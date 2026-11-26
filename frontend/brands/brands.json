@@ -149,7 +149,8 @@
    "aa"
   ],
   "codes": [
-   "AA_AADVANTAGE"
+   "AA_AADVANTAGE",
+   "AA_MILES"
   ]
  },
  {
@@ -196,7 +197,8 @@
    "southwest rapid rewards"
   ],
   "codes": [
-   "WN_RAPIDREWARDS"
+   "WN_RAPIDREWARDS",
+   "SOUTHWEST_POINTS"
   ]
  },
  {
@@ -207,10 +209,13 @@
    "alaska",
    "mileage plan",
    "alaska mileage plan",
-   "alaska airlines"
+   "alaska airlines",
+   "atmos rewards",
+   "atmos"
   ],
   "codes": [
-   "AS_MILEAGEPLAN"
+   "AS_MILEAGEPLAN",
+   "ATMOS_POINTS"
   ]
  },
  {
@@ -223,7 +228,8 @@
    "jetblue trueblue"
   ],
   "codes": [
-   "B6_TRUEBLUE"
+   "B6_TRUEBLUE",
+   "JETBLUE_POINTS"
   ]
  },
  {
@@ -236,7 +242,8 @@
    "air canada aeroplan"
   ],
   "codes": [
-   "AC_AEROPLAN"
+   "AC_AEROPLAN",
+   "AEROPLAN_POINTS"
   ]
  },
  {
@@ -278,7 +285,8 @@
    "flying blue air france klm"
   ],
   "codes": [
-   "AF_FLYINGBLUE"
+   "AF_FLYINGBLUE",
+   "FLYING_BLUE_MILES"
   ]
  },
  {
@@ -318,7 +326,8 @@
    "emirates skywards"
   ],
   "codes": [
-   "EK_SKYWARDS"
+   "EK_SKYWARDS",
+   "EMIRATES_MILES"
   ]
  },
  {
@@ -458,7 +467,8 @@
    "intercontinental hotels group"
   ],
   "codes": [
-   "IHG_ONE"
+   "IHG_ONE",
+   "IHG_POINTS"
   ]
  },
  {
@@ -470,7 +480,8 @@
    "wyndham hotels"
   ],
   "codes": [
-   "WYN_REWARDS"
+   "WYN_REWARDS",
+   "WYNDHAM_POINTS"
   ]
  },
  {
@@ -482,7 +493,8 @@
    "choice"
   ],
   "codes": [
-   "CHOICE_PRIV"
+   "CHOICE_PRIV",
+   "CHOICE_POINTS"
   ]
  },
  {
@@ -999,6 +1011,466 @@
   ],
   "codes": [
    "PLAID"
+  ]
+ },
+ {
+  "key": "barclays",
+  "name": "Barclays",
+  "kind": "ISSUER",
+  "simple": "barclays",
+  "aliases": [
+   "barclays bank",
+   "barclays us",
+   "barclaycard"
+  ]
+ },
+ {
+  "key": "synchrony",
+  "name": "Synchrony",
+  "kind": "ISSUER",
+  "aliases": [
+   "synchrony bank",
+   "synchrony financial"
+  ]
+ },
+ {
+  "key": "goldman-sachs",
+  "name": "Goldman Sachs",
+  "kind": "ISSUER",
+  "simple": "goldmansachs",
+  "aliases": [
+   "goldman sachs bank",
+   "apple card",
+   "marcus"
+  ]
+ },
+ {
+  "key": "elan",
+  "name": "Elan Financial Services",
+  "kind": "ISSUER",
+  "aliases": [
+   "elan",
+   "elan financial"
+  ]
+ },
+ {
+  "key": "pnc",
+  "name": "PNC",
+  "kind": "ISSUER",
+  "aliases": [
+   "pnc bank"
+  ]
+ },
+ {
+  "key": "td-bank",
+  "name": "TD Bank",
+  "kind": "ISSUER",
+  "aliases": [
+   "td",
+   "toronto-dominion",
+   "td bank na"
+  ]
+ },
+ {
+  "key": "citizens",
+  "name": "Citizens",
+  "kind": "ISSUER",
+  "aliases": [
+   "citizens bank",
+   "citizens financial group"
+  ]
+ },
+ {
+  "key": "truist",
+  "name": "Truist",
+  "kind": "ISSUER",
+  "aliases": [
+   "truist bank",
+   "truist financial",
+   "bb&t",
+   "suntrust"
+  ]
+ },
+ {
+  "key": "fifth-third",
+  "name": "Fifth Third Bank",
+  "kind": "ISSUER",
+  "aliases": [
+   "fifth third",
+   "5/3 bank"
+  ]
+ },
+ {
+  "key": "regions",
+  "name": "Regions",
+  "kind": "ISSUER",
+  "aliases": [
+   "regions bank"
+  ]
+ },
+ {
+  "key": "huntington",
+  "name": "Huntington",
+  "kind": "ISSUER",
+  "aliases": [
+   "huntington bank",
+   "huntington national bank"
+  ]
+ },
+ {
+  "key": "keybank",
+  "name": "KeyBank",
+  "kind": "ISSUER",
+  "aliases": [
+   "key bank",
+   "keycorp"
+  ]
+ },
+ {
+  "key": "bmo",
+  "name": "BMO",
+  "kind": "ISSUER",
+  "aliases": [
+   "bmo bank",
+   "bmo harris",
+   "bank of montreal",
+   "bmo financial group"
+  ]
+ },
+ {
+  "key": "fnbo",
+  "name": "First National Bank of Omaha",
+  "kind": "ISSUER",
+  "aliases": [
+   "fnbo",
+   "first national bank omaha"
+  ]
+ },
+ {
+  "key": "bread-financial",
+  "name": "Bread Financial",
+  "kind": "ISSUER",
+  "aliases": [
+   "comenity",
+   "bread"
+  ]
+ },
+ {
+  "key": "robinhood",
+  "name": "Robinhood",
+  "kind": "ISSUER",
+  "simple": "robinhood",
+  "aliases": [
+   "robinhood gold card"
+  ]
+ },
+ {
+  "key": "navy-federal",
+  "name": "Navy Federal Credit Union",
+  "kind": "ISSUER",
+  "aliases": [
+   "navy federal",
+   "nfcu"
+  ],
+  "codes": [
+   "NFCU_POINTS"
+  ]
+ },
+ {
+  "key": "penfed",
+  "name": "PenFed Credit Union",
+  "kind": "ISSUER",
+  "aliases": [
+   "penfed",
+   "pentagon federal credit union"
+  ],
+  "codes": [
+   "PENFED_POINTS"
+  ]
+ },
+ {
+  "key": "alliant",
+  "name": "Alliant Credit Union",
+  "kind": "ISSUER",
+  "aliases": [
+   "alliant"
+  ]
+ },
+ {
+  "key": "becu",
+  "name": "BECU",
+  "kind": "ISSUER",
+  "aliases": [
+   "boeing employees credit union"
+  ]
+ },
+ {
+  "key": "schoolsfirst",
+  "name": "SchoolsFirst Federal Credit Union",
+  "kind": "ISSUER",
+  "aliases": [
+   "schoolsfirst",
+   "schools first"
+  ]
+ },
+ {
+  "key": "golden-1",
+  "name": "Golden 1 Credit Union",
+  "kind": "ISSUER",
+  "aliases": [
+   "golden 1",
+   "golden1"
+  ]
+ },
+ {
+  "key": "first-tech",
+  "name": "First Tech Federal Credit Union",
+  "kind": "ISSUER",
+  "aliases": [
+   "first tech",
+   "first tech credit union"
+  ]
+ },
+ {
+  "key": "dcu",
+  "name": "Digital Federal Credit Union",
+  "kind": "ISSUER",
+  "aliases": [
+   "dcu",
+   "digital credit union"
+  ]
+ },
+ {
+  "key": "secu",
+  "name": "State Employees’ Credit Union",
+  "kind": "ISSUER",
+  "aliases": [
+   "secu",
+   "state employees credit union",
+   "state employees' credit union"
+  ]
+ },
+ {
+  "key": "mountain-america",
+  "name": "Mountain America Credit Union",
+  "kind": "ISSUER",
+  "aliases": [
+   "mountain america",
+   "macu"
+  ]
+ },
+ {
+  "key": "america-first",
+  "name": "America First Credit Union",
+  "kind": "ISSUER",
+  "aliases": [
+   "america first",
+   "afcu"
+  ]
+ },
+ {
+  "key": "randolph-brooks",
+  "name": "Randolph-Brooks Federal Credit Union",
+  "kind": "ISSUER",
+  "aliases": [
+   "rbfcu",
+   "randolph brooks"
+  ]
+ },
+ {
+  "key": "security-service",
+  "name": "Security Service Federal Credit Union",
+  "kind": "ISSUER",
+  "aliases": [
+   "security service",
+   "ssfcu"
+  ]
+ },
+ {
+  "key": "san-diego-county",
+  "name": "San Diego County Credit Union",
+  "kind": "ISSUER",
+  "aliases": [
+   "sdccu",
+   "san diego county cu"
+  ]
+ },
+ {
+  "key": "unionpay",
+  "name": "UnionPay",
+  "kind": "NETWORK",
+  "aliases": [
+   "union pay",
+   "unionpay international"
+  ]
+ },
+ {
+  "key": "jcb",
+  "name": "JCB",
+  "kind": "NETWORK",
+  "aliases": [
+   "japan credit bureau"
+  ]
+ },
+ {
+  "key": "diners-club",
+  "name": "Diners Club",
+  "kind": "NETWORK",
+  "aliases": [
+   "diners club international",
+   "diners"
+  ]
+ },
+ {
+  "key": "frontier",
+  "name": "Frontier Airlines",
+  "kind": "AIRLINE",
+  "aliases": [
+   "frontier",
+   "frontier miles"
+  ],
+  "codes": [
+   "FRONTIER_MILES"
+  ]
+ },
+ {
+  "key": "spirit",
+  "name": "Spirit Airlines",
+  "kind": "AIRLINE",
+  "aliases": [
+   "spirit",
+   "free spirit"
+  ]
+ },
+ {
+  "key": "iberia",
+  "name": "Iberia",
+  "kind": "AIRLINE",
+  "simple": "iberia",
+  "aliases": [
+   "iberia plus"
+  ]
+ },
+ {
+  "key": "avianca",
+  "name": "Avianca",
+  "kind": "AIRLINE",
+  "simple": "avianca",
+  "aliases": [
+   "lifemiles",
+   "avianca lifemiles"
+  ]
+ },
+ {
+  "key": "norwegian",
+  "name": "Norwegian",
+  "kind": "AIRLINE",
+  "simple": "norwegian",
+  "aliases": [
+   "norwegian air",
+   "norwegian reward"
+  ]
+ },
+ {
+  "key": "air-india",
+  "name": "Air India",
+  "kind": "AIRLINE",
+  "simple": "airindia",
+  "aliases": [
+   "maharaja club"
+  ]
+ },
+ {
+  "key": "radisson",
+  "name": "Radisson Hotels",
+  "kind": "HOTEL",
+  "aliases": [
+   "radisson",
+   "radisson rewards"
+  ]
+ },
+ {
+  "key": "grubhub",
+  "name": "Grubhub",
+  "kind": "MERCHANT"
+ },
+ {
+  "key": "saks",
+  "name": "Saks Fifth Avenue",
+  "kind": "MERCHANT",
+  "aliases": [
+   "saks",
+   "saks fifth avenue"
+  ]
+ },
+ {
+  "key": "lululemon",
+  "name": "lululemon",
+  "kind": "MERCHANT",
+  "aliases": [
+   "lululemon athletica"
+  ]
+ },
+ {
+  "key": "equinox",
+  "name": "Equinox",
+  "kind": "MERCHANT",
+  "aliases": [
+   "equinox fitness"
+  ]
+ },
+ {
+  "key": "resy",
+  "name": "Resy",
+  "kind": "MERCHANT"
+ },
+ {
+  "key": "opentable",
+  "name": "OpenTable",
+  "kind": "MERCHANT",
+  "aliases": [
+   "open table"
+  ]
+ },
+ {
+  "key": "shake-shack",
+  "name": "Shake Shack",
+  "kind": "MERCHANT",
+  "aliases": [
+   "shake shack"
+  ]
+ },
+ {
+  "key": "five-guys",
+  "name": "Five Guys",
+  "kind": "MERCHANT",
+  "aliases": [
+   "five guys burgers"
+  ]
+ },
+ {
+  "key": "xfinity",
+  "name": "Xfinity",
+  "kind": "MERCHANT",
+  "aliases": [
+   "comcast xfinity",
+   "comcast"
+  ]
+ },
+ {
+  "key": "gm",
+  "name": "GM",
+  "kind": "MERCHANT",
+  "aliases": [
+   "general motors",
+   "gm rewards",
+   "chevrolet",
+   "buick",
+   "gmc",
+   "cadillac"
+  ],
+  "codes": [
+   "GM_POINTS"
   ]
  }
 ]

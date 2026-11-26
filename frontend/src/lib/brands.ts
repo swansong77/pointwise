@@ -20,7 +20,7 @@ export interface Brand {
 }
 
 type Def = { key: string; name: string; kind: string; simple?: string; aliases?: string[]; codes?: string[] };
-const files = manifest as Record<string, { file: string; hex: string }>;
+const files = manifest as unknown as Record<string, { file: string; hex: string | null; url?: string; credit?: { author: string; licence: string; licenceUrl: string } }>;
 
 export const BRANDS: Brand[] = (defs as Def[]).map((d) => ({
   key: d.key,
@@ -46,7 +46,11 @@ export const KIND_LABEL: Record<BrandKind, string> = {
 export const KIND_ORDER: BrandKind[] = ['ISSUER', 'NETWORK', 'AIRLINE', 'HOTEL', 'BANK_REWARDS', 'SHOPPING', 'MERCHANT', 'MEMBERSHIP', 'SERVICE'];
 
 /** lower case, letters and digits only ("U.S. Bank" → "usbank"; "Walmart+" keeps its plus). */
-export const normalize = (s: string): string => s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9+]/g, '');
+export const normalize = (s: string): string =>
+  s
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9+]/g, '');
 
 const INDEX = new Map<string, Brand>();
 for (const b of BRANDS) for (const t of [b.key, b.name, ...b.aliases, ...b.codes]) if (!INDEX.has(normalize(t))) INDEX.set(normalize(t), b);
@@ -68,7 +72,9 @@ export interface BrandQuery {
 export function resolveBrand(input: string | BrandQuery | null | undefined, kinds?: BrandKind[]): Brand | null {
   if (!input) return null;
   const candidates = typeof input === 'string' ? [input] : [input.code, input.slug, input.issuer, input.network, input.name].filter((x): x is string => !!x);
-  const ok = (b: Brand) => !kinds || kinds.includes(b.kind);
+  // a bank filter also takes the bank-owned rewards brands (Bilt is a card issuer and a rewards currency)
+  const wanted = kinds && kinds.includes('ISSUER') && !kinds.includes('BANK_REWARDS') ? [...kinds, 'BANK_REWARDS' as BrandKind] : kinds;
+  const ok = (b: Brand) => !wanted || wanted.includes(b.kind);
   for (const c of candidates) {
     const hit = INDEX.get(normalize(c));
     if (hit && ok(hit)) return hit;
@@ -97,7 +103,10 @@ const SKIP = new Set(['the', 'of', 'and', 'a', 'an', 'inc', 'co', 'bank']);
 
 /** One or two capital letters for a name ("Wyndham Rewards" → "WR", "Citi" → "C"). */
 export function initials(name: string): string {
-  const words = name.replace(/[^A-Za-z0-9' ]/g, ' ').split(/\s+/).filter(Boolean);
+  const words = name
+    .replace(/[^A-Za-z0-9' ]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
   const keep = words.filter((w) => !SKIP.has(w.toLowerCase()));
   const use = keep.length ? keep : words;
   if (!use.length) return '?';
@@ -106,3 +115,6 @@ export function initials(name: string): string {
 
 export const brandsOfKind = (kind: BrandKind): Brand[] => BRANDS.filter((b) => b.kind === kind);
 export const logoUrl = (b: Brand): string | null => (b.file ? `/brands/${b.file}` : null);
+
+/** Logos that need a credit (Creative Commons BY-SA): author, licence and the Commons page, shown on the Brand logos page. */
+export const LOGO_CREDITS = BRANDS.filter((b) => files[b.key]?.credit).map((b) => ({ key: b.key, name: b.name, ...files[b.key].credit!, page: files[b.key].url ?? '' }));

@@ -36,6 +36,11 @@ export function toDomainCard(c: CardWithRewards): DomainCard {
       isRotating: r.isRotating,
       startsAt: r.startsAt,
       endsAt: r.endsAt,
+      capCents: r.capCents,
+      capPeriod: r.capPeriod,
+      conditional: r.conditional,
+      excludedMerchantIds: r.excludedMerchantIds ?? [],
+      verifiedAt: r.verifiedAt,
     })),
     ...(c.issuer && { issuerName: c.issuer.name, businessReportsToPersonal: c.issuer.businessReportsToPersonal }),
   };

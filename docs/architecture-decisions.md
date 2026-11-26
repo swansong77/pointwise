@@ -111,4 +111,61 @@ Format: Context · Options · Decision · Consequences · Status. Evidence and i
 
 ## ADR-020 — Refresh tiers
 - **Decision:** CRITICAL / HIGH / NORMAL / LOW by expiry, pending changes and stale data; event-driven, daily, weekly, scheduled and manual refresh; refresh confidence decays with age; stale accounts produce a "needs refresh" action rather than a silent gap.
+
+---
+## ADR-021 — Offer snapshots: one funnel, one diff
+- **Context:** offers reach PointWise from a server-side connector, the member's browser extension, offer emails and pasted lists; each shows the issuer's inventory for one card at one time.
+- **Decision:** every source feeds one function (`OfferSyncService.applyInventory`). It hashes the inventory (identical hash = no-op), diffs it against the stored items of that account (`domain/offer-snapshot-diff.ts`: new, updated, removed, expired, redeemed, newly enrolled, reappeared), writes an `OfferEvent` for each change, and keeps the current state in `OfferSnapshotItem`, unique per account, card and issuer offer id. A partial source (an email) never removes anything; a collapsed inventory (over 40 percent smaller) is a warning, not a mass removal.
+- **Consequences:** one place to audit and test; the same offer on two members' cards is two rows and two enrollments (never merged).
+- **Status:** accepted.
+
+## ADR-022 — Connector contract, vault and the opt-in server-side login
+- **Context:** the member asked for automated login and enrollment across six issuers, knowingly overriding the earlier rule against server-side bank logins (ADR-009, ADR-010). Chase's verified terms prohibit "agents, including AI agents or agentic AI, robots, spiders, scripts" and require agent traffic to be labelled. The other issuers' terms were not readable. No real issuer account is available to test against.
+- **Options:** (a) refuse; (b) build it on by default; (c) build the framework, ship the real issuer flows as unverified data, **off by default**, and prove everything against a mock issuer.
+- **Decision:** (c). A connector implements login, MFA, inventory, enrollments, enroll and health (`offer-automation/connector.ts`); new issuers are a new connector or flow definition and a registry line. Real issuer flows are inert without an optional browser add-on and are switched on only by `OFFER_CONNECTORS_ENABLED=true` plus a per-account opt-in with a recorded acknowledgement of the terms risk. Logins, sessions and device-trust markers are AES-256-GCM encrypted, write-only through the API, redacted from every audit row, event, notification and AI tool. Three bad logins lock the account; traffic is paced, one account at a time, capped per day.
+- **Consequences:** the member keeps the choice and the risk is visible; no real issuer flow is claimed to work; passkeys cannot be completed by a server and are user-assisted.
+- **Status:** accepted (supersedes the "not built" position of ADR-010 for this feature only; assisted activation remains the default).
+
+## ADR-023 — Enrollment modes, rules and smart scoring
+- **Decision:** three modes: recommend only (default), bulk approval, automatic. Rules are always/never over merchant, category, minimum value, offer type, keyword and spend history; a never-rule always wins; always-rules enroll without approval only in automatic mode. Every offer gets six 0-100 sub-scores (value, expiration, merchant preference, travel, household, likelihood of use) and an overall score with reasons, in one versioned weight table (`domain/offer-smart-enroll.ts`). Automatic mode needs an explicit filter; a score floor alone enrolls nothing. An enrollment counts as SUCCESS only after the issuer's enrollments are read back and show the offer; otherwise it is PARTIAL.
+- **Status:** accepted.
+
+## ADR-024 — Offer sources and the extension
+- **Decision:** the extension (extension-offers/) is user-initiated, issuer-domain-only, reads visible text and sends it to the member's own server with an `offers:ingest` token; "Enroll selected" presses the issuer's own Add button on the open page for offers the member approved, only on click. Offer emails from a known issuer add offers for the member's "Offer Emails" account. Page selectors are text heuristics, unverified.
+- **Status:** accepted.
+
+
+---
+## ADR-025 — One registry drives backup, restore, export and import
+- **Context:** the schema has 90 models and grows; a hand-written exporter per model would silently miss new ones.
+- **Decision:** `domain/data-registry.ts` classifies every model (member data, catalog and configuration, short-lived), says how a member's rows are found (a relation path to the user id), which columns are never exported, which columns hold ids of other models, how rows match on a merge, and which columns are secrets. Insert order comes from the schema's foreign keys (cycles broken at an optional key). A unit test compares the registry with the Prisma schema and fails if a model is unclassified, a column named *Enc is not a listed secret, or a path is not a real chain of relations.
+- **Consequences:** a new model cannot be forgotten; the same engine serves backups (all models, ids kept) and member import (member models, ids remapped).
+- **Status:** accepted.
+
+## ADR-026 — Passphrase-encrypted backups; secrets re-encrypted
+- **Context:** secrets are encrypted with TOKEN_ENC_KEY, there is no key rotation, and a database copy to a server with another key would break every secret.
+- **Options:** copy ciphertext (needs the same key on the new server); leave secrets out (everything must be reconnected); decrypt into the backup and protect the file with a passphrase.
+- **Decision:** the third (the member's choice). The backup stream is gzip then AES-256-GCM frames under a scrypt key; secrets are stored decrypted inside it and re-encrypted with the target key on restore. A member's own export never contains secrets.
+- **Consequences:** moves work across keys; the passphrase is the only protection and is never stored; a backup is as sensitive as the database.
+- **Status:** accepted.
+
+## ADR-027 — Restore safety
+- **Decision:** verify the whole file before touching anything; require the same database version; make a pre-restore backup; one transaction (truncate, insert in foreign-key order, check every model's count and checksum against the manifest); roll back on any difference; maintenance mode off afterwards. Maintenance mode (a SystemSetting) answers 503 to everyone but administrators, health checks and sign-in.
+- **Status:** accepted.
+
+
+---
+## ADR-028 — Category rates: what ranks, what is confirmed
+- **Context:** "Best Card by Category" is only as good as the earning rates. The list of 112 curated cards was written from general knowledge; 211 more come from issuer listing pages; 54 of those have no rates; the engine ignored caps, treated categories as flat and could not tell a travel-portal rate from a general one.
+- **Decision:** (1) A rate carries `conditional` (needs a portal, a linked account or similar; shown on the card, never used to rank), `verifiedAt` and `sourceUrl`. (2) Airlines, Hotels, Car rental and Transit are sub-categories of Travel: a travel rate applies to them, a sub-category rate does not apply to Travel. (3) A capped rate is blended with the card's base rate for the part of the member's yearly spend above the cap when the spending profile gives that spend; otherwise the headline rate ranks and the cap is shown. (4) Each ranked card says whether an issuer page confirmed the rate it used. (5) The ranking stays a rate comparison: annual fees are not in it (the portfolio and next-card pages net them). (6) About 60 popular cards were checked against the issuers' own pages (rate-verification.ts); pages that could not be read leave the card unverified; a rate that looks wrong and cannot be checked is made conditional until someone confirms it. (7) docs/rewards-audit.md is generated from the data by rules that run in the unit tests.
+- **Consequences:** a portal bonus can no longer make a card "best at travel"; a capped card stops winning for a heavy spender; unverified rates are visible; gaps (cards with no recorded rates) are listed, not hidden.
+- **Status:** accepted.
+
+
+---
+## ADR-029 — Scheduled refresh of rotating categories (scoped override of no-issuer-automation)
+- **Context:** the standing rule forbids automating issuer sites. Quarterly rotating categories (Freedom Flex, Discover it) change every quarter and a hand-kept calendar goes stale. On 2026-11-26 the owner explicitly overrode the rule for this feature.
+- **Decision:** the daily job `update-rotating-categories` (04:00 UTC, `ROTATING_AUTO_FETCH`, on by default) may read an issuer's PUBLIC announcement page listed in `seed/rotating-sources.ts`, only when the current quarter (or the next, in the last 45 days) is missing. It uses the catalog-refresh `PageFetcher`: https, allow-listed issuer domains, robots.txt, one request per host per interval, no cookies or credentials. A conservative parser applies a quarter only when the page states one quarter and one rate with recognised categories; otherwise admins are told once a day and import the quarter by hand. Pages known to be unreadable are marked and not requested. `GET /admin/rotating-categories/settings` shows the state.
+- **Not covered:** logins, credentials, activating a category for a member, any page behind a login, offers, portals, or any other feature. Each of those still follows the standing rule.
+- **Consequences:** quarters appear without a code change when an issuer's page is readable; a wrong or unreadable page degrades to an admin notice, never to a wrong calendar. Issuer terms against automated access are the operator's to check; the job is polite and can be switched off.
 - **Status:** accepted.

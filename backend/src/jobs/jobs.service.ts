@@ -1,4 +1,6 @@
 import { Injectable, Logger, Optional } from "@nestjs/common";
+import { runRotatingJob } from "./rotating.job";
+import { PageFetcher } from "../catalog-refresh/fetcher";
 import { PrismaService } from "../common/prisma.service";
 import { toDomainWalletCard, walletCardInclude } from "../common/mappers";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -19,6 +21,8 @@ import { OfferJobsService } from "../offers/offer-jobs.service";
 import { LoyaltyJobsService } from "../loyalty/loyalty.module";
 import { LoyaltyRefreshJobs } from "../loyalty/loyalty-automation.module";
 import { OrchestratorService } from "../ai/orchestrator.service";
+import { OfferAutomationJobs } from "../offer-automation/offer-automation.jobs";
+import { BackupJobs } from "../data/data.module";
 
 export const JOB_QUEUE = "pointwise-jobs";
 export type JobName =
@@ -41,12 +45,24 @@ export type JobName =
   | "scan-loyalty-expirations"
   | "snapshot-loyalty-balances"
   | "refresh-loyalty"
-  | "loyalty-audit";
+  | "loyalty-audit"
+  | "offer-sync-due"
+  | "offer-sync-recover"
+  | "offer-audit-monthly"
+  | "offer-digest"
+  | "backup-nightly"
+  | "update-rotating-categories";
 export const JOB_NAMES: JobName[] = [
+  "update-rotating-categories",
+  "backup-nightly",
   "refresh-loyalty",
   "loyalty-audit",
   "scan-loyalty-expirations",
   "snapshot-loyalty-balances",
+  "offer-sync-due",
+  "offer-sync-recover",
+  "offer-audit-monthly",
+  "offer-digest",
   "scan-offer-opportunities",
   "verify-offer-activation",
   "research-cards",
@@ -75,6 +91,7 @@ const day = (d: Date) => d.toISOString().slice(0, 10);
 @Injectable()
 export class JobsService {
   private readonly logger = new Logger(JobsService.name);
+  private readonly rotatingFetcher = new PageFetcher();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -91,6 +108,8 @@ export class JobsService {
     @Optional() private readonly loyaltyJobs?: LoyaltyJobsService,
     @Optional() private readonly loyaltyRefresh?: LoyaltyRefreshJobs,
     @Optional() private readonly orchestrator?: OrchestratorService,
+    @Optional() private readonly offerAutomation?: OfferAutomationJobs,
+    @Optional() private readonly backupJobs?: BackupJobs,
   ) {}
 
   async run(
@@ -104,6 +123,9 @@ export class JobsService {
         break;
       case "scan-renewals":
         created = await this.scanRenewals(now);
+        break;
+      case "update-rotating-categories":
+        created = await runRotatingJob(this.prisma, (...a) => this.notifications.notify(...a), now, this.rotatingFetcher);
         break;
       case "scan-bonus-deadlines":
         created = await this.scanBonusDeadlines(now);
@@ -158,6 +180,21 @@ export class JobsService {
         break;
       case "verify-offer-activation":
         created = (await this.offerJobs?.verifyActivations(now)) ?? 0;
+        break;
+      case "offer-sync-due":
+        created = (await this.offerAutomation?.syncDue(now)) ?? 0;
+        break;
+      case "offer-sync-recover":
+        created = (await this.offerAutomation?.recover(now)) ?? 0;
+        break;
+      case "offer-audit-monthly":
+        created = (await this.offerAutomation?.monthlyAudit(now)) ?? 0;
+        break;
+      case "offer-digest":
+        created = (await this.offerAutomation?.digest(now)) ?? 0;
+        break;
+      case "backup-nightly":
+        created = (await this.backupJobs?.nightly(now)) ?? 0;
         break;
     }
     this.logger.log(`job ${name} done: ${created}`);

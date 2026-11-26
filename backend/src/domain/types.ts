@@ -12,6 +12,15 @@ export interface DomainRewardRule {
   isRotating: boolean;
   startsAt: Date | null;
   endsAt: Date | null;
+  /** spend cap in cents per period, after which the rate drops to the card's base rate */
+  capCents?: number | null;
+  capPeriod?: 'QUARTER' | 'YEAR' | string | null;
+  /** the rate needs something a category match cannot know (a travel portal, a linked account, an "up to" rate): shown on the card, never used to rank */
+  conditional?: boolean;
+  /** merchants this category rate does not cover (superstores and clubs are not "supermarkets"); the card falls back to its next rule there */
+  excludedMerchantIds?: string[];
+  /** when an issuer page last confirmed this rate; null = unverified */
+  verifiedAt?: Date | null;
 }
 
 export interface DomainCurrency {

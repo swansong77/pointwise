@@ -1,5 +1,6 @@
 'use client';
 
+import { rateNotes } from '@/lib/rates';
 import { BrandLogo } from '@/components/brand-logo';
 import Link from 'next/link';
 import { Badge, EmptyState, ErrorText, Panel, PageHeader, ProgressBar, Spinner } from '@/components/ui';
@@ -44,7 +45,7 @@ export default function DashboardPage() {
       <Panel title="Best card by category" data-testid="best-by-category">
         <ul className="grid gap-2 sm:grid-cols-2">
           {data.bestByCategory.map(({ category, best }) => (
-            <li key={category.id}>
+            <li key={category.id} className={category.parentSlug ? 'sm:pl-6' : undefined} data-testid={category.parentSlug ? 'best-sub-category' : 'best-category'}>
               <Link href={`/categories/${category.slug}`} className="flex items-center gap-3 rounded-xl border border-slate-100 p-3 hover:border-brand-200 hover:bg-brand-50/40">
                 <span className="text-xl" aria-hidden>
                   {categoryEmoji(category.icon)}
@@ -52,6 +53,7 @@ export default function DashboardPage() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-900">{category.name}</p>
                   <p className="truncate text-xs text-slate-500">{best ? best.name : 'No card yet'}</p>
+                  {best && rateNotes(best).length > 0 && <p className="truncate text-xs text-amber-700">{rateNotes(best).join(' · ')}</p>}
                 </div>
                 {best && (
                   <span className="flex items-center gap-2 text-sm font-semibold text-slate-900">

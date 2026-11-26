@@ -11,8 +11,12 @@
  *   npm run catalog:import -- --retire-demo
  */
 import { PrismaClient } from "@prisma/client";
-import { CATEGORIES } from "./categories";
+import { CATEGORIES, CATEGORY_PARENTS } from "./categories";
 import { applyVerifiedListings, ListingResult } from "./verified-listings.apply";
+import { applyRateVerifications, RateVerificationResult } from "./rate-verification.apply";
+import { applyRotating, RotatingResult } from "./rotating.apply";
+import { applyRewardExclusions } from "./reward-exclusions.apply";
+import { ROTATING_CALENDAR } from "./rotating-calendar";
 import {
   DATA_AS_OF,
   ISSUER_REGISTRY,
@@ -30,6 +34,9 @@ export interface ImportResult {
   skipped: number;
   retiredDemo: number;
   listings: ListingResult | null;
+  rates: RateVerificationResult | null;
+  rotating: RotatingResult | null;
+  exclusions: { grocery: number; updated: number } | null;
 }
 
 export async function importRealCatalog(
@@ -45,6 +52,9 @@ export async function importRealCatalog(
     skipped: 0,
     retiredDemo: 0,
     listings: null,
+    rates: null,
+    rotating: null,
+    exclusions: null,
   };
   const asOf = new Date(`${DATA_AS_OF}T00:00:00Z`);
 
@@ -57,6 +67,8 @@ export async function importRealCatalog(
     });
     categoryIds[slug] = c.id;
   }
+  // sub-categories (travel family): fill in the parent where it is missing, leave admin changes alone
+  for (const [child, parent] of Object.entries(CATEGORY_PARENTS)) await prisma.category.updateMany({ where: { slug: child, parentId: null }, data: { parentId: categoryIds[parent] } });
 
   const issuerIds: Record<string, string> = {};
   for (const i of ISSUER_REGISTRY) {
@@ -201,6 +213,10 @@ export async function importRealCatalog(
 
   // issuer listings read from the issuers' own websites correct and extend the curated list
   out.listings = await applyVerifiedListings(prisma);
+  // rates confirmed against issuer product pages (and conditional/portal-only flags) go on top of the curated list and the listings
+  out.rates = await applyRateVerifications(prisma);
+  out.rotating = await applyRotating(prisma, ROTATING_CALENDAR);
+  out.exclusions = await applyRewardExclusions(prisma);
   if (opts.retireDemo)
     out.retiredDemo = (
       await prisma.creditCard.updateMany({

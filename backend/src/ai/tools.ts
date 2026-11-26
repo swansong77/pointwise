@@ -6,6 +6,7 @@ import { norm, tokenSimilarity } from '../domain/import';
 import { OffersService } from '../offers/offers.service';
 import { OfferAnalysisService } from '../offers/offer-analysis.service';
 import { OfferIntelService } from '../offers/offer-intel.service';
+import { OfferAutomationService } from '../offer-automation/offer-automation.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { LoyaltyAutomationService } from '../loyalty/loyalty-automation.service';
 import { BenefitsService } from '../portfolio/benefits';
@@ -89,6 +90,7 @@ export class ToolRegistry {
     private readonly offerIntel: OfferIntelService,
     private readonly loyalty: LoyaltyService,
     private readonly loyaltyAuto: LoyaltyAutomationService,
+    private readonly offerAutomation: OfferAutomationService,
   ) {
     this.tools = this.build();
   }
@@ -723,6 +725,44 @@ export class ToolRegistry {
         handler: async (ctx, input) => {
           const r = await this.loyaltyAuto.recentChanges(ctx.userId, Math.min(N(input.days) ?? 30, 365), ctx.now);
           return { summary: r.changes.length ? r.changes.slice(0, 10).map((c) => `• ${c.program}: ${c.what}${c.source ? ` (${String(c.source).toLowerCase()}, ${c.reliability})` : ''}`).join('\n') : 'No recent changes.', data: r };
+        },
+      },
+      {
+        name: 'get_offer_inbox',
+        description: "Merchant offers PointWise discovered on the household's issuer accounts, with a score and a reason for each: what to add, review, ignore, and what is already enrolled. Read-only.",
+        inputSchema: obj({ tab: str('new, review, enrolled, auto, expiring, redeemed or history') }),
+        readOnly: true,
+        handler: async (ctx, input) => {
+          const tab = ['new', 'review', 'enrolled', 'auto', 'expiring', 'redeemed', 'history', 'queued'].includes(S(input.tab) ?? '') ? S(input.tab)! : 'new';
+          const rows = await this.offerAutomation.inbox(ctx.userId, { tab }, ctx.now);
+          const lines = rows.slice(0, 12).map((o) => `• ${o.merchant} on ${o.card ?? o.holder} (${o.issuer}): $${(o.valueCents / 100).toFixed(0)}, score ${o.score ?? '-'}/100, ${o.decision.toLowerCase().replace('_', ' ')}${o.daysLeft != null ? `, ${o.daysLeft} day(s) left` : ''}${o.reason ? ` - ${o.reason}` : ''}`);
+          return { summary: lines.length ? lines.join('\n') : 'No offers in that list.', data: rows.slice(0, 50) };
+        },
+      },
+      {
+        name: 'get_offer_sync_status',
+        description: 'When each issuer account was last synced, its health, and the latest sync runs with what they found. Read-only; never includes a login.',
+        inputSchema: obj({}),
+        readOnly: true,
+        handler: async (ctx) => {
+          const d = await this.offerAutomation.syncDashboard(ctx.userId);
+          const accts = (d.accounts ?? []).map((a) => `• ${a.holderLabel} (${a.issuer.name}): ${a.syncHealth.toLowerCase().replace('_', ' ')}, last sync ${a.lastSyncAt ? a.lastSyncAt.toISOString().slice(0, 10) : 'never'}`);
+          return { summary: accts.length ? accts.join('\n') : 'No offer accounts yet.', data: { accounts: d.accounts, runs: d.runs.slice(0, 10), totals: d.totals } };
+        },
+      },
+      {
+        name: 'explain_offer_decision',
+        description: 'Why PointWise recommended, ignored or enrolled an offer: its score factors, the rule that matched and the reasons. Read-only.',
+        inputSchema: obj({ merchant: str('Merchant name') }, ['merchant']),
+        readOnly: true,
+        handler: async (ctx, input) => {
+          const q = S(input.merchant) ?? '';
+          const rows = await this.offerAutomation.inbox(ctx.userId, { tab: 'all' }, ctx.now);
+          const hit = fuzzyFind(rows, q, (o) => `${o.merchant} ${o.title}`);
+          if (!hit) throw new NotFoundException(`No discovered offer matching "${q}"`);
+          const detail = (hit.scoreDetail ?? {}) as { scores?: Record<string, number>; reasons?: string[] };
+          const factors = Object.entries(detail.scores ?? {}).map(([k, v]) => `${k} ${v}`).join(', ');
+          return { summary: `${hit.merchant} on ${hit.card ?? hit.holder}: score ${hit.score}/100 (${factors}). ${hit.reason ?? ''} ${(detail.reasons ?? []).join(' ')}`.trim(), data: { offer: hit } };
         },
       },
       {

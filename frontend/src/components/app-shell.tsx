@@ -24,6 +24,7 @@ const NAV = [
   { href: '/household', label: 'Household', icon: '👪' },
   { href: '/import', label: 'Import', icon: '📥' },
   { href: '/offers', label: 'Offers', icon: '🏷️' },
+  { href: '/offers/automation', label: 'Offer Automation', icon: '🤖' },
   { href: '/offers/market', label: 'Offer Market', icon: '📈' },
   { href: '/offers/intel', label: 'Offer Intelligence', icon: '🎯' },
   { href: '/offers/plan', label: 'Plan a Purchase', icon: '🧭' },
@@ -54,6 +55,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         { href: '/admin/ai', label: 'AI & MCP', icon: '🤖' },
         { href: '/admin/catalog', label: 'Card Data', icon: '🗂️' },
         { href: '/admin/ops', label: 'Operations', icon: '🩺' },
+        { href: '/admin/backup', label: 'Backup & Migration', icon: '💾' },
       ]
     : NAV;
 

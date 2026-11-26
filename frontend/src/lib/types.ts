@@ -38,9 +38,13 @@ export interface Reward {
   multiplier: string;
   description: string;
   isRotating: boolean;
+  conditional?: boolean;
+  capCents?: number | null;
+  capPeriod?: 'QUARTER' | 'YEAR' | null;
+  verifiedAt?: string | null;
   categoryId: string | null;
   merchantId: string | null;
-  category?: { name: string } | null;
+  category?: { name: string; slug?: string } | null;
   merchant?: { name: string } | null;
 }
 
@@ -50,6 +54,9 @@ export interface WalletCard {
   notes: string | null;
   status: CardStatus;
   cardholder: 'PRIMARY' | 'AUTHORIZED_USER';
+  /** the household member who holds the card; null means the account owner (primary member) */
+  profileId?: string | null;
+  profile?: { id: string; nickname: string; relationship: string; isPrimary: boolean } | null;
   lastFour: string | null;
   approvedAt: string | null;
   closedAt: string | null;
@@ -88,6 +95,12 @@ export interface RankedCard {
   matchLevel: string;
   reason: string;
   pinned: boolean;
+  /** the multiplier used to rank: lower than `multiplier` when a cap and your known spend pull it down */
+  effectiveMultiplier?: number;
+  cap?: { capCents: number; capPeriod: 'QUARTER' | 'YEAR' } | null;
+  blended?: boolean;
+  /** an issuer page has confirmed the rate used */
+  verified?: boolean;
 }
 
 export interface Offer {
@@ -125,7 +138,7 @@ export interface Dashboard {
   plan: 'FREE' | 'PRO';
   unreadNotifications: number;
   stats: { cards: number; activeOffers: number; availableOfferValueCents: number; redeemedValueCents: number };
-  bestByCategory: Array<{ category: { id: string; slug: string; name: string; icon: string }; best: RankedCard | null }>;
+  bestByCategory: Array<{ category: { id: string; slug: string; name: string; icon: string; parentSlug?: string | null }; best: RankedCard | null }>;
   expiringOffers: Array<{ id: string; offer: Offer; walletCard: { nickname: string | null; card: { name: string; color: string } } }>;
   renewals: Array<{ walletCardId: string; name: string; renewsAt: string; daysUntil: number; annualFeeCents: number }>;
   bonuses: Array<{ walletCardId: string; name: string; requiredSpendCents: number; spentCents: number; percent: number; deadline: string; daysLeft: number; atRisk: boolean }>;

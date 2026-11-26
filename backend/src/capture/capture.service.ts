@@ -3,6 +3,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
   ServiceUnavailableException,
 } from "@nestjs/common";
 import { TransactionKind } from "@prisma/client";
@@ -21,6 +22,8 @@ import {
   statementDigits,
 } from "../domain/email-alerts";
 import { classifyMail, MAIL_KIND_LABEL } from "../domain/mail-classify";
+import { issuerNameForDomain } from "../domain/offer-mail";
+import { OfferAutomationService } from "../offer-automation/offer-automation.service";
 import { StatementError } from "../domain/spend";
 import { extractPdfLines } from "../spend/pdf-extract";
 import { SpendService } from "../spend/spend.service";
@@ -51,6 +54,7 @@ export class CaptureService {
     private readonly prisma: PrismaService,
     private readonly spend: SpendService,
     private readonly loyalty: LoyaltyIngestService,
+    @Optional() private readonly offerAutomation?: OfferAutomationService,
   ) {}
 
   domain(env = process.env) {
@@ -248,6 +252,16 @@ export class CaptureService {
           verified,
         );
       return { accepted: true, kind: "STATEMENT", status: last.status };
+    }
+
+    // an offer-alert email from an issuer the member keeps an email offers account for
+    const offerIssuer = issuerNameForDomain(fromDomain);
+    if (offerIssuer && /\b(offers?|deals?)\b/i.test(subject) && this.offerAutomation) {
+      const note = await this.offerAutomation.ingestFromMail(userId, offerIssuer, `${subject}\n${text}`);
+      if (note) {
+        await record({ kind: "IGNORED", status: "PROCESSED", verified, note });
+        return { accepted: true, kind: "IGNORED", status: "PROCESSED" };
+      }
     }
 
     const parsed = parseAlert(subject, text, mail.date ?? now);

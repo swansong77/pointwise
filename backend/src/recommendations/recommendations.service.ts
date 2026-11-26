@@ -5,7 +5,7 @@ import { RankedCard, rankCards } from '../domain/recommendation.engine';
 import { DomainWalletCard, PurchaseTarget } from '../domain/types';
 
 export interface CategoryBest {
-  category: { id: string; slug: string; name: string; icon: string };
+  category: { id: string; slug: string; name: string; icon: string; parentSlug: string | null };
   best: RankedCard | null;
 }
 
@@ -22,13 +22,16 @@ export class RecommendationsService {
   }
 
   async context(userId: string) {
-    const [cards, valuations, pins, fallbackCategoryId] = await Promise.all([
+    const [cards, valuations, pins, fallbackCategoryId, spend] = await Promise.all([
       this.wallet.domainCards(userId),
       this.wallet.valuations(userId),
       this.prisma.categoryPin.findMany({ where: { userId } }),
       this.fallbackCategoryId(),
+      this.prisma.spendProfileEntry.findMany({ where: { userId }, select: { categoryId: true, monthlyCents: true } }),
     ]);
-    return { cards, valuations, pins, fallbackCategoryId };
+    // what the member spends in a category in a year, when they have told us: used to blend capped rates
+    const annualSpend = new Map(spend.map((s) => [s.categoryId, s.monthlyCents * 12]));
+    return { cards, valuations, pins, fallbackCategoryId, annualSpend };
   }
 
   async forCategory(userId: string, categoryIdOrSlug: string) {
@@ -37,7 +40,7 @@ export class RecommendationsService {
     const ctx = await this.context(userId);
     const target: PurchaseTarget = { categoryId: category.id, parentCategoryId: category.parentId, fallbackCategoryId: ctx.fallbackCategoryId };
     const pinned = ctx.pins.find((p) => p.categoryId === category.id)?.walletCardId ?? null;
-    return { category, ranked: rankCards(ctx.cards, target, { valuations: ctx.valuations, pinnedWalletCardId: pinned }) };
+    return { category, ranked: rankCards(ctx.cards, target, { valuations: ctx.valuations, pinnedWalletCardId: pinned, annualSpendCents: ctx.annualSpend.get(category.id) ?? null }) };
   }
 
   async forMerchant(userId: string, merchantIdOrSlug: string) {
@@ -79,18 +82,26 @@ export class RecommendationsService {
     });
   }
 
-  /** Best card for every top-level category (dashboard "Best Card Pointers"). */
+  /**
+   * Best card for every category (dashboard "Best Card by Category"): each top-level category followed by its sub-categories
+   * (Travel, then Airlines, Hotels, Car rental, Transit). A sub-category also counts its parent's rates, a parent counts only its own.
+   */
   async allCategories(userId: string): Promise<CategoryBest[]> {
     const ctx = await this.context(userId);
-    const categories = await this.prisma.category.findMany({ where: { parentId: null }, orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] });
-    return categories.map((c) => {
+    const categories = await this.prisma.category.findMany({ orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] });
+    const byId = new Map(categories.map((c) => [c.id, c]));
+    const ordered = [
+      ...categories.filter((c) => !c.parentId).flatMap((p) => [p, ...categories.filter((c) => c.parentId === p.id)]),
+      ...categories.filter((c) => c.parentId && !byId.has(c.parentId)),
+    ];
+    return ordered.map((c) => {
       const pinned = ctx.pins.find((p) => p.categoryId === c.id)?.walletCardId ?? null;
       const ranked = rankCards(
         ctx.cards,
-        { categoryId: c.id, parentCategoryId: null, fallbackCategoryId: ctx.fallbackCategoryId },
-        { valuations: ctx.valuations, pinnedWalletCardId: pinned },
+        { categoryId: c.id, parentCategoryId: c.parentId, fallbackCategoryId: ctx.fallbackCategoryId },
+        { valuations: ctx.valuations, pinnedWalletCardId: pinned, annualSpendCents: ctx.annualSpend.get(c.id) ?? null },
       );
-      return { category: { id: c.id, slug: c.slug, name: c.name, icon: c.icon }, best: ranked[0] ?? null };
+      return { category: { id: c.id, slug: c.slug, name: c.name, icon: c.icon, parentSlug: c.parentId ? (byId.get(c.parentId)?.slug ?? null) : null }, best: ranked[0] ?? null };
     });
   }
 }

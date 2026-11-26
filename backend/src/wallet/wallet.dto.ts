@@ -111,3 +111,7 @@ export class ValuationDto {
   @ApiProperty({ description: 'cents per point, 0–10' }) @Min(0) @Max(10)
   centsPerPoint: number;
 }
+
+export class RelinkDto {
+  @ApiProperty({ type: [String] }) @IsArray() @ArrayMaxSize(200) @IsUUID('all', { each: true }) walletCardIds!: string[];
+}

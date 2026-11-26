@@ -26,6 +26,7 @@ export function useAuthedQuery<T>(key: readonly unknown[], path: string, opts: {
 export const qk = {
   dashboard: ['dashboard'] as const,
   wallet: ['wallet'] as const,
+  customMatches: ['wallet', 'custom-matches'] as const,
   categories: ['categories'] as const,
   cards: (q: string) => ['cards', q] as const,
   offers: (status: string, sort: string) => ['offers', status, sort] as const,
@@ -42,6 +43,16 @@ export function useDashboard() {
     queryFn: () => api<Dashboard>('/dashboard'),
     enabled: useAuthed(),
   });
+}
+
+export interface CustomMatches {
+  matches: Array<{ walletCardId: string; lastFour: string | null; customName: string; catalogCardId: string; catalogName: string; score: number }>;
+  unmatched: number;
+}
+/** Imported cards that have no earning rates of their own but match a catalog card. */
+export function useCustomMatches() {
+  const api = useApi();
+  return useQuery({ queryKey: qk.customMatches, queryFn: () => api<CustomMatches>('/wallet/custom-matches'), enabled: useAuthed() });
 }
 
 export function useWallet() {

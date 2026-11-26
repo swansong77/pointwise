@@ -1,5 +1,6 @@
 'use client';
 
+import { DataSection } from './data-section';
 import { signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { Badge, Button, ErrorText, Field, Input, Panel, PageHeader, Spinner } from '@/components/ui';
@@ -253,6 +254,7 @@ export default function SettingsPage() {
       <NotificationPrefs />
       <AiSettingsSection />
       <TokensSection />
+      <DataSection />
       <PrivacySection />
     </div>
   );

@@ -38,3 +38,13 @@ Code: `domain/{merchant-resolve,offer-import,offer-engine,spend-behavior,opportu
 | TC-ACT-01 | POS | Assisted activation: queue, mark activated, event written; other user 403 | as stated | P0 | ✅ INT, PW-OI-01 |
 | TC-VERIFY-01 | POS | Statement credit verifies an activation (idempotent); terms met + no credit after 14 days → FAILED with evidence | as stated | P0 | ✅ INT |
 | TC-WF-01 | POS | `purchase-plan` and `offer-review` workflows record steps and agents; missing inputs fail cleanly | as stated | P0 | ✅ U, INT |
+
+
+## Offer automation (OA)
+| ID | Where | What it checks |
+|---|---|---|
+| unit | `backend/test/unit/offers/offer-automation-*.spec.ts` | snapshot diff, rules, scoring and decisions, schedule across daylight saving, retry and lock, vault, connector registry, mock issuer |
+| TC-OA integration | `backend/test/integration/offer-automation.int-spec.ts` | accounts and vault, sync, diff, modes, rules, verification outcomes, MFA, failures and retries, household separation, extension and email intake, tools, audit |
+| PW-OA-01..04 | `playwright/tests/offer-automation.spec.ts` | Sync Now with progress, inbox with scores and reasons, adding offers, rules and mode, accounts and the risk note |
+| CY-OA-01..02 | `cypress/cypress/e2e/offer-automation.cy.ts` | API flow, ownership, rules validation, extension token |
+| frontend | `frontend/test/offer-automation.test.ts` | client helpers and the extension's page logic |

@@ -1,4 +1,6 @@
 import { BullModule, InjectQueue, Processor, WorkerHost } from "@nestjs/bullmq";
+import { OfferAutomationCoreModule } from '../offer-automation/offer-automation.module';
+import { DataJobsModule } from '../data/data.module';
 import {
   Controller,
   HttpCode,
@@ -28,6 +30,7 @@ import { LoyaltyAutomationCoreModule } from "../loyalty/loyalty-automation.modul
 import { CardRefreshCoreModule } from "../catalog-refresh/card-refresh.module";
 import { CardResearchCoreModule } from "../catalog-research/card-research.module";
 import { JOB_NAMES, JOB_QUEUE, JobName, JobsService } from "./jobs.service";
+import { ROTATING_SCHEDULE } from "./rotating.job";
 
 /** Cron schedule (UTC). */
 export const SCHEDULE: Record<JobName, string> = {
@@ -59,6 +62,18 @@ export const SCHEDULE: Record<JobName, string> = {
   "refresh-loyalty": "10 * * * *",
   /** weekly loyalty audit (Mondays) */
   "loyalty-audit": "30 14 * * 1",
+  /** hourly: runs every offer account whose local scheduled time (2 AM by default) has passed */
+  "offer-sync-due": "5 * * * *",
+  /** retries transient sync failures and closes stuck runs */
+  "offer-sync-recover": "*/10 * * * *",
+  /** first of the month: how offer automation did */
+  "offer-audit-monthly": "30 6 1 * *",
+  /** expiring offers */
+  "offer-digest": "45 13 * * *",
+  /** encrypted backup into BACKUP_DIR, only when BACKUP_PASSPHRASE is set */
+  "backup-nightly": "30 3 * * *",
+  /** applies the quarterly rotating-category calendar and tells holders what is new (no issuer is contacted) */
+  "update-rotating-categories": ROTATING_SCHEDULE,
 };
 
 const JobNameEnum = Object.fromEntries(JOB_NAMES.map((n) => [n, n])) as Record<
@@ -168,6 +183,8 @@ const jobDeps = () => [
   OfferCoreModule,
   LoyaltyCoreModule,
   LoyaltyAutomationCoreModule,
+  OfferAutomationCoreModule,
+  DataJobsModule,
 ];
 
 @Module({
