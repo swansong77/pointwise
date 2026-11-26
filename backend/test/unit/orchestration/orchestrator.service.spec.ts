@@ -156,7 +156,7 @@ describe("TC-ORC: offer workflows", () => {
     const r = await svc.run("u1", "purchase-plan", { question: "Plan", params: { merchantText: "Hilton", amountCents: 120_000 } });
     expect(r.status).toBe("COMPLETED");
     expect(r.privacy).toBe("USER");
-    expect(r.steps.map((s) => [s.id, s.agent, s.engine])).toEqual([["plan", "reward-optimization", "purchase-plan/1"]]);
+    expect(r.steps.map((s) => [s.id, s.agent, s.engine])).toEqual([["plan", "reward-optimization", "purchase-plan/2"]]);
     expect(offers.plan).toHaveBeenCalledWith("u1", { merchantText: "Hilton", amountCents: 120_000 }, expect.any(Date));
     expect(r.answer).toMatch(/Best: Card A \(Me\) for \$1200\.00 .* expected return \$124\.00/);
     expect(r.answer).toMatch(/Do first: Activate "Hilton \$100 back"/);

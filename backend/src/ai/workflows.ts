@@ -6,6 +6,7 @@ import { currentPublicOffers, PublicOffer } from '../strategy/offer-data';
 import { SmartRecommendationService } from '../strategy/smart-recommendation.service';
 import { StrategyService } from '../strategy/strategy.service';
 import { OfferAnalysisService } from '../offers/offer-analysis.service';
+import { PLAN_VERSION } from '../domain/purchase-plan';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { LoyaltyAutomationService } from '../loyalty/loyalty-automation.service';
 import { SmartResult } from './workflow-types';
@@ -151,7 +152,7 @@ export function purchasePlanWorkflow(d: WfDeps): WorkflowDef<WfCtx> {
       {
         id: 'plan',
         agentKey: 'reward-optimization',
-        engine: 'purchase-plan/1',
+        engine: PLAN_VERSION,
         privacy: 'USER',
         run: (c) => {
           if (!c.params?.merchantText || !c.params.amountCents) throw new Error('merchantText and amountDollars are required');

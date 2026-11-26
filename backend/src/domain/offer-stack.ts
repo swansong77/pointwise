@@ -4,7 +4,7 @@
  * surface as warnings with a risk-weighted value, never as facts (ADR-012).
  */
 
-export type StackKind = 'CARD_EARN' | 'ISSUER_OFFER' | 'PORTAL' | 'COUPON' | 'GIFT_CARD' | 'STORE_SALE';
+export type StackKind = 'CARD_EARN' | 'ISSUER_OFFER' | 'PORTAL' | 'COUPON' | 'GIFT_CARD' | 'STORE_SALE' | 'BENEFIT_CREDIT' | 'CERTIFICATE' | 'BONUS_PROGRESS';
 export type Compat = 'STACKS' | 'RISK' | 'CONFLICT';
 
 export interface StackRule {
@@ -56,7 +56,7 @@ export interface StackResult {
   version: string;
 }
 
-const ORDER: StackKind[] = ['STORE_SALE', 'COUPON', 'PORTAL', 'CARD_EARN', 'ISSUER_OFFER', 'GIFT_CARD'];
+const ORDER: StackKind[] = ['STORE_SALE', 'COUPON', 'PORTAL', 'CARD_EARN', 'ISSUER_OFFER', 'BENEFIT_CREDIT', 'CERTIFICATE', 'BONUS_PROGRESS', 'GIFT_CARD'];
 
 function ruleFor(x: StackKind, y: StackKind, rules: StackRule[]): StackRule | undefined {
   return rules.find((r) => (r.a === x && r.b === y) || (r.a === y && r.b === x));

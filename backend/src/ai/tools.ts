@@ -5,6 +5,8 @@ import { upcomingRenewals } from '../domain/insights';
 import { norm, tokenSimilarity } from '../domain/import';
 import { OffersService } from '../offers/offers.service';
 import { OfferAnalysisService } from '../offers/offer-analysis.service';
+import { OfferInventoryService } from '../offers/offer-inventory.service';
+import { OfferDashboardsService } from '../offers/offer-dashboards.service';
 import { OfferIntelService } from '../offers/offer-intel.service';
 import { OfferAutomationService } from '../offer-automation/offer-automation.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
@@ -91,6 +93,8 @@ export class ToolRegistry {
     private readonly loyalty: LoyaltyService,
     private readonly loyaltyAuto: LoyaltyAutomationService,
     private readonly offerAutomation: OfferAutomationService,
+    private readonly inventory: OfferInventoryService,
+    private readonly dashboards: OfferDashboardsService,
   ) {
     this.tools = this.build();
   }
@@ -572,18 +576,65 @@ export class ToolRegistry {
       },
       {
         name: 'plan_purchase',
-        description: 'Best way to pay for a planned purchase: which household card (and whether to split), the offer to activate first, portal rate, expected return and the evidence behind it.',
-        inputSchema: obj({ merchant: str('Merchant name, e.g. Marriott'), amountDollars: num('Planned spend in dollars', { exclusiveMinimum: 0 }) }, ['merchant', 'amountDollars']),
+        description: 'Best way to pay for a planned purchase: which household card and member (and whether to split), the offer to activate first, credits, certificates, welcome-bonus progress, portal rate, expected return, strategies (best, alternative, conservative, maximum rewards), what expires and the best day to buy, with the evidence behind it. Give a merchant, an item (e.g. "MacBook Pro"), or both.',
+        inputSchema: obj(
+          { merchant: str('Merchant name, e.g. Marriott (optional when an item is given)'), item: str('What is being bought, e.g. MacBook Pro, Hilton stay, international flight'), amountDollars: num('Planned spend in dollars', { exclusiveMinimum: 0 }), date: str('Planned purchase date, YYYY-MM-DD (optional)') },
+          ['amountDollars'],
+        ),
         readOnly: true,
         handler: async (ctx, input) => {
           const merchant = S(input.merchant);
+          const item = S(input.item);
           const amount = N(input.amountDollars);
-          if (!merchant || !amount || amount <= 0) throw new NotFoundException('merchant and amountDollars are required');
-          const res = await this.offerAnalysis.plan(ctx.userId, { merchantText: merchant, amountCents: Math.round(amount * 100) }, ctx.now);
+          if ((!merchant && !item) || !amount || amount <= 0) throw new NotFoundException('amountDollars and a merchant or item are required');
+          const date = S(input.date);
+          const plannedFor = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined;
+          const res = await this.offerAnalysis.plan(ctx.userId, { merchantText: merchant || undefined, item: item || undefined, amountCents: Math.round(amount * 100), plannedFor }, ctx.now);
           const best = res.plans[0];
           if (!best) return { summary: 'No plan with evidence could be produced.', data: res };
           const legs = best.legs.map((l) => `${l.cardName}${l.member ? ` (${l.member})` : ''} for ${$(l.amountCents)}`).join(' + ');
-          return { summary: `Best: ${legs}. Expected return ${$(best.expectedCents)}, confidence ${best.confidence}%.\n${[...best.justification, ...best.actions.map((a) => `Do first: ${a}`), ...best.warnings.map((w) => `Note: ${w}`)].join('\n')}`, data: res };
+          const lines = [
+            `Best: ${legs}. Expected return ${$(best.expectedCents)}, net cost ${$(best.netCostCents)}, confidence ${best.confidence}%.`,
+            ...best.justification,
+            ...best.actions.map((a) => `Do first: ${a}`),
+            ...best.warnings.map((w) => `Note: ${w}`),
+            ...(res.household.best && res.household.options.length > 1 ? [`Who should pay: ${res.household.reason}`] : []),
+            ...res.strategies.filter((x) => x.key !== 'BEST').map((x) => `${x.label}: ${x.why}`),
+            ...res.expiryImpact.slice(0, 3).map((e) => e.message),
+            ...(res.bestTimeToBuy && res.bestTimeToBuy.gainCents > 0 ? [`Best time: ${res.bestTimeToBuy.reason}`] : []),
+          ];
+          return { summary: lines.join('\n'), data: res };
+        },
+      },
+      {
+        name: 'search_offer_inventory',
+        description: "Search every offer across the household's cards by merchant, card, issuer, person, state or expiry. Examples: 'hilton', 'amex', offers expiring in 30 days, offers worth over $50. Each row has the cardholder, card, value, spend requirement, expiry, lifecycle state and expected savings.",
+        inputSchema: obj({
+          query: str('Merchant, card, issuer or person, e.g. "amex hilton"'),
+          expiresWithinDays: num('Only offers ending within this many days', { minimum: 0 }),
+          minValueDollars: num('Only offers worth at least this much', { minimum: 0 }),
+          states: str('Lifecycle states, comma separated: AVAILABLE, ADDED, ACTIVATED, PARTIALLY_USED, REDEEMED, EXPIRED, REMOVED, REJECTED'),
+        }),
+        readOnly: true,
+        handler: async (ctx, input) => {
+          const valid = ['AVAILABLE', 'ADDED', 'ACTIVATED', 'PARTIALLY_USED', 'REDEEMED', 'EXPIRED', 'REMOVED', 'REJECTED'];
+          const states = S(input.states)?.split(',').map((x) => x.trim().toUpperCase()).filter((x) => valid.includes(x)) as never[] | undefined;
+          const days = N(input.expiresWithinDays);
+          const min = N(input.minValueDollars);
+          const r = await this.inventory.list(ctx.userId, { q: S(input.query), states: states?.length ? states : undefined, expiresWithinDays: days != null ? Math.max(0, Math.floor(days)) : undefined, minValueCents: min != null ? Math.round(min * 100) : undefined, sort: days != null ? 'ENDING' : 'EXPECTED', pageSize: 15 }, ctx.now);
+          const lines = r.items.map((o) => `• ${o.merchant?.name ?? o.merchantText} — ${o.cardholder ?? 'no cardholder'}'s ${o.card ?? 'card'}: ${o.title}, ${o.state.toLowerCase().replace(/_/g, ' ')}${o.endsAt ? `, ends ${o.endsAt.toISOString().slice(0, 10)}` : ''}, expected ${$(o.expectedSavingsCents)}`);
+          return { summary: lines.length ? `${r.total} offer${r.total === 1 ? '' : 's'} found (expected ${$(r.summary.expectedCents)} from those still earning).\n${lines.join('\n')}` : 'No offers match.', data: r };
+        },
+      },
+      {
+        name: 'get_expiring_offers',
+        description: 'Offers, benefit credits and certificates about to expire, in buckets (this week, next week, 30 and 60 days), with the value lost if each lapses and what to do about it.',
+        inputSchema: obj({}),
+        readOnly: true,
+        handler: async (ctx) => {
+          const r = await this.dashboards.expirations(ctx.userId, ctx.now);
+          const lines = r.buckets.filter((b) => b.items.length).flatMap((b) => [`${b.label} (${$(b.totalCents)}):`, ...b.items.slice(0, 6).map((i) => `• ${i.label}${i.cardholder ? ` — ${i.cardholder}` : ''}, ends ${i.endsAt.toISOString().slice(0, 10)}, ${$(i.valueCents)}: ${i.action}`)]);
+          return { summary: lines.length ? `${r.count} item${r.count === 1 ? '' : 's'} expire within 60 days, about ${$(r.totalCents)} in all (${$(r.urgentCents)} this week).\n${lines.join('\n')}` : 'Nothing is about to expire in the next 60 days.', data: r };
         },
       },
       {
