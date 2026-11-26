@@ -1962,6 +1962,12 @@ model PortalRate {
   @@index([merchantId])
 }
 
+enum PlannedPurchaseStatus {
+  PLANNED
+  DONE
+  CANCELLED
+}
+
 model PlannedPurchase {
   id           String    @id @default(uuid())
   userId       String
@@ -1969,12 +1975,22 @@ model PlannedPurchase {
   merchantText String
   amountCents  Int
   plannedFor   DateTime?
-  /// the latest plan: ranked options with evidence and confidence
+  /// the latest plan: ranked options with evidence and confidence, plus insights (expiry impact, best time, best member)
   result       Json?
+  /// what is being bought ("MacBook Pro"), its spend category slug and how much it matters
+  item         String?
+  category     String?
+  priority     String?
+  status       PlannedPurchaseStatus @default(PLANNED)
+  /// the card the user paid with and what it returned, once bought: expected vs actual savings
+  chosenWalletCardId String?
+  expectedCents Int?
+  actualCents  Int?
   createdAt    DateTime  @default(now())
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, plannedFor])
+  @@index([userId, status])
 }
 
 

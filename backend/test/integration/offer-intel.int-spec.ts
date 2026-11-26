@@ -167,7 +167,7 @@ describe("TC-PLAN: purchase plans", () => {
     expect(best.stack.version).toBe("stack-rules/1");
     const ev = (await get("/offers/intel/events").expect(200)).body as any[];
     const rec = ev.find((e) => e.type === "RECOMMENDED");
-    expect(rec.detail).toMatchObject({ merchant: "Hilton", amountCents: 60_000, engine: "purchase-plan/1" });
+    expect(rec.detail).toMatchObject({ merchant: "Hilton", amountCents: 60_000, engine: "purchase-plan/2" });
     expect(rec.detail.evidence.length).toBeGreaterThan(0);
   });
   it("a purchase below the offer minimum does not count the offer", async () => {
@@ -242,7 +242,7 @@ describe("TC-WF: offer workflows and tools", () => {
     expect(r.answer).toMatch(/^Best: /);
     expect(r.steps).toHaveLength(1);
     const detail = (await get(`/ai/runs/${r.runId}`).expect(200)).body;
-    expect(detail.steps[0]).toMatchObject({ agent: "reward-optimization", engine: "purchase-plan/1", privacy: "USER" });
+    expect(detail.steps[0]).toMatchObject({ agent: "reward-optimization", engine: "purchase-plan/2", privacy: "USER" });
   });
   it("purchase-plan without inputs fails and is recorded as failed", async () => {
     const r = (await post("/ai/workflows/purchase-plan", {}).expect(200)).body;

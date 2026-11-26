@@ -17,7 +17,7 @@ describe('Card management', () => {
     cy.get('#card-search').type('Double Cash');
     cy.get('[aria-label="Add Fabrikam Double Cash"]').click();
     cy.get('[data-testid=wallet-card]').contains('button', 'Edit').click();
-    cy.get('[data-testid=wallet-card] select').select('CLOSED');
+    cy.get('[data-testid=wallet-card] select[id^=status-]').select('CLOSED'); // the Owner dropdown is a select too
     cy.get('[data-testid=wallet-card]').contains('button', 'Save').click();
     cy.get('[data-testid=wallet-card]').should('contain', 'closed');
     cy.visit('/categories/dining');

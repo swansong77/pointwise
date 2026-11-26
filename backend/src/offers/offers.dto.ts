@@ -78,10 +78,38 @@ export class InventoryQuery {
   @ApiPropertyOptional() @IsOptional() @IsIn(['NOT_REQUIRED', 'PENDING', 'ACTIVATED', 'FAILED']) activation?: string;
 }
 
+export class OfferInventoryQuery {
+  @ApiPropertyOptional({ description: 'free text: merchant, title, card, issuer or cardholder; "amex" reads as American Express' }) @IsOptional() @IsString() @MaxLength(120) q?: string;
+  @ApiPropertyOptional() @IsOptional() @IsUUID() walletCardId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsUUID() profileId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(80) issuer?: string;
+  @ApiPropertyOptional() @IsOptional() @IsUUID() categoryId?: string;
+  @ApiPropertyOptional({ description: 'comma separated lifecycle states, e.g. ADDED,ACTIVATED' }) @IsOptional() @IsString() @MaxLength(200) states?: string;
+  @ApiPropertyOptional({ description: 'only offers ending within this many days' }) @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(3650) expiresWithinDays?: number;
+  @ApiPropertyOptional({ description: 'only offers worth at least this much, in cents' }) @IsOptional() @Type(() => Number) @IsInt() @Min(0) minValueCents?: number;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(40) source?: string;
+  @ApiPropertyOptional({ enum: ['ENDING', 'VALUE', 'EXPECTED', 'ADDED', 'MERCHANT'] }) @IsOptional() @IsIn(['ENDING', 'VALUE', 'EXPECTED', 'ADDED', 'MERCHANT']) sort?: 'ENDING' | 'VALUE' | 'EXPECTED' | 'ADDED' | 'MERCHANT';
+  @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
+  @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(200) pageSize?: number;
+}
+
 export class PlanPurchaseDto {
   @ApiPropertyOptional() @IsOptional() @IsUUID() merchantId?: string;
   @ApiPropertyOptional({ description: 'free text, resolved to a merchant (e.g. "Marriott")' }) @IsOptional() @IsString() @MaxLength(120) merchantText?: string;
   @ApiProperty({ description: 'planned spend in cents' }) @IsInt() @Min(1) @Max(100_000_000) amountCents: number;
   @ApiPropertyOptional() @IsOptional() @IsDateString() plannedFor?: string;
   @ApiPropertyOptional({ description: 'keep this as a planned purchase' }) @IsOptional() @IsBoolean() save?: boolean;
+  @ApiPropertyOptional({ description: 'what is being bought, e.g. "MacBook Pro"; used to guess a merchant or category when none is given' }) @IsOptional() @IsString() @MaxLength(120) item?: string;
+  @ApiPropertyOptional({ description: 'spend category slug, e.g. hotels' }) @IsOptional() @IsString() @MaxLength(60) category?: string;
+  @ApiPropertyOptional({ enum: ['LOW', 'MEDIUM', 'HIGH'] }) @IsOptional() @IsIn(['LOW', 'MEDIUM', 'HIGH']) priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+  @ApiPropertyOptional({ description: 'household member (profile id) who would rather pay; the answer says what that costs' }) @IsOptional() @IsUUID() preferMember?: string;
+  @ApiPropertyOptional({ type: [String], description: 'wallet cards to leave out' }) @IsOptional() @IsUUID(undefined, { each: true }) excludeCardIds?: string[];
+}
+
+export class UpdatePlannedDto {
+  @ApiPropertyOptional({ enum: ['PLANNED', 'DONE', 'CANCELLED'] }) @IsOptional() @IsIn(['PLANNED', 'DONE', 'CANCELLED']) status?: 'PLANNED' | 'DONE' | 'CANCELLED';
+  @ApiPropertyOptional({ description: 'what the purchase really returned, in cents' }) @IsOptional() @IsInt() @Min(0) @Max(100_000_000) actualCents?: number;
+  @ApiPropertyOptional({ description: 'the card paid with' }) @IsOptional() @IsUUID() chosenWalletCardId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsDateString() plannedFor?: string;
+  @ApiPropertyOptional({ enum: ['LOW', 'MEDIUM', 'HIGH'] }) @IsOptional() @IsIn(['LOW', 'MEDIUM', 'HIGH']) priority?: 'LOW' | 'MEDIUM' | 'HIGH';
 }

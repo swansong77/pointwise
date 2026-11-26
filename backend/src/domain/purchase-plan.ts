@@ -3,12 +3,15 @@
  * (card earn + applicable offer + portal, stacked per offer-stack rules), and test splitting the spend across two
  * cards. Every plan carries its justification, evidence and confidence; a claim without evidence is omitted
  * (ADR-012). No model is involved.
+ *
+ * purchase-plan/2 adds value the household already holds: unused benefit credits that cover the purchase, certificates,
+ * progress toward a welcome bonus, and (kept apart, never in the expected return) the extra a points transfer could add.
  */
 import { buildStack, StackComponent, StackResult } from './offer-stack';
 import { confidenceCap } from './offer-import';
 import { eligibilityState, OfferTerms, offerValueCents } from './offer-engine';
 
-export const PLAN_VERSION = 'purchase-plan/1';
+export const PLAN_VERSION = 'purchase-plan/2';
 /** earn rules come from the card catalog, not a user claim */
 export const EARN_CONFIDENCE = 90;
 /** a split must beat the best single card by at least this much to be suggested */
@@ -23,6 +26,47 @@ export interface PlanCard {
   /** rewards earned per dollar at this merchant, in cents (from the ranking engine) */
   centsPerDollar: number;
   earnReason: string;
+  /** points earned per dollar and what a point is worth, for a points currency; leave out for cash back */
+  pointsPerDollar?: number;
+  centsPerPoint?: number;
+  isCash?: boolean;
+}
+
+/** An unused credit on a card (a benefit) that covers this purchase. */
+export interface PlanCredit {
+  walletCardId: string;
+  title: string;
+  remainingCents: number;
+  expiresOn: Date | null;
+  /** 0–100: lower when the match to this purchase is only suggested */
+  confidence: number;
+}
+
+/** A certificate a household member holds (free night, companion, upgrade) that applies to this merchant. */
+export interface PlanCertificate {
+  id: string;
+  name: string;
+  member: string | null;
+  valueCents: number;
+  expiresAt: Date | null;
+  confidence: number;
+}
+
+/** A welcome bonus that is still earnable on a card: spend here counts toward it. */
+export interface PlanBonus {
+  walletCardId: string;
+  requiredCents: number;
+  remainingCents: number;
+  bonusValueCents: number;
+  deadline: Date | null;
+}
+
+/** What transferring this card's points to the best known partner could add, in cents per point above their plain value. */
+export interface PlanTransfer {
+  walletCardId: string;
+  upliftCentsPerPoint: number;
+  partner: string;
+  note: string;
 }
 
 export interface PlanOffer {
@@ -51,6 +95,24 @@ export interface PlanInput {
   portalRates: PortalRateInput[];
   /** resolution confidence for the merchant (0–1); below 0.8 the plan says so */
   merchantConfidence?: number;
+  credits?: PlanCredit[];
+  certificates?: PlanCertificate[];
+  bonuses?: PlanBonus[];
+  transfers?: PlanTransfer[];
+  /** context that never changes the ranking: an annual fee about to post, and similar */
+  notes?: Array<{ walletCardId: string; message: string }>;
+}
+
+export interface PlanBreakdown {
+  cashbackCents: number;
+  estimatedPoints: number;
+  offersCents: number;
+  creditsCents: number;
+  certificateCents: number;
+  portalCents: number;
+  bonusProgressCents: number;
+  /** extra value if the points are transferred to the best partner; not part of the expected return */
+  transferUpliftCents: number;
 }
 
 export interface PlanLeg {
@@ -79,7 +141,22 @@ export interface Plan {
   evidence: string[];
   warnings: string[];
   actions: string[];
+  /** the household member who pays (the first leg) */
+  member: string | null;
+  breakdown: PlanBreakdown;
+  /** what the plan returns in total (the expected return) and what is left to pay after it */
+  totalValueReturnedCents: number;
+  netCostCents: number;
+  /** only the parts backed by a reliable source (confidence 75 or more) */
+  sureCents: number;
+  /** the expected return plus the transfer uplift */
+  maxRewardsCents: number;
+  transfer: { partner: string; note: string } | null;
+  reasoning: string;
 }
+
+/** components at or above this confidence count as dependable for the conservative strategy */
+export const SURE_CONFIDENCE = 75;
 
 const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
 
@@ -128,6 +205,10 @@ function makePlan(kind: Plan['kind'], legs: Array<{ c: Candidate; amount: number
   const justification: string[] = [];
   const warnings: string[] = [];
   const actions: string[] = [];
+  let transferUplift = 0;
+  let transfer: { partner: string; note: string; cents: number } | null = null;
+  let cashback = 0;
+  let points = 0;
   for (const l of legs) {
     const who = `${l.c.card.cardName}${l.c.card.member ? ` (${l.c.card.member})` : ''}`;
     comps.push({ kind: 'CARD_EARN', label: `${who} earn`, cents: l.earn, confidence: EARN_CONFIDENCE, evidence: l.c.card.earnReason });
@@ -140,6 +221,52 @@ function makePlan(kind: Plan['kind'], legs: Array<{ c: Candidate; amount: number
       evidence.push(`offer ${t.id}: ${l.c.offer.title} — source ${t.source}, ${t.verification.toLowerCase()}, confidence cap ${l.c.offerConfidence}`);
       justification.push(`${l.c.offer.title} credits ${usd(l.offerCents)}${t.minSpendCents ? ` once ${usd(t.minSpendCents)} is spent` : ''}.`);
       if (l.c.needsActivation) actions.push(`Activate "${l.c.offer.title}" on ${l.c.card.cardName} before paying${l.c.offer.offersUrl ? ` (${l.c.offer.offersUrl})` : ''}.`);
+    }
+    // unused benefit credits on this card that cover part of the leg
+    let room = l.amount;
+    for (const cr of (input.credits ?? []).filter((x) => x.walletCardId === l.c.card.walletCardId).sort((a, b) => b.remainingCents - a.remainingCents)) {
+      const cents = Math.min(cr.remainingCents, room);
+      if (cents <= 0) continue;
+      room -= cents;
+      comps.push({ kind: 'BENEFIT_CREDIT', label: cr.title, cents, confidence: cr.confidence, evidence: `benefit credit "${cr.title}" on ${who}` });
+      evidence.push(`benefit credit: ${who} — ${cr.title}, ${usd(cr.remainingCents)} unused${cr.expiresOn ? `, period ends ${cr.expiresOn.toISOString().slice(0, 10)}` : ''}`);
+      justification.push(`Your unused "${cr.title}" on ${who} covers ${usd(cents)}${cr.expiresOn ? ` (use it by ${cr.expiresOn.toISOString().slice(0, 10)})` : ''}.`);
+    }
+    // a welcome bonus still to earn: the spend counts toward it
+    for (const b of (input.bonuses ?? []).filter((x) => x.walletCardId === l.c.card.walletCardId)) {
+      const applied = Math.min(l.amount, b.remainingCents);
+      const cents = b.requiredCents > 0 ? Math.round((b.bonusValueCents * applied) / b.requiredCents) : 0;
+      if (applied <= 0 || cents <= 0) continue;
+      comps.push({ kind: 'BONUS_PROGRESS', label: `welcome bonus progress on ${l.c.card.cardName}`, cents, confidence: 70, evidence: `bonus needs ${usd(b.requiredCents)}, ${usd(b.remainingCents)} still to spend` });
+      evidence.push(`welcome bonus: ${who} — ${usd(b.remainingCents)} of ${usd(b.requiredCents)} still to spend${b.deadline ? ` by ${b.deadline.toISOString().slice(0, 10)}` : ''}`);
+      justification.push(`This ${usd(applied)} counts toward ${who}'s welcome bonus (${usd(Math.max(0, b.remainingCents - applied))} left after it), worth about ${usd(cents)} of the bonus.`);
+      if (b.deadline && (b.deadline.getTime() - input.now.getTime()) / 86_400_000 <= 30) warnings.push(`${who}'s welcome bonus spend window ends ${b.deadline.toISOString().slice(0, 10)}.`);
+    }
+    // points transferred to the best partner are worth more than their plain value: shown apart from the expected return
+    const t = (input.transfers ?? []).find((x) => x.walletCardId === l.c.card.walletCardId);
+    if (t && (l.c.card.pointsPerDollar ?? 0) > 0) {
+      const points = (l.amount / 100) * (l.c.card.pointsPerDollar as number);
+      const cents = Math.round(points * t.upliftCentsPerPoint);
+      if (cents > 0) {
+        transferUplift += cents;
+        if (!transfer || cents > transfer.cents) transfer = { partner: t.partner, note: t.note, cents };
+      }
+    }
+    for (const n of (input.notes ?? []).filter((x) => x.walletCardId === l.c.card.walletCardId)) warnings.push(n.message);
+    if (l.c.card.isCash === false || (l.c.card.isCash === undefined && l.c.card.pointsPerDollar)) points += Math.round((l.amount / 100) * (l.c.card.pointsPerDollar ?? 0));
+    else cashback += l.earn;
+  }
+  // a certificate held by the member who pays (one per plan, the most valuable)
+  const heldBy = new Set(legs.map((l) => l.c.card.member));
+  const cert = (input.certificates ?? []).filter((c) => heldBy.has(c.member)).sort((a, b) => b.valueCents - a.valueCents)[0];
+  if (cert) {
+    const biggest = Math.max(...legs.filter((l) => l.c.card.member === cert.member).map((l) => l.amount));
+    const cents = Math.min(cert.valueCents, biggest);
+    if (cents > 0) {
+      comps.push({ kind: 'CERTIFICATE', label: cert.name, cents, confidence: cert.confidence, evidence: `certificate "${cert.name}"${cert.member ? ` held by ${cert.member}` : ''}` });
+      evidence.push(`certificate: ${cert.name}${cert.member ? ` (${cert.member})` : ''}, worth about ${usd(cert.valueCents)}${cert.expiresAt ? `, expires ${cert.expiresAt.toISOString().slice(0, 10)}` : ''}`);
+      justification.push(`${cert.member ? `${cert.member}'s` : 'Your'} certificate "${cert.name}" is worth about ${usd(cents)} here.`);
+      actions.push(`Redeem "${cert.name}" for this purchase before paying.`);
     }
   }
   if (portal) {
@@ -175,8 +302,27 @@ function makePlan(kind: Plan['kind'], legs: Array<{ c: Candidate; amount: number
     evidence,
     warnings,
     actions,
+    member: legs[0].c.card.member,
+    breakdown: {
+      cashbackCents: cashback,
+      estimatedPoints: points,
+      offersCents: sumKind(stack, 'ISSUER_OFFER'),
+      creditsCents: sumKind(stack, 'BENEFIT_CREDIT'),
+      certificateCents: sumKind(stack, 'CERTIFICATE'),
+      portalCents: sumKind(stack, 'PORTAL'),
+      bonusProgressCents: sumKind(stack, 'BONUS_PROGRESS'),
+      transferUpliftCents: transferUplift,
+    },
+    totalValueReturnedCents: stack.expectedCents,
+    netCostCents: input.amountCents - stack.expectedCents,
+    sureCents: stack.included.filter((c) => c.confidence >= SURE_CONFIDENCE).reduce((s, c) => s + c.cents, 0),
+    maxRewardsCents: stack.maxCents + transferUplift,
+    transfer: transfer ? { partner: (transfer as { partner: string }).partner, note: (transfer as { note: string }).note } : null,
+    reasoning: justification.join(' '),
   };
 }
+
+const sumKind = (stack: StackResult, kind: StackComponent['kind']) => stack.included.filter((c) => c.kind === kind).reduce((s, c) => s + c.cents, 0);
 
 /** Ranked plans, best first. Empty when there is no card to evaluate. */
 export function planPurchase(input: PlanInput): Plan[] {

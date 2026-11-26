@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, Panel, PageHeader, Select, Spinner } from '@/components/ui';
 import { CardArt } from '@/components/card-bits';
@@ -156,6 +157,13 @@ function WalletCardRow({ wc, members }: { wc: WalletCard; members: Member[] }) {
           )}
         </div>
         <Badge tone={STATUS_TONE[wc.status]}>{wc.status.toLowerCase()}</Badge>
+        <Link
+          href={`/wallet/${wc.id}`}
+          className="rounded-lg px-3 py-2 text-sm font-medium text-brand-700 hover:bg-slate-100"
+          aria-label={`Details for ${wc.nickname || wc.card.name}`}
+        >
+          Details
+        </Link>
         <Button variant="ghost" onClick={() => setEditing((v) => !v)} aria-expanded={editing}>
           {editing ? 'Done' : 'Edit'}
         </Button>

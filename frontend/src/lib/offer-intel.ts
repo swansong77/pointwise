@@ -136,6 +136,17 @@ export interface PlanLeg {
   offersUrl: string | null;
 }
 
+export interface PlanBreakdown {
+  cashbackCents: number;
+  estimatedPoints: number;
+  offersCents: number;
+  creditsCents: number;
+  certificateCents: number;
+  portalCents: number;
+  bonusProgressCents: number;
+  transferUpliftCents: number;
+}
+
 export interface PlanView {
   kind: 'SINGLE' | 'SPLIT';
   legs: PlanLeg[];
@@ -148,6 +159,59 @@ export interface PlanView {
   warnings: string[];
   actions: string[];
   stack: { allRulesVerified: boolean; version: string };
+  member?: string | null;
+  breakdown?: PlanBreakdown;
+  totalValueReturnedCents?: number;
+  netCostCents?: number;
+  sureCents?: number;
+  maxRewardsCents?: number;
+  transfer?: { partner: string; note: string } | null;
+  reasoning?: string;
+}
+
+export type StrategyKey = 'BEST' | 'ALTERNATIVE' | 'CONSERVATIVE' | 'MAX_REWARDS';
+
+export interface PlanStrategy {
+  key: StrategyKey;
+  label: string;
+  planIndex: number;
+  expectedCents: number;
+  opportunityCostCents: number;
+  why: string;
+}
+
+export interface ExpiryImpact {
+  kind: 'OFFER' | 'CREDIT' | 'CERTIFICATE';
+  label: string;
+  endsAt: string;
+  daysLeft: number;
+  potentialLossCents: number;
+  lapsesBeforePlanned: boolean;
+  message: string;
+}
+
+export interface BestTime {
+  date: string;
+  valueCents: number;
+  plannedValueCents: number;
+  gainCents: number;
+  reason: string;
+}
+
+export interface MemberOption {
+  member: string | null;
+  planIndex: number;
+  cardName: string;
+  expectedCents: number;
+  offerTitle: string | null;
+}
+
+export interface HouseholdAdvice {
+  options: MemberOption[];
+  best: MemberOption | null;
+  marginCents: number;
+  reason: string;
+  preferred: { member: string | null; available: boolean; expectedCents: number | null; vsBestCents: number | null } | null;
 }
 
 export interface PlanResponse {
@@ -156,13 +220,30 @@ export interface PlanResponse {
   amountCents: number;
   plans: PlanView[];
   plannedPurchaseId: string | null;
+  item?: string | null;
+  itemHint?: { categorySlug: string; merchantHint: string | null; label: string; confidence: number } | null;
+  category?: { slug: string } | null;
+  strategies?: PlanStrategy[];
+  expiryImpact?: ExpiryImpact[];
+  bestTimeToBuy?: BestTime | null;
+  household?: HouseholdAdvice;
 }
+
+export type PlannedStatus = 'PLANNED' | 'DONE' | 'CANCELLED';
 
 export interface PlannedPurchase {
   id: string;
   merchantText: string;
   amountCents: number;
   plannedFor: string | null;
+  item?: string | null;
+  category?: string | null;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+  status?: PlannedStatus;
+  chosenWalletCardId?: string | null;
+  expectedCents?: number | null;
+  actualCents?: number | null;
+  result?: (PlanView & { insights?: { expiryImpact?: ExpiryImpact[]; bestTimeToBuy?: BestTime | null; bestMember?: MemberOption | null; memberReason?: string } }) | null;
 }
 
 /** Colour for a 0–100 score. */
