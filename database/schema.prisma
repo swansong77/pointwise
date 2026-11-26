@@ -833,6 +833,7 @@ enum NotificationType {
   OFFER_ENROLL_FAILED
   OFFER_SYNC_FAILED
   OFFER_SAVINGS_DIGEST
+  BACKUP_FAILED
 }
 
 model Notification {
@@ -2628,4 +2629,13 @@ model OfferSyncRun {
   @@index([userId, createdAt])
   @@index([batchId])
   @@index([status])
+}
+
+// ───────────────────────────── System settings (maintenance mode, backup bookkeeping) ─────────────────────────────
+
+/// Small key/value settings that belong to the system, not to a member.
+model SystemSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
 }
