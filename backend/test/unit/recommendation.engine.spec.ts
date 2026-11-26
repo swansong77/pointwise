@@ -91,7 +91,7 @@ describe('recommendation engine', () => {
     it('returns NONE when nothing applies', () => {
       const c = card({ id: 'c', rewards: [rule({ categoryId: CAT.gas, multiplier: 5 })] });
       const res = bestRuleForCard(wc({ id: 'w', card: c }), { categoryId: CAT.dining, fallbackCategoryId: null }, NOW);
-      expect(res).toEqual({ rule: null, level: 'NONE', multiplier: 0 });
+      expect(res).toEqual({ rule: null, level: 'NONE', multiplier: 0, effective: 0 });
     });
   });
 
@@ -170,7 +170,7 @@ describe('recommendation engine', () => {
       const none = card({ id: 'n', rewards: [] });
       const r = rankCards([wc({ id: 'w', card: none })], target(CAT.dining), { now: NOW })[0];
       expect(r.centsPerDollar).toBe(0);
-      expect(r.reason).toMatch(/No reward rule/);
+      expect(r.reason).toMatch(/No earning rates are recorded/);
     });
     it('defaults now to current time', () => {
       expect(rankCards(sampleWallet(), target(CAT.dining))[0].walletCardId).toBe('w-gold');

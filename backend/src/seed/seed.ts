@@ -20,7 +20,7 @@ import { seedFamilyStrategy, seedStrategyCatalog } from "./strategy";
 import { seedAi } from "./ai";
 import { applyMerchantIdentities } from "./merchant-identities";
 import { applyLoyaltyRegistry } from "./loyalty-registry";
-import { CATEGORIES } from "./categories";
+import { CATEGORIES, CATEGORY_PARENTS } from "./categories";
 import { importRealCatalog } from "./real-catalog";
 
 const prisma = new PrismaClient();
@@ -533,6 +533,7 @@ async function upsertCategories() {
     });
     categoryIds[slug] = c.id;
   }
+  for (const [child, parent] of Object.entries(CATEGORY_PARENTS)) await prisma.category.update({ where: { slug: child }, data: { parentId: categoryIds[parent] } });
   return categoryIds;
 }
 

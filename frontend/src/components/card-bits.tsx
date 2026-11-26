@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import type { RankedCard } from '@/lib/types';
 import { centsPerDollar, multiplier } from '@/lib/format';
 import { resolveBrand } from '@/lib/brands';
+import { rateNotes } from '@/lib/rates';
 import { BrandLogo } from '@/components/brand-logo';
 import { useMemo } from 'react';
 import { useWallet } from '@/lib/queries';
@@ -110,6 +111,11 @@ export function RankedCardRow({ r, rank, action }: { r: RankedCard; rank: number
           {r.name} {r.pinned && <span className="ml-1 text-xs text-brand-600">📌 pinned</span>}
         </p>
         <p className="truncate text-xs text-slate-500">{r.reason}</p>
+        {rateNotes(r).length > 0 && (
+          <p className="truncate text-xs text-amber-700" data-testid="rate-notes">
+            {rateNotes(r).join(' · ')}
+          </p>
+        )}
       </div>
       <div className="text-right">
         <p className="text-sm font-semibold text-slate-900">{centsPerDollar(r.centsPerDollar)}</p>

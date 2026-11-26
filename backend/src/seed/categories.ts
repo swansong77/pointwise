@@ -1,3 +1,11 @@
+/** Sub-categories: a card's "travel" rate also applies to these (the engine falls back from a category to its parent). */
+export const CATEGORY_PARENTS: Record<string, string> = {
+  airlines: 'travel',
+  hotels: 'travel',
+  'car-rental': 'travel',
+  transit: 'travel',
+};
+
 /** Spend categories shared by the demo catalog and the real-card catalog. */
 export const CATEGORIES: Array<
   [slug: string, name: string, icon: string, fallback?: boolean]

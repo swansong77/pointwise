@@ -88,6 +88,12 @@ export interface RankedCard {
   matchLevel: string;
   reason: string;
   pinned: boolean;
+  /** the multiplier used to rank: lower than `multiplier` when a cap and your known spend pull it down */
+  effectiveMultiplier?: number;
+  cap?: { capCents: number; capPeriod: 'QUARTER' | 'YEAR' } | null;
+  blended?: boolean;
+  /** an issuer page has confirmed the rate used */
+  verified?: boolean;
 }
 
 export interface Offer {
@@ -125,7 +131,7 @@ export interface Dashboard {
   plan: 'FREE' | 'PRO';
   unreadNotifications: number;
   stats: { cards: number; activeOffers: number; availableOfferValueCents: number; redeemedValueCents: number };
-  bestByCategory: Array<{ category: { id: string; slug: string; name: string; icon: string }; best: RankedCard | null }>;
+  bestByCategory: Array<{ category: { id: string; slug: string; name: string; icon: string; parentSlug?: string | null }; best: RankedCard | null }>;
   expiringOffers: Array<{ id: string; offer: Offer; walletCard: { nickname: string | null; card: { name: string; color: string } } }>;
   renewals: Array<{ walletCardId: string; name: string; renewsAt: string; daysUntil: number; annualFeeCents: number }>;
   bonuses: Array<{ walletCardId: string; name: string; requiredSpendCents: number; spentCents: number; percent: number; deadline: string; daysLeft: number; atRisk: boolean }>;

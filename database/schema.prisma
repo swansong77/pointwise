@@ -388,6 +388,11 @@ model Reward {
   isRotating  Boolean    @default(false) // must be activated/selected
   startsAt    DateTime?
   endsAt      DateTime?
+  /// needs something a category match cannot know (a travel portal, a linked account, an "up to" rate): shown on the card, never used to rank
+  conditional Boolean    @default(false)
+  /// when an issuer page last confirmed this rate (null = unverified) and which page
+  verifiedAt  DateTime?
+  sourceUrl   String?
   card        CreditCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
   category    Category?  @relation(fields: [categoryId], references: [id])
   merchant    Merchant?  @relation(fields: [merchantId], references: [id])

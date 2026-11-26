@@ -76,6 +76,8 @@ function fakeDb() {
           ...rewards.filter((r) => r.cardId !== where.cardId),
         ),
       createMany: async ({ data }: any) => rewards.push(...data),
+      findFirst: async ({ where }: any) => rewards.find((r) => r.cardId === where.cardId && r.categoryId === where.categoryId) ?? null,
+      create: async ({ data }: any) => rewards.push(data),
     },
     cardFeature: {
       createMany: async ({ data }: any) => features.push(...data),

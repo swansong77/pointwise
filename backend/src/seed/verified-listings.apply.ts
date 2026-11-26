@@ -73,8 +73,16 @@ export async function applyVerifiedListings(
     rewards: NonNullable<
       (typeof VERIFIED_LISTINGS)[number]["cards"][number]["rewards"]
     >,
+    verifiedAt: Date,
+    sourceUrl?: string | null,
   ) => {
+    // a listing states the category rates; the base ("everything else") rate stays when the listing does not state one
+    const keepBase = rewards.some(([cat]) => cat === "everything-else") ? null : await prisma.reward.findFirst({ where: { cardId, categoryId: categories["everything-else"], merchantId: null } });
     await prisma.reward.deleteMany({ where: { cardId } });
+    if (keepBase) {
+      const { id: _id, ...rest } = keepBase;
+      await prisma.reward.create({ data: rest });
+    }
     const rows = rewards
       .filter(([cat]) => categories[cat])
       .map(([cat, rate, description, cap, period]) => ({
@@ -84,6 +92,9 @@ export async function applyVerifiedListings(
         description,
         capCents: cap ? cap * 100 : null,
         capPeriod: cap ? (period ?? "YEAR") : null,
+        // the listing page states these rates
+        verifiedAt,
+        sourceUrl: sourceUrl ?? null,
       }));
     if (rows.length) await prisma.reward.createMany({ data: rows });
   };
@@ -122,7 +133,7 @@ export async function applyVerifiedListings(
           where: { id: existing.id },
           data: facts,
         });
-        if (l.rewards?.length) await replaceRewards(existing.id, l.rewards);
+        if (l.rewards?.length) await replaceRewards(existing.id, l.rewards, at, l.url);
         await addSource(existing.id, l.url);
         out.confirmed++;
         continue;
@@ -144,7 +155,7 @@ export async function applyVerifiedListings(
           color: "#475569",
         },
       });
-      if (l.rewards?.length) await replaceRewards(card.id, l.rewards);
+      if (l.rewards?.length) await replaceRewards(card.id, l.rewards, at, l.url);
       const features = [...(l.features ?? []), `Issuer listing: ${l.earning}`];
       await prisma.cardFeature.createMany({
         data: features.map((text, i) => ({

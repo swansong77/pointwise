@@ -6,6 +6,7 @@ export const CAT = {
   gas: 'cat-gas',
   travel: 'cat-travel',
   hotels: 'cat-hotels',
+  airlines: 'cat-airlines',
   fallback: 'cat-everything',
   coffee: 'cat-coffee', // subcategory of dining
 };
