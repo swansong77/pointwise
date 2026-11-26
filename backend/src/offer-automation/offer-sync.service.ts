@@ -227,13 +227,13 @@ export class OfferSyncService {
   // ───────────── the shared funnel ─────────────
 
   /** Applies an inventory (from a connector, the extension, an email or a paste) to the stored state of one account. */
-  async applyInventory(account: AccountFull, inv: InventoryResult, opts: { source: OfferSource; actor: 'USER' | 'SYSTEM'; run?: OfferSyncRun; now?: Date; handle?: Handle }) {
+  async applyInventory(account: AccountFull, inv: InventoryResult, opts: { source: OfferSource; actor: 'USER' | 'SYSTEM'; run?: OfferSyncRun; now?: Date; handle?: Handle; partial?: boolean }) {
     const now = opts.now ?? new Date();
     const userId = account.userId;
     const out = { added: 0, updated: 0, removed: 0, expired: 0, enrolled: 0, errors: 0, redeemed: 0, unchanged: 0, warnings: [] as string[], idempotent: false, newHighValue: 0, autoEnrolled: 0 };
     const hash = inventoryHash(inv.items);
     const last = await this.prisma.offerSnapshot.findFirst({ where: { accountId: account.id }, orderBy: { takenAt: 'desc' } });
-    if (last && last.hash === hash) {
+    if (!opts.partial && last && last.hash === hash) {
       out.idempotent = true;
       out.unchanged = inv.items.length;
       await this.prisma.offerSnapshotItem.updateMany({ where: { accountId: account.id, status: { in: ['AVAILABLE', 'ENROLLED'] } }, data: { lastSeenAt: now } });
@@ -241,7 +241,7 @@ export class OfferSyncService {
     }
     const rows = await this.prisma.offerSnapshotItem.findMany({ where: { accountId: account.id } });
     const stored: StoredItem[] = rows.map((r) => this.toStored(r));
-    const diff = diffInventory(stored, inv.items, now);
+    const diff = diffInventory(stored, inv.items, now, { partial: opts.partial });
     out.warnings.push(...diff.warnings);
     const byId = new Map(rows.map((r) => [r.id, r]));
     const merchants = await this.merchants();

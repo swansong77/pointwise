@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { ToolRegistry } from '../../src/ai/tools';
+import { CaptureService } from '../../src/capture/capture.service';
 import { OfferAutomationJobs } from '../../src/offer-automation/offer-automation.jobs';
 import { OfferSyncService } from '../../src/offer-automation/offer-sync.service';
 import { defaultMockOffers, expireMockSessions, getMockOffers, MOCK_MFA_CODE, resetMock, setMockOffers } from '../../src/offer-automation/mock-connector';
@@ -582,5 +583,32 @@ describe('the merchant offer agent tools', () => {
     const all = JSON.stringify([inboxTool, status, why]);
     expect(all).not.toContain(PASSWORD);
     expect(all).not.toMatch(/credentialEnc|sessionEnc/);
+  });
+});
+
+describe('offer-alert emails', () => {
+  const day = (n: number) => {
+    const d = new Date(Date.now() + n * 86_400_000);
+    return `${String(d.getUTCMonth() + 1).padStart(2, '0')}/${String(d.getUTCDate()).padStart(2, '0')}/${d.getUTCFullYear()}`;
+  };
+  const mime = (from: string, subject: string, body: string) => Buffer.from(`From: Offers <${from}>\r\nTo: me@example.test\r\nSubject: ${subject}\r\nMessage-ID: <${Date.now()}.${Math.random()}@mail.test>\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n${body}`);
+
+  it('adds the offers an issuer emails about and never removes the ones it does not mention', async () => {
+    const amex = await prisma.issuer.upsert({ where: { name: 'American Express' }, update: {}, create: { name: 'American Express' } });
+    const acct = await makeAccount({ kind: 'EMAIL', optIn: false, issuer: amex.id, holder: 'Amex by email' });
+    const capture = app.get(CaptureService);
+    const first = await capture.receiveFromMailbox(userId, mime('offers@welcome.aexp.com', 'New offers added to your account', `Hilton: Spend $500, get $100 back, expires ${day(20)}\nUber Eats - 10% back up to $20 - ends ${day(20)}`), undefined);
+    expect(first.accepted).toBe(true);
+    expect(await prisma.offerSnapshotItem.count({ where: { accountId: acct.id } })).toBe(2);
+    expect((await prisma.inboundEmail.findFirstOrThrow({ where: { userId, note: { contains: 'offer email read' } }, orderBy: { receivedAt: 'desc' } })).note).toMatch(/2 offer\(s\), 2 new/);
+    await capture.receiveFromMailbox(userId, mime('offers@welcome.aexp.com', 'Another offer for you', `Marriott: Spend $300, get $75 back, expires ${day(25)}`), undefined);
+    const items = await prisma.offerSnapshotItem.findMany({ where: { accountId: acct.id } });
+    expect(items).toHaveLength(3);
+    expect(items.every((i) => i.status === 'AVAILABLE')).toBe(true);
+    expect((await prisma.offerAccount.findUniqueOrThrow({ where: { id: acct.id } })).lastSyncAt).not.toBeNull();
+    // an issuer without an email account, or mail that is not about offers, is left to the other parsers
+    const other = await capture.receiveFromMailbox(userId, mime('offers@chase.com', 'New offers', `Hilton: Spend $500, get $100 back, expires ${day(20)}`), undefined);
+    expect(other.accepted).toBe(true);
+    expect(await prisma.offerSnapshotItem.count({ where: { userId, merchantText: 'Hilton', account: { issuer: { name: 'Chase' } } } })).toBe(0);
   });
 });

@@ -43,3 +43,7 @@ A Chrome/Firefox extension would run **in the user's own browser session**, read
 
 ## 6. To verify (free)
 Read each issuer's offers terms from its own help centre (Amex Offers, Chase Offers, Citi Merchant Offers, Capital One Offers, BankAmeriDeals) and replace the UNVERIFIED rows with URLs and dates.
+
+
+## 7. Update 2026-11-26 — offer automation
+The member asked for automated discovery and enrollment and chose to build opt-in server-side login connectors, a browser extension (read-only capture plus user-clicked adds) and offer-email intake. See `merchant-offer-automation-review.md`, ADR-021 to ADR-024 and `offer-automation.md`. This section's "Restricted - not built" rows still describe the default; the connectors are off unless the server and the account both opt in, and none has been verified against a real issuer.

@@ -96,9 +96,10 @@ const ACTIVE: ItemStatus[] = ['AVAILABLE', 'ENROLLED'];
 
 /**
  * Compares the stored state of one account with a new inventory. Offers already EXPIRED, REMOVED or REDEEMED that are
- * not in the inventory stay as they are. Duplicate external ids in the inventory keep the first.
+ * not in the inventory stay as they are. Duplicate external ids in the inventory keep the first. A partial inventory
+ * (an email that mentions only some offers) never removes, expires or redeems anything by absence.
  */
-export function diffInventory(stored: StoredItem[], incoming: InvItem[], now: Date): DiffResult {
+export function diffInventory(stored: StoredItem[], incoming: InvItem[], now: Date, opts: { partial?: boolean } = {}): DiffResult {
   const seen = new Map<string, InvItem>();
   for (const i of incoming) if (!seen.has(itemKey(i))) seen.set(itemKey(i), i);
   const prev = new Map(stored.map((s) => [itemKey(s), s]));
@@ -128,8 +129,8 @@ export function diffInventory(stored: StoredItem[], incoming: InvItem[], now: Da
   }
 
   const activePrev = stored.filter((s) => ACTIVE.includes(s.status));
-  const missing = activePrev.filter((s) => !seen.has(itemKey(s)));
-  const shrank = activePrev.length >= SHRINK_GUARD_MIN_PREVIOUS && seen.size < activePrev.length * (1 - SHRINK_GUARD);
+  const missing = opts.partial ? [] : activePrev.filter((s) => !seen.has(itemKey(s)));
+  const shrank = !opts.partial && activePrev.length >= SHRINK_GUARD_MIN_PREVIOUS && seen.size < activePrev.length * (1 - SHRINK_GUARD);
   for (const s of missing) {
     if (s.endsAt && s.endsAt.getTime() <= now.getTime()) res.expired.push(s);
     else if (shrank) continue;

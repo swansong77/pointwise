@@ -369,15 +369,27 @@ export class OfferAutomationService {
   }
 
   /** The extension (or a paste) hands over the text of an offers page. The text is parsed and discarded. */
-  async ingestSnapshot(userId: string, dto: IngestSnapshotDto, via: 'EXTENSION' | 'USER_ENTERED' = 'EXTENSION') {
+  async ingestSnapshot(userId: string, dto: IngestSnapshotDto, via: 'EXTENSION' | 'USER_ENTERED' | 'EMAIL' = 'EXTENSION') {
     const account = await this.accountForIngest(userId, dto);
     const cardKey = dto.lastFour ? (account.cards.filter((c) => c.walletCard.lastFour === dto.lastFour)[0]?.walletCardId ?? '') : account.cards.length === 1 ? account.cards[0].walletCardId : '';
     const items = this.parseText(dto.text, cardKey);
     if (items.length === 0) return { accepted: false, reason: 'No offers were recognised on this page.', found: 0, toAdd: [] as Array<{ externalId: string; cardKey: string }> };
-    const result = await this.sync.applyInventory(account, { items, cards: [] }, { source: via, actor: via === 'EXTENSION' ? 'SYSTEM' : 'USER' });
+    const result = await this.sync.applyInventory(account, { items, cards: [] }, { source: via, actor: via === 'USER_ENTERED' ? 'USER' : 'SYSTEM', partial: via === 'EMAIL' });
     await this.prisma.offerAccount.update({ where: { id: account.id }, data: { lastSyncAt: new Date(), syncHealth: 'HEALTHY', lastError: null } });
-    await this.sync.event(userId, 'SYNC', via === 'EXTENSION' ? 'SYSTEM' : 'USER', { action: 'snapshot', accountId: account.id, via, found: items.length, pageHash: dto.pageHash ?? null });
+    await this.sync.event(userId, 'SYNC', via === 'USER_ENTERED' ? 'USER' : 'SYSTEM', { action: 'snapshot', accountId: account.id, via, found: items.length, pageHash: dto.pageHash ?? null });
     return { accepted: true, found: items.length, added: result.added, updated: result.updated, removed: result.removed, expired: result.expired, unchanged: result.unchanged, idempotent: result.idempotent, warnings: result.warnings, toAdd: await this.queueFor(userId, account.id) };
+  }
+
+  /**
+   * An offer-alert email from an issuer. It lists only some offers, so it adds and updates but never removes. Returns a
+   * note for the mailbox log, or null when the member has no email account for this issuer or the mail has no offers.
+   */
+  async ingestFromMail(userId: string, issuerName: string, text: string): Promise<string | null> {
+    const account = await this.prisma.offerAccount.findFirst({ where: { userId, connectorKind: 'EMAIL', issuer: { name: { equals: issuerName, mode: 'insensitive' } } }, select: { id: true } });
+    if (!account) return null;
+    const r = await this.ingestSnapshot(userId, { accountId: account.id, text }, 'EMAIL');
+    if (!r.accepted) return null;
+    return `offer email read: ${r.found} offer(s), ${r.added} new`;
   }
 
   /** Offers approved for the extension to add in the member's own browser. */

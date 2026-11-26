@@ -8728,6 +8728,757 @@
           "admin"
         ]
       }
+    },
+    "/api/v1/offer-automation/accounts": {
+      "get": {
+        "operationId": "OfferAutomationController_accounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      },
+      "post": {
+        "operationId": "OfferAutomationController_createAccount",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOfferAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/accounts/{id}": {
+      "put": {
+        "operationId": "OfferAutomationController_updateAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOfferAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      },
+      "delete": {
+        "operationId": "OfferAutomationController_deleteAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/accounts/{id}/disconnect": {
+      "post": {
+        "operationId": "OfferAutomationController_disconnect",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/connectors": {
+      "get": {
+        "operationId": "OfferAutomationController_connectors",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/sync": {
+      "post": {
+        "operationId": "OfferAutomationController_syncNow",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      },
+      "get": {
+        "operationId": "OfferAutomationController_dashboard",
+        "parameters": [
+          {
+            "name": "batchId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/accounts/{id}/mfa": {
+      "post": {
+        "operationId": "OfferAutomationController_mfa",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/inbox": {
+      "get": {
+        "operationId": "OfferAutomationController_inbox",
+        "parameters": [
+          {
+            "name": "tab",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "new",
+                "review",
+                "enrolled",
+                "auto",
+                "expiring",
+                "redeemed",
+                "history",
+                "queued"
+              ]
+            }
+          },
+          {
+            "name": "accountId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "profileId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/counts": {
+      "get": {
+        "operationId": "OfferAutomationController_counts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/approve": {
+      "post": {
+        "operationId": "OfferAutomationController_approve",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemIdsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/ignore": {
+      "post": {
+        "operationId": "OfferAutomationController_ignore",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemIdsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/items/{id}/mark-enrolled": {
+      "post": {
+        "operationId": "OfferAutomationController_markEnrolled",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/history": {
+      "get": {
+        "operationId": "OfferAutomationController_history",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/attempts": {
+      "get": {
+        "operationId": "OfferAutomationController_attempts",
+        "parameters": [
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/savings": {
+      "get": {
+        "operationId": "OfferAutomationController_savings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/rules": {
+      "get": {
+        "operationId": "OfferAutomationController_rules",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      },
+      "post": {
+        "operationId": "OfferAutomationController_createRule",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/rules/{id}": {
+      "put": {
+        "operationId": "OfferAutomationController_updateRule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      },
+      "delete": {
+        "operationId": "OfferAutomationController_deleteRule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/policy": {
+      "get": {
+        "operationId": "OfferAutomationController_policy",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      },
+      "put": {
+        "operationId": "OfferAutomationController_setPolicy",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolicyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/accounts/{id}/paste": {
+      "post": {
+        "operationId": "OfferAutomationController_paste",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/tokens": {
+      "get": {
+        "operationId": "OfferAutomationController_tokens",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      },
+      "post": {
+        "operationId": "OfferAutomationController_createToken",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
+    },
+    "/api/v1/offer-automation/tokens/{id}": {
+      "delete": {
+        "operationId": "OfferAutomationController_revokeToken",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-automation"
+        ]
+      }
     }
   },
   "info": {
@@ -10792,8 +11543,10 @@
         "type": "object",
         "properties": {
           "text": {
-            "type": "string",
-            "description": "Text (or HTML) copied from the public product page"
+            "type": "string"
+          },
+          "lastFour": {
+            "type": "string"
           }
         },
         "required": [
@@ -11846,6 +12599,250 @@
         },
         "required": [
           "walletCardId"
+        ]
+      },
+      "CreateOfferAccountDto": {
+        "type": "object",
+        "properties": {
+          "issuerId": {
+            "type": "string"
+          },
+          "profileId": {
+            "type": "string"
+          },
+          "holderLabel": {
+            "type": "string",
+            "description": "who the account belongs to, e.g. \"Alex - Platinum\""
+          },
+          "connectorKind": {
+            "type": "string",
+            "enum": [
+              "MOCK",
+              "EXTENSION",
+              "EMAIL",
+              "MANUAL",
+              "ISSUER_LOGIN"
+            ]
+          },
+          "username": {
+            "type": "string",
+            "description": "write-only; encrypted at rest, never returned"
+          },
+          "password": {
+            "type": "string",
+            "description": "write-only; encrypted at rest, never returned"
+          },
+          "mfaMethod": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "SMS",
+              "APP",
+              "AUTHENTICATOR",
+              "PASSKEY"
+            ]
+          },
+          "cadence": {
+            "type": "string",
+            "enum": [
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY",
+              "MANUAL"
+            ]
+          },
+          "syncHour": {
+            "type": "number"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "walletCardIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "automationOptIn": {
+            "type": "boolean",
+            "description": "opt in to server-side login; requires ackTermsRisk"
+          },
+          "ackTermsRisk": {
+            "type": "boolean",
+            "description": "the member has read the terms-risk note for this issuer"
+          }
+        },
+        "required": [
+          "issuerId",
+          "holderLabel",
+          "connectorKind"
+        ]
+      },
+      "UpdateOfferAccountDto": {
+        "type": "object",
+        "properties": {
+          "holderLabel": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "mfaMethod": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "SMS",
+              "APP",
+              "AUTHENTICATOR",
+              "PASSKEY"
+            ]
+          },
+          "cadence": {
+            "type": "string",
+            "enum": [
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY",
+              "MANUAL"
+            ]
+          },
+          "syncHour": {
+            "type": "number"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "walletCardIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "automationOptIn": {
+            "type": "boolean"
+          },
+          "ackTermsRisk": {
+            "type": "boolean"
+          },
+          "unlock": {
+            "type": "boolean",
+            "description": "clear the lock after repeated login failures"
+          }
+        }
+      },
+      "SyncDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "one account; omit to sync the whole household"
+          },
+          "wait": {
+            "type": "boolean",
+            "description": "wait for the runs to finish before answering (default: answer at once and poll)"
+          }
+        }
+      },
+      "MfaDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "ItemIdsDto": {
+        "type": "object",
+        "properties": {
+          "itemIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemIds"
+        ]
+      },
+      "RuleDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ALWAYS",
+              "NEVER"
+            ]
+          },
+          "matcher": {
+            "type": "string",
+            "enum": [
+              "MERCHANT",
+              "CATEGORY",
+              "MIN_VALUE",
+              "OFFER_TYPE",
+              "KEYWORD",
+              "SPEND_HISTORY"
+            ]
+          },
+          "matcherValue": {
+            "type": "string",
+            "description": "merchant or keyword text, a category, a value in cents, or an offer type"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "walletCardId": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "number"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label",
+          "kind",
+          "matcher",
+          "matcherValue"
+        ]
+      },
+      "AutoFilterDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "PolicyDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "RECOMMEND",
+              "BULK_APPROVAL",
+              "AUTO"
+            ]
+          },
+          "autoFilter": {
+            "$ref": "#/components/schemas/AutoFilterDto"
+          }
+        },
+        "required": [
+          "mode"
         ]
       }
     }

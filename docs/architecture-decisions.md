@@ -111,4 +111,25 @@ Format: Context · Options · Decision · Consequences · Status. Evidence and i
 
 ## ADR-020 — Refresh tiers
 - **Decision:** CRITICAL / HIGH / NORMAL / LOW by expiry, pending changes and stale data; event-driven, daily, weekly, scheduled and manual refresh; refresh confidence decays with age; stale accounts produce a "needs refresh" action rather than a silent gap.
+
+---
+## ADR-021 — Offer snapshots: one funnel, one diff
+- **Context:** offers reach PointWise from a server-side connector, the member's browser extension, offer emails and pasted lists; each shows the issuer's inventory for one card at one time.
+- **Decision:** every source feeds one function (`OfferSyncService.applyInventory`). It hashes the inventory (identical hash = no-op), diffs it against the stored items of that account (`domain/offer-snapshot-diff.ts`: new, updated, removed, expired, redeemed, newly enrolled, reappeared), writes an `OfferEvent` for each change, and keeps the current state in `OfferSnapshotItem`, unique per account, card and issuer offer id. A partial source (an email) never removes anything; a collapsed inventory (over 40 percent smaller) is a warning, not a mass removal.
+- **Consequences:** one place to audit and test; the same offer on two members' cards is two rows and two enrollments (never merged).
+- **Status:** accepted.
+
+## ADR-022 — Connector contract, vault and the opt-in server-side login
+- **Context:** the member asked for automated login and enrollment across six issuers, knowingly overriding the earlier rule against server-side bank logins (ADR-009, ADR-010). Chase's verified terms prohibit "agents, including AI agents or agentic AI, robots, spiders, scripts" and require agent traffic to be labelled. The other issuers' terms were not readable. No real issuer account is available to test against.
+- **Options:** (a) refuse; (b) build it on by default; (c) build the framework, ship the real issuer flows as unverified data, **off by default**, and prove everything against a mock issuer.
+- **Decision:** (c). A connector implements login, MFA, inventory, enrollments, enroll and health (`offer-automation/connector.ts`); new issuers are a new connector or flow definition and a registry line. Real issuer flows are inert without an optional browser add-on and are switched on only by `OFFER_CONNECTORS_ENABLED=true` plus a per-account opt-in with a recorded acknowledgement of the terms risk. Logins, sessions and device-trust markers are AES-256-GCM encrypted, write-only through the API, redacted from every audit row, event, notification and AI tool. Three bad logins lock the account; traffic is paced, one account at a time, capped per day.
+- **Consequences:** the member keeps the choice and the risk is visible; no real issuer flow is claimed to work; passkeys cannot be completed by a server and are user-assisted.
+- **Status:** accepted (supersedes the "not built" position of ADR-010 for this feature only; assisted activation remains the default).
+
+## ADR-023 — Enrollment modes, rules and smart scoring
+- **Decision:** three modes: recommend only (default), bulk approval, automatic. Rules are always/never over merchant, category, minimum value, offer type, keyword and spend history; a never-rule always wins; always-rules enroll without approval only in automatic mode. Every offer gets six 0-100 sub-scores (value, expiration, merchant preference, travel, household, likelihood of use) and an overall score with reasons, in one versioned weight table (`domain/offer-smart-enroll.ts`). Automatic mode needs an explicit filter; a score floor alone enrolls nothing. An enrollment counts as SUCCESS only after the issuer's enrollments are read back and show the offer; otherwise it is PARTIAL.
+- **Status:** accepted.
+
+## ADR-024 — Offer sources and the extension
+- **Decision:** the extension (extension-offers/) is user-initiated, issuer-domain-only, reads visible text and sends it to the member's own server with an `offers:ingest` token; "Enroll selected" presses the issuer's own Add button on the open page for offers the member approved, only on click. Offer emails from a known issuer add offers for the member's "Offer Emails" account. Page selectors are text heuristics, unverified.
 - **Status:** accepted.

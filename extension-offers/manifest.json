@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "PointWise Offers",
+  "version": "0.1.0",
+  "description": "Reads the offers page you have open and sends it to your own PointWise server. Adds offers you approved, only when you click.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "PointWise Offers"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

@@ -204,6 +204,7 @@ function SyncPanel() {
   const start = useApiMutation<void, { batchId: string; runs: string[]; skipped: Array<{ holder: string; reason: string }> }>(() => ({ path: '/offer-automation/sync', method: 'POST', body: {} }), REFRESH);
   const active = !!batch && !dash.data?.done;
   const d = dash.data;
+  const accounts = useAuthedQuery<OfferAccountView[]>([...KEY, 'accounts'], '/offer-automation/accounts', { refetchInterval: active ? 1500 : undefined });
   return (
     <div className="space-y-4">
       <Panel
@@ -237,9 +238,9 @@ function SyncPanel() {
         )}
       </Panel>
       <Panel title="Accounts">
-        {dash.isLoading ? <Spinner /> : !d?.accounts?.length && !batch ? <EmptyState title="No accounts yet">Add one on the Accounts tab.</EmptyState> : (
+        {dash.isLoading || accounts.isLoading ? <Spinner /> : !accounts.data?.length ? <EmptyState title="No accounts yet">Add one on the Accounts tab.</EmptyState> : (
           <ul className="divide-y divide-slate-100 text-sm" data-testid="sync-accounts">
-            {(d?.accounts ?? []).map((a) => (
+            {(accounts.data ?? []).map((a) => (
               <li key={a.id} className="flex flex-wrap items-center gap-2 py-2" data-testid="sync-account">
                 <span className="font-medium">{a.holderLabel}</span>
                 <span className="text-slate-600">{a.issuer.name}</span>
@@ -297,7 +298,7 @@ interface IssuerRow { id: string; name: string }
 interface FlowInfo { switchOn: boolean; flows: Array<{ issuers: string[]; termsNote: string }> }
 
 function AccountForm({ onDone }: { onDone: () => void }) {
-  const issuers = useAuthedQuery<IssuerRow[]>(['catalog', 'issuers'], '/catalog/issuers');
+  const issuers = useAuthedQuery<IssuerRow[]>(['catalog', 'issuers'], '/issuers');
   const wallet = useWallet();
   const info = useAuthedQuery<FlowInfo>([...KEY, 'connectors'], '/offer-automation/connectors');
   const [f, setF] = useState({ issuerId: '', holderLabel: '', connectorKind: 'EXTENSION', username: '', password: '', mfaMethod: 'NONE', syncHour: 2, optIn: false, ack: false, cards: [] as string[] });

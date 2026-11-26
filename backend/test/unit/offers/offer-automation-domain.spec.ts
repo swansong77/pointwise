@@ -1,3 +1,4 @@
+import { issuerNameForDomain } from '../../../src/domain/offer-mail';
 import { categoriesOf, effectiveValueCents, evaluateRules, Rule } from '../../../src/domain/offer-enrollment-rules';
 import { contentHash, diffInventory, InvItem, inventoryHash, StoredItem } from '../../../src/domain/offer-snapshot-diff';
 import { AutoFilter, daysLeft, decide, duplicateCounts, passesAutoFilter, scoreOffer, SmartContext } from '../../../src/domain/offer-smart-enroll';
@@ -99,6 +100,22 @@ describe('offer snapshot diff', () => {
   it('does not bring back an offer that is shown again after it ended', () => {
     const r = diffInventory([stored({ status: 'EXPIRED' })], [inv({ endsAt: day(-3) })], NOW);
     expect(r.reappeared).toHaveLength(0);
+  });
+
+  it('a partial inventory (an offer email) never removes, expires or redeems by absence', () => {
+    const items = ['a', 'b', 'c', 'd', 'e', 'f'].map((id) => stored({ id, externalId: id, status: id === 'a' ? 'ENROLLED' : 'AVAILABLE', endsAt: id === 'b' ? day(-2) : day(30) }));
+    const r = diffInventory(items, [inv({ externalId: 'z' })], NOW, { partial: true });
+    expect(r.added.map((x) => x.externalId)).toEqual(['z']);
+    expect([r.removed, r.expired, r.redeemed].map((x) => x.length)).toEqual([0, 0, 0]);
+    expect(r.suspicious).toBe(false);
+  });
+
+  it('maps issuer sender domains', () => {
+    expect(issuerNameForDomain('welcome.aexp.com')).toBe('American Express');
+    expect(issuerNameForDomain('email.CHASE.com')).toBe('Chase');
+    expect(issuerNameForDomain('notify.wellsfargo.com')).toBe('Wells Fargo');
+    expect(issuerNameForDomain('notchase.com')).toBeNull();
+    expect(issuerNameForDomain('')).toBeNull();
   });
 
   it('hashes are stable, order independent and sensitive to content', () => {
