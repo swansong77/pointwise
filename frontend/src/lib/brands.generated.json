@@ -741,5 +741,86 @@
     "license": "PD-textlogo: \"does not meet the threshold of originality\". Also tagged Trademarked.",
     "url": "https://commons.wikimedia.org/wiki/File:Diners_Club_Logo3.svg",
     "retrieved": "2026-11-26"
+  },
+  "att": {
+    "file": "att.svg",
+    "hex": null,
+    "title": "AT&T",
+    "source": "wikimedia-commons",
+    "license": "Commons licence metadata: \"Public domain\"; restriction tag: trademarked. Artwork only; the mark stays the owner's trademark.",
+    "url": "https://commons.wikimedia.org/wiki/File:AT%26T_logo_2016.svg",
+    "retrieved": "2026-11-26"
+  },
+  "outlook": {
+    "file": "outlook.svg",
+    "hex": null,
+    "title": "Outlook",
+    "source": "wikimedia-commons",
+    "license": "Commons licence metadata: \"Public domain\"; restriction tag: trademarked. Artwork only; the mark stays the owner's trademark.",
+    "url": "https://commons.wikimedia.org/wiki/File:Microsoft_Outlook_Icon_(2025%E2%80%93present).svg",
+    "retrieved": "2026-11-26"
+  },
+  "resy": {
+    "file": "resy.svg",
+    "hex": null,
+    "title": "Resy",
+    "source": "wikimedia-commons",
+    "license": "Commons licence metadata: \"Public domain\"; restriction tag: trademarked. Artwork only; the mark stays the owner's trademark.",
+    "url": "https://commons.wikimedia.org/wiki/File:Resy_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "opentable": {
+    "file": "opentable.svg",
+    "hex": null,
+    "title": "OpenTable",
+    "source": "wikimedia-commons",
+    "license": "Commons licence metadata: \"Public domain\"; restriction tag: trademarked. Artwork only; the mark stays the owner's trademark.",
+    "url": "https://commons.wikimedia.org/wiki/File:OpenTable_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "shake-shack": {
+    "file": "shake-shack.svg",
+    "hex": null,
+    "title": "Shake Shack",
+    "source": "wikimedia-commons",
+    "license": "Commons licence metadata: \"Public domain\"; restriction tag: trademarked. Artwork only; the mark stays the owner's trademark.",
+    "url": "https://commons.wikimedia.org/wiki/File:Shake_Shack_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "xfinity": {
+    "file": "xfinity.svg",
+    "hex": null,
+    "title": "Xfinity",
+    "source": "wikimedia-commons",
+    "license": "Commons licence metadata: \"Public domain\"; restriction tag: trademarked. Artwork only; the mark stays the owner's trademark.",
+    "url": "https://commons.wikimedia.org/wiki/File:Xfinity_2025.svg",
+    "retrieved": "2026-11-26"
+  },
+  "gm": {
+    "file": "gm.svg",
+    "hex": null,
+    "title": "GM",
+    "source": "wikimedia-commons",
+    "license": "Commons licence metadata: \"Public domain\"; restriction tag: trademarked. Artwork only; the mark stays the owner's trademark.",
+    "url": "https://commons.wikimedia.org/wiki/File:General_Motors_(2021).svg",
+    "retrieved": "2026-11-26"
+  },
+  "becu": {
+    "file": "becu.svg",
+    "hex": null,
+    "title": "BECU",
+    "source": "wikimedia-commons",
+    "license": "Commons licence metadata: \"Public domain\"; restriction tag: trademarked. Artwork only; the mark stays the owner's trademark.",
+    "url": "https://commons.wikimedia.org/wiki/File:Logo-of-BECU.svg",
+    "retrieved": "2026-11-26"
+  },
+  "openai": {
+    "file": "openai.svg",
+    "hex": null,
+    "title": "OpenAI",
+    "source": "wikimedia-commons",
+    "license": "Commons licence metadata: \"Public domain\"; restriction tag: trademarked. Artwork only; the mark stays the owner's trademark.",
+    "url": "https://commons.wikimedia.org/wiki/File:OpenAI_logo_2025_(symbol).svg",
+    "retrieved": "2026-11-26"
   }
 }
