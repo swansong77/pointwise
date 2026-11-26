@@ -1,7 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Module, Param, ParseUUIDPipe, Post, Put, Query, Req, UnauthorizedException } from '@nestjs/common';
 import { ApiBearerAuth, ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
-import { TokensService } from '../ai/ai.controller';
 import { AuthUser, CurrentUser, Public } from '../common/decorators';
 import { NotificationsModule } from '../notifications/notifications.service';
 import { ConnectorRegistry } from './connector';
@@ -9,7 +8,7 @@ import { EnrollmentService } from './enrollment.service';
 import { FlowConnector, ISSUER_FLOWS } from './issuer-flows';
 import { MockConnector } from './mock-connector';
 import { CreateOfferAccountDto, EnrollResultsDto, IngestSnapshotDto, InboxQuery, ItemIdsDto, MfaDto, PasteDto, PolicyDto, RuleDto, SyncDto, UpdateOfferAccountDto } from './offer-automation.dto';
-import { EXTENSION_SCOPE, OfferAutomationService } from './offer-automation.service';
+import { OfferAutomationService } from './offer-automation.service';
 import { OfferAutomationJobs } from './offer-automation.jobs';
 import { CONNECTORS, OfferSyncService } from './offer-sync.service';
 
@@ -129,15 +128,12 @@ export class OfferAutomationController {
 @Public()
 @Controller('offer-automation/extension')
 export class OfferExtensionController {
-  constructor(
-    private readonly svc: OfferAutomationService,
-    private readonly tokens: TokensService,
-  ) {}
+  constructor(private readonly svc: OfferAutomationService) {}
 
   private async user(req: Request): Promise<string> {
     const auth = req.headers.authorization;
     const token = auth?.startsWith('Bearer ') ? auth.slice(7).trim() : undefined;
-    const id = await this.tokens.verify(token, EXTENSION_SCOPE);
+    const id = await this.svc.verifyToken(token);
     if (!id) throw new UnauthorizedException('A valid offers extension token is required');
     return id;
   }
@@ -155,10 +151,10 @@ export class OfferExtensionController {
 
 @Module({
   imports: [NotificationsModule],
-  providers: [OfferSyncService, EnrollmentService, OfferAutomationService, OfferAutomationJobs, TokensService, { provide: CONNECTORS, useFactory: defaultRegistry }],
+  providers: [OfferSyncService, EnrollmentService, OfferAutomationService, OfferAutomationJobs, { provide: CONNECTORS, useFactory: defaultRegistry }],
   exports: [OfferSyncService, EnrollmentService, OfferAutomationService, OfferAutomationJobs],
 })
 export class OfferAutomationCoreModule {}
 
-@Module({ imports: [OfferAutomationCoreModule], controllers: [OfferAutomationController, OfferExtensionController], providers: [TokensService] })
+@Module({ imports: [OfferAutomationCoreModule], controllers: [OfferAutomationController, OfferExtensionController] })
 export class OfferAutomationModule {}

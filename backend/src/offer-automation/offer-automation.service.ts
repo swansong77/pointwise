@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { OfferEventType, Prisma } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
-import { PAT_PREFIX, hashToken } from '../ai/ai.controller';
+import { PAT_PREFIX, hashToken } from '../common/pat';
 import { PrismaService } from '../common/prisma.service';
 import { daysLeft, duplicateCounts } from '../domain/offer-smart-enroll';
 import { InvItem } from '../domain/offer-snapshot-diff';
@@ -324,6 +324,15 @@ export class OfferAutomationService {
     const row = await this.prisma.personalAccessToken.create({ data: { userId, name: name.slice(0, 60), prefix: token.slice(0, PAT_PREFIX.length + 6), tokenHash: hashToken(token), scopes: [EXTENSION_SCOPE], expiresAt: new Date(Date.now() + 90 * 86_400_000) } });
     await this.sync.audit(userId, 'offer-token.create', 'PersonalAccessToken', row.id, { scope: EXTENSION_SCOPE });
     return { id: row.id, name: row.name, token, expiresAt: row.expiresAt, scopes: row.scopes };
+  }
+
+  /** Resolves an offers:ingest bearer token to its owner, or null. Updates lastUsedAt at most once a minute. */
+  async verifyToken(token: string | undefined): Promise<string | null> {
+    if (!token || !token.startsWith(PAT_PREFIX) || token.length > 200) return null;
+    const row = await this.prisma.personalAccessToken.findUnique({ where: { tokenHash: hashToken(token) }, include: { user: { select: { deletedAt: true } } } });
+    if (!row || row.revokedAt || (row.expiresAt && row.expiresAt < new Date()) || row.user.deletedAt || !row.scopes.includes(EXTENSION_SCOPE)) return null;
+    if (!row.lastUsedAt || Date.now() - row.lastUsedAt.getTime() > 60_000) await this.prisma.personalAccessToken.update({ where: { id: row.id }, data: { lastUsedAt: new Date() } });
+    return row.userId;
   }
 
   extensionTokens(userId: string) {

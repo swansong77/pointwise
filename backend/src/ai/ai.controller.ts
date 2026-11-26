@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpException, Injectable, NotFoundException, Param, ParseUUIDPipe, Post, Put, Res } from '@nestjs/common';
+import { PAT_PREFIX, hashToken } from '../common/pat';
 import { ApiBearerAuth, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { IsBoolean, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
@@ -120,8 +121,8 @@ export class AiController {
 
 // ───────── personal access tokens (PointWise MCP server) ─────────
 
-export const PAT_PREFIX = 'pw_pat_';
-export const hashToken = (t: string) => createHash('sha256').update(t).digest('hex');
+export { PAT_PREFIX };
+export { hashToken };
 
 export class CreateTokenDto {
   @ApiProperty() @IsString() @MinLength(1) @MaxLength(60) name: string;

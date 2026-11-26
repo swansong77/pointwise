@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { ToolRegistry } from '../../src/ai/tools';
 import { OfferAutomationJobs } from '../../src/offer-automation/offer-automation.jobs';
 import { OfferSyncService } from '../../src/offer-automation/offer-sync.service';
 import { defaultMockOffers, expireMockSessions, getMockOffers, MOCK_MFA_CODE, resetMock, setMockOffers } from '../../src/offer-automation/mock-connector';
@@ -560,5 +561,26 @@ describe('savings, history and the audit trail', () => {
     const someone = await prisma.offerSnapshotItem.findFirstOrThrow({ where: { userId } });
     expect((await post('/approve', { itemIds: [someone.id] }, other)).status).toBe(404);
     expect((await get('/connectors').expect(200)).body.flows).toHaveLength(6);
+  });
+});
+
+describe('the merchant offer agent tools', () => {
+  it('read the inbox, the sync status and explain a decision, without any login', async () => {
+    const reg = app.get(ToolRegistry);
+    const ctx = { userId, now: new Date() } as never;
+    const { id, username } = await makeAccount({ holder: 'Agent view' });
+    seed(username);
+    await syncNow(id);
+    const inboxTool = await reg.get('get_offer_inbox')!.handler(ctx, { tab: 'all' });
+    expect(inboxTool.summary).toMatch(/Hilton/);
+    expect(reg.get('get_offer_inbox')!.readOnly).toBe(true);
+    const status = await reg.get('get_offer_sync_status')!.handler(ctx, {});
+    expect(status.summary).toMatch(/Agent view/);
+    const why = await reg.get('explain_offer_decision')!.handler(ctx, { merchant: 'Hilton' });
+    expect(why.summary).toMatch(/score \d+\/100/);
+    await expect(reg.get('explain_offer_decision')!.handler(ctx, { merchant: 'Nonexistent Shop' })).rejects.toThrow(/No discovered offer/);
+    const all = JSON.stringify([inboxTool, status, why]);
+    expect(all).not.toContain(PASSWORD);
+    expect(all).not.toMatch(/credentialEnc|sessionEnc/);
   });
 });

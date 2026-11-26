@@ -1,6 +1,7 @@
 import { StrategyCoreModule } from '../strategy/strategy.module';
 import { Module } from '@nestjs/common';
 import { OffersModule } from '../offers/offers.module';
+import { OfferAutomationCoreModule } from '../offer-automation/offer-automation.module';
 import { BenefitsModule } from '../portfolio/benefits';
 import { HouseholdsModule } from '../portfolio/households';
 import { PortfolioModule } from '../portfolio/portfolio';
@@ -24,7 +25,7 @@ import { ToolRegistry } from './tools';
 
 /** Core AI providers (no controllers) — shared by the API and the worker. */
 @Module({
-  imports: [PortfolioModule, BenefitsModule, HouseholdsModule, RecommendationsModule, OffersModule, WalletModule, StrategyCoreModule, SpendCoreModule, BenefitAuditModule, LoyaltyCoreModule, LoyaltyAutomationCoreModule],
+  imports: [PortfolioModule, BenefitsModule, HouseholdsModule, RecommendationsModule, OffersModule, WalletModule, StrategyCoreModule, SpendCoreModule, BenefitAuditModule, LoyaltyCoreModule, LoyaltyAutomationCoreModule, OfferAutomationCoreModule],
   providers: [ToolRegistry, ModelRouter, McpClientService, AiService, TokensService, BenefitClassifyService, OrchestratorService, PromptsService],
   exports: [ToolRegistry, ModelRouter, McpClientService, AiService, TokensService, OrchestratorService, PromptsService],
 })
