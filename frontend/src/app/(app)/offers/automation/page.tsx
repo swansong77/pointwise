@@ -3,6 +3,8 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, PageHeader, Panel, Select, Spinner } from '@/components/ui';
+import { BrandLogo } from '@/components/brand-logo';
+import { WalletCardArt } from '@/components/card-bits';
 import { Tabs } from '@/components/charts';
 import { money, shortDate } from '@/lib/format';
 import {
@@ -84,13 +86,15 @@ function InboxList({ tab }: { tab: InboxTab }) {
           <li key={o.id} className="py-3" data-testid="inbox-item">
             <div className="flex flex-wrap items-center gap-2">
               {actionable(o) && <input type="checkbox" aria-label={`Select ${o.merchant} on ${o.card ?? o.holder}`} checked={picked.has(o.id)} onChange={() => toggle(o.id)} />}
+              <BrandLogo brand={{ name: o.merchant }} size="md" decorative />
               <Badge tone={scoreTone(o.score)}>Score {o.score ?? '—'}/100</Badge>
               <span className="font-medium">{o.merchant}</span>
               <span className="text-slate-600">{money(o.valueCents)}</span>
               <Badge tone={DECISION_LABEL[o.decision].tone}>{DECISION_LABEL[o.decision].label}</Badge>
               {o.daysLeft != null && <Badge tone={o.daysLeft <= 7 ? 'red' : 'slate'}>{o.daysLeft} day(s) left</Badge>}
               {o.sameOfferOnCards > 1 && <Badge tone="amber">Same offer on {o.sameOfferOnCards} cards</Badge>}
-              <span className="ml-auto text-xs text-slate-600">
+              <span className="ml-auto flex items-center gap-2 text-xs text-slate-600">
+                {o.walletCardId && <WalletCardArt walletCardId={o.walletCardId} name={o.card ?? o.holder} size="sm" />}
                 {o.issuer} · {o.card ?? o.holder}
               </span>
             </div>
@@ -242,6 +246,7 @@ function SyncPanel() {
           <ul className="divide-y divide-slate-100 text-sm" data-testid="sync-accounts">
             {(accounts.data ?? []).map((a) => (
               <li key={a.id} className="flex flex-wrap items-center gap-2 py-2" data-testid="sync-account">
+                <BrandLogo brand={{ name: a.issuer.name }} kinds={['ISSUER']} size="md" decorative />
                 <span className="font-medium">{a.holderLabel}</span>
                 <span className="text-slate-600">{a.issuer.name}</span>
                 <Badge tone={HEALTH_LABEL[a.syncHealth].tone}>{HEALTH_LABEL[a.syncHealth].label}</Badge>
@@ -273,7 +278,7 @@ function SyncPanel() {
                 {d.runs.map((r) => (
                   <tr key={r.id} className="border-t border-slate-100" data-testid="run-row">
                     <td className="py-1.5">{shortDate(r.createdAt)}</td>
-                    <td>{r.holder ?? '—'}</td>
+                    <td><span className="inline-flex items-center gap-1.5">{r.issuer && <BrandLogo brand={{ name: r.issuer }} kinds={['ISSUER']} size="xs" decorative />}{r.holder ?? '—'}</span></td>
                     <td>{r.trigger.toLowerCase()}{r.attempt > 1 ? ` (attempt ${r.attempt})` : ''}</td>
                     <td title={r.error ?? ''}>
                       <Badge tone={RUN_LABEL[r.status].tone}>{RUN_LABEL[r.status].label}</Badge>
@@ -367,6 +372,7 @@ function AccountForm({ onDone }: { onDone: () => void }) {
           {(wallet.data ?? []).map((w) => (
             <label key={w.id} className="flex items-center gap-1.5">
               <input type="checkbox" checked={f.cards.includes(w.id)} onChange={(e) => setF({ ...f, cards: e.target.checked ? [...f.cards, w.id] : f.cards.filter((x) => x !== w.id) })} />
+              <WalletCardArt walletCardId={w.id} name={w.nickname || w.card.name} size="sm" />
               {w.nickname || w.card.name}
               {w.lastFour ? ` ··${w.lastFour}` : ''}
             </label>
@@ -392,6 +398,7 @@ function AccountRow({ a }: { a: OfferAccountView }) {
   return (
     <li className="py-3 text-sm" data-testid="account">
       <div className="flex flex-wrap items-center gap-2">
+        <BrandLogo brand={{ name: a.issuer.name }} kinds={['ISSUER']} size="lg" decorative />
         <span className="font-medium">{a.holderLabel}</span>
         <span className="text-slate-600">{a.issuer.name}</span>
         <Badge>{KIND_LABEL[a.connectorKind]}</Badge>

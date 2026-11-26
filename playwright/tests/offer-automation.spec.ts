@@ -42,6 +42,7 @@ test.describe('Offer automation', () => {
     await expect(progress).toContainText('3 added');
     await expect(page.getByTestId('run-row').first()).toContainText('Done');
     await expect(page.getByTestId('sync-account').first()).toContainText('Healthy');
+    await expect(page.getByTestId('sync-account').first().getByTestId('brand-logo')).toBeVisible();
     await noSeriousA11y(page);
 
     await page.getByRole('button', { name: 'Offer Inbox' }).click();
@@ -49,6 +50,8 @@ test.describe('Offer automation', () => {
     await expect(items).toHaveCount(3);
     const hilton = items.filter({ hasText: 'Hilton' });
     await expect(hilton).toContainText('Recommended');
+    await expect(hilton.getByTestId('brand-logo').first()).toBeVisible();
+    await expect(hilton.getByTestId('card-art')).toBeVisible();
     await hilton.getByRole('button', { name: 'Why This Score?' }).click();
     await expect(hilton.getByTestId('score-detail')).toContainText('Offer value');
     await expect(hilton.getByTestId('score-detail')).toContainText('Should Add');
