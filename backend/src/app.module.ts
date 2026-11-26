@@ -41,6 +41,8 @@ import { MailboxModule } from './mailbox/mailbox.module';
 import { CaptureModule } from './capture/capture.module';
 import { OpsModule } from './ops/ops.module';
 import { OfferAutomationModule } from './offer-automation/offer-automation.module';
+import { DataModule } from './data/data.module';
+import { MaintenanceGuard } from './data/maintenance.service';
 
 const rateLimit = Number(process.env.RATE_LIMIT_PER_MIN ?? 100);
 
@@ -85,10 +87,13 @@ const rateLimit = Number(process.env.RATE_LIMIT_PER_MIN ?? 100);
     CaptureModule,
     OpsModule,
     OfferAutomationModule,
+    DataModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ClientIpThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // after authentication: while maintenance mode is on only administrators get through
+    { provide: APP_GUARD, useClass: MaintenanceGuard },
   ],
 })
 export class AppModule {}

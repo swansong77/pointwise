@@ -1,5 +1,6 @@
 import { BullModule, InjectQueue, Processor, WorkerHost } from "@nestjs/bullmq";
 import { OfferAutomationCoreModule } from '../offer-automation/offer-automation.module';
+import { DataJobsModule } from '../data/data.module';
 import {
   Controller,
   HttpCode,
@@ -68,6 +69,8 @@ export const SCHEDULE: Record<JobName, string> = {
   "offer-audit-monthly": "30 6 1 * *",
   /** expiring offers */
   "offer-digest": "45 13 * * *",
+  /** encrypted backup into BACKUP_DIR, only when BACKUP_PASSPHRASE is set */
+  "backup-nightly": "30 3 * * *",
 };
 
 const JobNameEnum = Object.fromEntries(JOB_NAMES.map((n) => [n, n])) as Record<
@@ -178,6 +181,7 @@ const jobDeps = () => [
   LoyaltyCoreModule,
   LoyaltyAutomationCoreModule,
   OfferAutomationCoreModule,
+  DataJobsModule,
 ];
 
 @Module({

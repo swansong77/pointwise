@@ -32,3 +32,10 @@ raw/
 .DS_Store
 !backend/prisma/migrations/**/*.sql
 extension/dist/
+
+# backups and data exports contain personal data: never commit them
+*.pwbackup
+*.pwbackup.partial
+*.pointwise-data.json
+*.pointwise-data.json.gz
+.env.migrated

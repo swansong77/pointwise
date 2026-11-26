@@ -20,6 +20,7 @@ import { LoyaltyJobsService } from "../loyalty/loyalty.module";
 import { LoyaltyRefreshJobs } from "../loyalty/loyalty-automation.module";
 import { OrchestratorService } from "../ai/orchestrator.service";
 import { OfferAutomationJobs } from "../offer-automation/offer-automation.jobs";
+import { BackupJobs } from "../data/data.module";
 
 export const JOB_QUEUE = "pointwise-jobs";
 export type JobName =
@@ -46,8 +47,10 @@ export type JobName =
   | "offer-sync-due"
   | "offer-sync-recover"
   | "offer-audit-monthly"
-  | "offer-digest";
+  | "offer-digest"
+  | "backup-nightly";
 export const JOB_NAMES: JobName[] = [
+  "backup-nightly",
   "refresh-loyalty",
   "loyalty-audit",
   "scan-loyalty-expirations",
@@ -101,6 +104,7 @@ export class JobsService {
     @Optional() private readonly loyaltyRefresh?: LoyaltyRefreshJobs,
     @Optional() private readonly orchestrator?: OrchestratorService,
     @Optional() private readonly offerAutomation?: OfferAutomationJobs,
+    @Optional() private readonly backupJobs?: BackupJobs,
   ) {}
 
   async run(
@@ -180,6 +184,9 @@ export class JobsService {
         break;
       case "offer-digest":
         created = (await this.offerAutomation?.digest(now)) ?? 0;
+        break;
+      case "backup-nightly":
+        created = (await this.backupJobs?.nightly(now)) ?? 0;
         break;
     }
     this.logger.log(`job ${name} done: ${created}`);

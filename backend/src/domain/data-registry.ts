@@ -24,6 +24,8 @@ export interface ModelRule {
   importable?: boolean;
   /** Columns forced to a value on import (for example opt-ins that must be switched on again by the member). */
   force?: Record<string, unknown>;
+  /** One row per member that every account already has (settings): an import updates it instead of skipping it. */
+  singleton?: boolean;
 }
 
 const U = 'userId';
@@ -89,9 +91,9 @@ export const DATA_RULES: Record<string, ModelRule> = {
   OfferEvent: { cls: 'USER', scope: U },
 
   // ───────── settings
-  NotificationPreference: { cls: 'USER', scope: U, natural: ['userId'] },
-  AiSettings: { cls: 'USER', scope: U, drop: ['consentedAt'], natural: ['userId'] },
-  EnrollmentPolicy: { cls: 'USER', scope: U, natural: ['userId'] },
+  NotificationPreference: { cls: 'USER', scope: U, natural: ['userId'], singleton: true },
+  AiSettings: { cls: 'USER', scope: U, drop: ['consentedAt'], natural: ['userId'], singleton: true, refs: { preferredModelId: 'AiModel' } },
+  EnrollmentPolicy: { cls: 'USER', scope: U, natural: ['userId'], singleton: true },
   EnrollmentRule: { cls: 'USER', scope: U, refs: { accountId: 'OfferAccount', walletCardId: 'WalletCard' } },
 
   // ───────── loyalty
@@ -243,9 +245,10 @@ export interface OrderResult {
  * Orders models so a restore can insert parents before children. A cycle is broken at an optional foreign key (the
  * column is inserted as null and filled in afterwards); a cycle with no optional key throws. Self references count as cycles.
  */
-export function insertOrder(models: readonly ModelMeta[]): OrderResult {
+export function insertOrder(models: readonly ModelMeta[], rules?: Record<string, ModelRule>): OrderResult {
   const names = models.map((m) => m.name);
-  const fks = new Map(models.map((m) => [m.name, foreignKeys(m)]));
+  // with rules, the columns that hold another model's id without being a declared relation also count as edges (a member import needs them)
+  const fks = new Map(models.map((m) => [m.name, [...foreignKeys(m), ...Object.entries(rules?.[m.name]?.refs ?? {}).filter(([f, t]) => !foreignKeys(m).some((k) => k.field === f) && t !== 'User' && t !== m.name).map(([field, target]) => ({ field, target, optional: true }))]]));
   const deferred: OrderResult['deferred'] = [];
   const skip = new Set<string>();
   for (const m of models) for (const fk of fks.get(m.name)!) if (fk.target === m.name) {

@@ -40,6 +40,12 @@ x-backend-env: &backend-env
   INBOUND_EXTRA_SENDER_DOMAINS: ${INBOUND_EXTRA_SENDER_DOMAINS:-}
   # AES-256-GCM key for bank access tokens at rest (≥ 32 chars)
   TOKEN_ENC_KEY: ${TOKEN_ENC_KEY:-dev-token-encryption-key-change-me-0123456789}
+  # backups: the encrypted files are written here (a named volume); the nightly backup runs only when BACKUP_PASSPHRASE is set
+  BACKUP_DIR: /var/backups/pointwise
+  BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:-}
+  BACKUP_KEEP: ${BACKUP_KEEP:-7}
+  BACKUP_INCLUDE_EPHEMERAL: ${BACKUP_INCLUDE_EPHEMERAL:-false}
+  BACKUP_MAX_MB: ${BACKUP_MAX_MB:-2048}
   # Web push (optional): generate with `npx web-push generate-vapid-keys`
   VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
   VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
@@ -119,11 +125,15 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
       mailhog: { condition: service_started }
+    volumes:
+      - pointwise-backups:/var/backups/pointwise
 
   # Executes queued / scheduled jobs (offer + benefit scans, digests, 5/24 snapshots, bank sync).
   worker:
     image: pointwise/backend:local
     command: ["node", "dist/worker.js"]
+    volumes:
+      - pointwise-backups:/var/backups/pointwise
     environment:
       <<: *backend-env
       RUN_MIGRATIONS: "false"
@@ -249,3 +259,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  pointwise-backups:
