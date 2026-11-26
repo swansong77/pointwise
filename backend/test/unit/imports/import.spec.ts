@@ -234,9 +234,30 @@ describe('matching', () => {
       { id: 'a', name: 'Metro Platinum Card', issuerName: 'American Express' },
       { id: 'b', name: 'Metro Gold Card', issuerName: 'American Express' },
     ];
-    expect(matchCatalog('Metro Platinum', 'Amex', catalog)).toEqual({ id: 'a', score: 0.867 });
+    expect(matchCatalog('Metro Platinum', 'Amex', catalog)).toEqual({ id: 'a', score: 1.2 });
     expect(matchCatalog('Completely Different', null, catalog)).toBeNull();
     expect(matchCatalog('x', null, [])).toBeNull();
+  });
+  it('matchCatalog reads Amex as American Express, ignores filler words, and does not take a different product with a shared word', () => {
+    const catalog = [
+      { id: 'gold', name: 'American Express Gold Card', issuerName: 'American Express', type: 'PERSONAL' },
+      { id: 'bgold', name: 'American Express Business Gold Card', issuerName: 'American Express', type: 'BUSINESS' },
+      { id: 'dgold', name: 'Delta SkyMiles Gold American Express Card', issuerName: 'American Express', type: 'PERSONAL' },
+      { id: 'plat', name: 'American Express Platinum Card', issuerName: 'American Express', type: 'PERSONAL' },
+      { id: 'green', name: 'American Express Green Card', issuerName: 'American Express', type: 'PERSONAL' },
+      { id: 'hh', name: 'Hilton Honors American Express Card', issuerName: 'American Express', type: 'PERSONAL' },
+      { id: 'hhs', name: 'Hilton Honors American Express Surpass Card', issuerName: 'American Express', type: 'PERSONAL' },
+      { id: 'bce', name: 'Blue Cash Everyday Card from American Express', issuerName: 'American Express', type: 'PERSONAL' },
+    ];
+    const id = (n: string, biz: boolean | null = null) => matchCatalog(n, 'American Express', catalog, 0.5, biz)?.id ?? null;
+    expect(id('Amex Gold')).toBe('gold');
+    expect(id('Amex Platinum')).toBe('plat');
+    expect(id('Amex Classic Green')).toBe('green');
+    expect(id('Hilton Honors (no fee)')).toBe('hh');
+    expect(id('Hilton Honors Surpass')).toBe('hhs');
+    expect(id('Amex EveryDay')).toBeNull(); // a different product from Blue Cash Everyday
+    expect(id('Amex Gold', true)).toBe('bgold');
+    expect(id('Amex card ...11003 (type unknown)')).toBeNull();
   });
   it('matchExisting by last digits + issuer, by digits + name, or by owner + name', () => {
     const existing = [

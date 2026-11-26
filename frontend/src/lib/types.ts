@@ -38,9 +38,13 @@ export interface Reward {
   multiplier: string;
   description: string;
   isRotating: boolean;
+  conditional?: boolean;
+  capCents?: number | null;
+  capPeriod?: 'QUARTER' | 'YEAR' | null;
+  verifiedAt?: string | null;
   categoryId: string | null;
   merchantId: string | null;
-  category?: { name: string } | null;
+  category?: { name: string; slug?: string } | null;
   merchant?: { name: string } | null;
 }
 

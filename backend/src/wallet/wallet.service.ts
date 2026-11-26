@@ -3,6 +3,7 @@ import { PrismaService } from '../common/prisma.service';
 import { toDomainWalletCard, walletCardInclude } from '../common/mappers';
 import { DomainWalletCard } from '../domain/types';
 import { limitsFor } from '../domain/entitlements';
+import { matchCatalog } from '../domain/import';
 import { AddWalletCardDto, PinDto, UpdateWalletCardDto, ValuationDto } from './wallet.dto';
 import { HouseholdsService } from '../portfolio/households';
 import { BenefitsService } from '../portfolio/benefits';
@@ -114,6 +115,44 @@ export class WalletService {
       },
       include: walletCardInclude,
     });
+  }
+
+  /**
+   * Cards the member's imports added as custom cards (no earning rates of their own) that now match a catalog card, so the
+   * wallet can show and use the catalog's categories. Nothing changes until `relinkCustom` is called with the ones to move.
+   */
+  async customMatches(userId: string) {
+    const [rows, catalog] = await Promise.all([
+      this.prisma.walletCard.findMany({
+        where: { wallet: { userId }, card: { ownerId: userId, rewards: { none: {} } } },
+        select: { id: true, lastFour: true, card: { select: { name: true, type: true, issuer: { select: { name: true } } } } },
+      }),
+      this.prisma.creditCard.findMany({ where: { isActive: true, ownerId: null }, select: { id: true, name: true, type: true, issuer: { select: { name: true } }, _count: { select: { rewards: true } } } }),
+    ]);
+    const entries = catalog.filter((c) => c._count.rewards > 0).map((c) => ({ id: c.id, name: c.name, issuerName: c.issuer.name, type: c.type }));
+    const names = new Map(catalog.map((c) => [c.id, c.name]));
+    const out: Array<{ walletCardId: string; lastFour: string | null; customName: string; catalogCardId: string; catalogName: string; score: number }> = [];
+    for (const r of rows) {
+      const m = matchCatalog(r.card.name, r.card.issuer.name, entries, 0.6, r.card.type === 'BUSINESS' ? true : null);
+      if (m) out.push({ walletCardId: r.id, lastFour: r.lastFour, customName: r.card.name, catalogCardId: m.id, catalogName: names.get(m.id) ?? '', score: m.score });
+    }
+    return { matches: out, unmatched: rows.length - out.length };
+  }
+
+  /** Moves the chosen wallet cards onto their catalog card and removes the custom card when nothing else uses it. */
+  async relinkCustom(userId: string, walletCardIds: string[]) {
+    const { matches } = await this.customMatches(userId);
+    const chosen = matches.filter((m) => walletCardIds.includes(m.walletCardId));
+    let moved = 0;
+    for (const m of chosen) {
+      const wc = await this.prisma.walletCard.findFirst({ where: { id: m.walletCardId, wallet: { userId } }, select: { cardId: true } });
+      if (!wc) continue;
+      await this.prisma.walletCard.update({ where: { id: m.walletCardId }, data: { cardId: m.catalogCardId } });
+      moved++;
+      const left = await this.prisma.walletCard.count({ where: { cardId: wc.cardId } });
+      if (!left) await this.prisma.creditCard.deleteMany({ where: { id: wc.cardId, ownerId: userId } });
+    }
+    return { moved };
   }
 
   async remove(userId: string, id: string): Promise<void> {

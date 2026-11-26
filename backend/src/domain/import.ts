@@ -481,6 +481,33 @@ export function tokenSimilarity(a: string, b: string): number {
   return inter / (ta.size + tb.size - inter);
 }
 
+/** Words that say nothing about which product a card is. */
+const FILLER = new Set(['card', 'credit', 'the', 'from', 'no', 'fee', 'annual', 'legacy', 'additional', 'authorized', 'user', 'visa', 'mastercard', 'signature', 'world', 'elite', 'infinite']);
+/** Issuer words are not product words: "American Express" is on every Amex card. */
+const ISSUER_WORDS = new Set(['american', 'express', 'chase', 'citi', 'discover', 'capital', 'one', 'barclays', 'wells', 'fargo', 'bank', 'of', 'america', 'us', 'u', 's']);
+
+/** Product words of a card name, with "Amex" read as "American Express". */
+export function productTokens(name: string): Set<string> {
+  const words = norm(name).replace(/\bamex\b/g, 'american express').split(' ').filter(Boolean);
+  return new Set(words.filter((w) => !FILLER.has(w)));
+}
+
+/** How alike a card name and a catalog name are: shared words over all words, less a penalty for every product word the catalog entry has that the name lacks. */
+export function catalogNameScore(cardName: string, entryName: string): number {
+  const own = (n: string) => {
+    const all = productTokens(n);
+    const product = new Set([...all].filter((t) => !ISSUER_WORDS.has(t)));
+    return product.size ? product : all; // a name of issuer words only ("American Express card") keeps them
+  };
+  const a = own(cardName);
+  const b = own(entryName);
+  if (!a.size || !b.size) return 0;
+  let inter = 0;
+  for (const t of a) if (b.has(t)) inter++;
+  if (!inter) return 0;
+  return inter / (a.size + b.size - inter) - 0.2 * [...b].filter((t) => !a.has(t)).length;
+}
+
 export interface CatalogEntry {
   id: string;
   name: string;
@@ -497,7 +524,7 @@ export interface CatalogEntry {
 export function matchCatalog(cardName: string, issuer: string | null, catalog: CatalogEntry[], threshold = 0.5, isBusiness: boolean | null = null): { id: string; score: number } | null {
   let best: { id: string; score: number } | null = null;
   for (const e of catalog) {
-    let score = tokenSimilarity(cardName, e.name);
+    let score = catalogNameScore(cardName, e.name);
     if (issuer && canonicalIssuer(issuer) === canonicalIssuer(e.issuerName)) score += 0.2;
     if (isBusiness != null && e.type) score += (e.type === 'BUSINESS') === isBusiness ? 0.15 : -0.6;
     if (!best || score > best.score) best = { id: e.id, score: Math.round(score * 1000) / 1000 };

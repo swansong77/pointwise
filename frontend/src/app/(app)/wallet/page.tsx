@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, Panel, PageHeader, Select, Spinner } from '@/components/ui';
 import { CardArt } from '@/components/card-bits';
 import { Tabs } from '@/components/charts';
-import { qk, useApiMutation, useCardSearch, useCategories, useWallet } from '@/lib/queries';
-import { money, multiplier, shortDate } from '@/lib/format';
+import { qk, useApiMutation, useCardSearch, useCategories, useCustomMatches, useWallet } from '@/lib/queries';
+import { money, shortDate } from '@/lib/format';
+import { rewardBadges } from '@/lib/rates';
 import { validateLastFour } from '@/lib/validation';
 import { verificationBadge } from '@/lib/catalog';
 import type { CardStatus, WalletCard } from '@/lib/types';
@@ -125,13 +126,17 @@ function WalletCardRow({ wc }: { wc: WalletCard }) {
         </Button>
       </div>
       <ul className="mt-3 flex flex-wrap gap-2">
-        {wc.card.rewards.slice(0, 6).map((r) => (
-          <li key={r.id}>
-            <Badge tone={r.isRotating ? (wc.selectedCategoryIds.includes(r.categoryId ?? '') ? 'green' : 'slate') : 'brand'}>
-              {multiplier(r.multiplier)} {r.description.replace(/^\S+\s/, '')}
-            </Badge>
-          </li>
-        ))}
+        {rewardBadges(wc.card.rewards).map((b) => {
+          const r = wc.card.rewards.find((x) => x.id === b.id)!;
+          return (
+            <li key={b.id} data-testid="reward-badge" data-conditional={b.conditional || undefined}>
+              <Badge tone={r.isRotating ? (wc.selectedCategoryIds.includes(r.categoryId ?? '') ? 'green' : 'slate') : b.conditional ? 'slate' : 'brand'}>
+                {b.text}
+                {b.conditional ? ' (portal or linked account)' : r.isRotating ? ' (activate)' : ''}
+              </Badge>
+            </li>
+          );
+        })}
       </ul>
       {editing && (
         <div className="mt-4 grid gap-4 border-t border-slate-100 pt-4 sm:grid-cols-3">
@@ -193,6 +198,35 @@ function WalletCardRow({ wc }: { wc: WalletCard }) {
   );
 }
 
+function MatchCustomCards() {
+  const m = useCustomMatches();
+  const relink = useApiMutation<string[]>((ids) => ({ path: '/wallet/custom-matches', method: 'POST', body: { walletCardIds: ids } }), [qk.wallet, qk.customMatches, qk.dashboard]);
+  if (!m.data || m.data.matches.length === 0) return null;
+  const ids = m.data.matches.map((x) => x.walletCardId);
+  return (
+    <Panel title="Match imported cards to the catalog" data-testid="match-custom">
+      <p className="text-sm text-slate-600">
+        {ids.length} card{ids.length === 1 ? ' was' : 's were'} imported without earning rates. Matching them to the catalog shows their categories and uses them in Best Card by Category. Your last digits, dates and notes stay.
+      </p>
+      <ul className="mt-3 space-y-1 text-sm">
+        {m.data.matches.map((x) => (
+          <li key={x.walletCardId}>
+            {x.customName}
+            {x.lastFour ? ` ••••${x.lastFour}` : ''} → <strong>{x.catalogName}</strong>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 flex items-center gap-3">
+        <Button onClick={() => relink.mutate(ids)} disabled={relink.isPending}>
+          {relink.isPending ? 'Matching…' : `Match ${ids.length} card${ids.length === 1 ? '' : 's'}`}
+        </Button>
+        {m.data.unmatched > 0 && <span className="text-xs text-slate-500">{m.data.unmatched} more have no catalog match (older or discontinued cards).</span>}
+      </div>
+      <ErrorText error={relink.error} />
+    </Panel>
+  );
+}
+
 export default function WalletPage() {
   const wallet = useWallet();
   const [adding, setAdding] = useState(false);
@@ -204,6 +238,7 @@ export default function WalletPage() {
         action={!adding && <Button onClick={() => setAdding(true)}>+ Add card</Button>}
       />
       {adding && <AddCard onDone={() => setAdding(false)} />}
+      <MatchCustomCards />
       {wallet.isLoading && <Spinner />}
       <ErrorText error={wallet.error} />
       {wallet.data && wallet.data.length === 0 && !adding && <EmptyState title="Your wallet is empty">Add a card to see your best card everywhere.</EmptyState>}
