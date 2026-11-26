@@ -1,0 +1,392 @@
+{
+  "issuers": [
+    "Alliant Credit Union",
+    "America First Credit Union",
+    "American Express",
+    "Bank of America",
+    "Barclays",
+    "BECU",
+    "Bilt",
+    "BMO",
+    "Bread Financial",
+    "Capital One",
+    "Chase",
+    "Citi",
+    "Citizens",
+    "Digital Federal Credit Union",
+    "Discover",
+    "Elan Financial Services",
+    "Fifth Third Bank",
+    "First National Bank of Omaha",
+    "First Tech Federal Credit Union",
+    "Golden 1 Credit Union",
+    "Goldman Sachs",
+    "Huntington",
+    "KeyBank",
+    "Mountain America Credit Union",
+    "Navy Federal Credit Union",
+    "PenFed Credit Union",
+    "PNC",
+    "Randolph-Brooks Federal Credit Union",
+    "Regions",
+    "Robinhood",
+    "San Diego County Credit Union",
+    "SchoolsFirst Federal Credit Union",
+    "Security Service Federal Credit Union",
+    "State Employees’ Credit Union",
+    "Synchrony",
+    "TD Bank",
+    "Truist",
+    "U.S. Bank",
+    "Wells Fargo"
+  ],
+  "merchants": [
+    "Airbnb",
+    "Alaska Airlines",
+    "Amazon",
+    "American Airlines",
+    "Apple",
+    "AT&T",
+    "Avis",
+    "Best Buy",
+    "BP",
+    "British Airways",
+    "Chevron",
+    "Chipotle",
+    "CLEAR",
+    "Costco",
+    "CVS",
+    "Delta Air Lines",
+    "Disney",
+    "DoorDash",
+    "Enterprise",
+    "Equinox",
+    "Expedia",
+    "ExxonMobil",
+    "Five Guys",
+    "Google",
+    "Grubhub",
+    "Hertz",
+    "Hilton",
+    "Hyatt",
+    "IHG",
+    "IHG Hotels & Resorts",
+    "Instacart",
+    "JetBlue",
+    "Kroger",
+    "Lowe's",
+    "lululemon",
+    "Lyft",
+    "Macy's",
+    "Marriott",
+    "McDonald's",
+    "Netflix",
+    "Nordstrom",
+    "OpenTable",
+    "PayPal",
+    "Peloton",
+    "Resy",
+    "Safeway",
+    "Saks Fifth Avenue",
+    "Sephora",
+    "Shake Shack",
+    "Shell",
+    "Southwest Airlines",
+    "Spotify",
+    "Starbucks",
+    "T-Mobile",
+    "Target",
+    "The Home Depot",
+    "Uber",
+    "Uber Eats",
+    "United Airlines",
+    "Verizon",
+    "Walgreens",
+    "Walmart",
+    "Walmart+",
+    "Whole Foods Market",
+    "Wyndham",
+    "Wyndham Hotels",
+    "Xfinity"
+  ],
+  "programs": [
+    {
+      "code": "AA_AADVANTAGE",
+      "name": "American Airlines AAdvantage",
+      "kind": "AIRLINE"
+    },
+    {
+      "code": "AC_AEROPLAN",
+      "name": "Air Canada Aeroplan",
+      "kind": "AIRLINE"
+    },
+    {
+      "code": "ACCOR_ALL",
+      "name": "Accor Live Limitless",
+      "kind": "HOTEL"
+    },
+    {
+      "code": "AF_FLYINGBLUE",
+      "name": "Flying Blue (Air France-KLM)",
+      "kind": "AIRLINE"
+    },
+    {
+      "code": "AS_MILEAGEPLAN",
+      "name": "Alaska Mileage Plan",
+      "kind": "AIRLINE"
+    },
+    {
+      "code": "B6_TRUEBLUE",
+      "name": "JetBlue TrueBlue",
+      "kind": "AIRLINE"
+    },
+    {
+      "code": "BA_AVIOS",
+      "name": "British Airways Executive Club",
+      "kind": "AIRLINE"
+    },
+    {
+      "code": "BW_REWARDS",
+      "name": "Best Western Rewards",
+      "kind": "HOTEL"
+    },
+    {
+      "code": "CASINO_PROGRAM",
+      "name": "Casino rewards (other)",
+      "kind": "CASINO"
+    },
+    {
+      "code": "CHOICE_PRIV",
+      "name": "Choice Privileges",
+      "kind": "HOTEL"
+    },
+    {
+      "code": "CRUISE_PROGRAM",
+      "name": "Cruise loyalty program (other)",
+      "kind": "CRUISE"
+    },
+    {
+      "code": "DINING_PROGRAM",
+      "name": "Dining rewards program (other)",
+      "kind": "DINING"
+    },
+    {
+      "code": "DL_SKYMILES",
+      "name": "Delta SkyMiles",
+      "kind": "AIRLINE"
+    },
+    {
+      "code": "EK_SKYWARDS",
+      "name": "Emirates Skywards",
+      "kind": "AIRLINE"
+    },
+    {
+      "code": "EY_GUEST",
+      "name": "Etihad Guest",
+      "kind": "AIRLINE"
+    },
+    {
+      "code": "HA_HAWAIIANMILES",
+      "name": "HawaiianMiles",
+      "kind": "AIRLINE"
+    },
+    {
+      "code": "HH_HONORS",
+      "name": "Hilton Honors",
+      "kind": "HOTEL"
+    },
+    {
+      "code": "IHG_ONE",
+      "name": "IHG One Rewards",
+      "kind": "HOTEL"
+    },
+    {
+      "code": "MAR_BONVOY",
+      "name": "Marriott Bonvoy",
+      "kind": "HOTEL"
+    },
+    {
+      "code": "QR_PRIVILEGE",
+      "name": "Qatar Privilege Club",
+      "kind": "AIRLINE"
+    },
+    {
+      "code": "RAKUTEN",
+      "name": "Rakuten",
+      "kind": "SHOPPING"
+    },
+    {
+      "code": "RENTAL_PROGRAM",
+      "name": "Rental car program (other)",
+      "kind": "RENTAL_CAR"
+    },
+    {
+      "code": "RETAIL_REWARDS",
+      "name": "Retail rewards (other)",
+      "kind": "RETAIL"
+    },
+    {
+      "code": "SHOP_PORTAL",
+      "name": "Shopping portal (other)",
+      "kind": "SHOPPING"
+    },
+    {
+      "code": "SQ_KRISFLYER",
+      "name": "Singapore KrisFlyer",
+      "kind": "AIRLINE"
+    },
+    {
+      "code": "UA_MILEAGEPLUS",
+      "name": "United MileagePlus",
+      "kind": "AIRLINE"
+    },
+    {
+      "code": "VS_FLYINGCLUB",
+      "name": "Virgin Atlantic Flying Club",
+      "kind": "AIRLINE"
+    },
+    {
+      "code": "WN_RAPIDREWARDS",
+      "name": "Southwest Rapid Rewards",
+      "kind": "AIRLINE"
+    },
+    {
+      "code": "WOH_HYATT",
+      "name": "World of Hyatt",
+      "kind": "HOTEL"
+    },
+    {
+      "code": "WYN_REWARDS",
+      "name": "Wyndham Rewards",
+      "kind": "HOTEL"
+    }
+  ],
+  "currencies": [
+    {
+      "code": "AA_MILES",
+      "name": "American Airlines AAdvantage Miles"
+    },
+    {
+      "code": "AEROPLAN_POINTS",
+      "name": "Aeroplan Points"
+    },
+    {
+      "code": "AMEX_MR",
+      "name": "American Express Membership Rewards"
+    },
+    {
+      "code": "ATMOS_POINTS",
+      "name": "Atmos Rewards Points"
+    },
+    {
+      "code": "AVIOS",
+      "name": "Avios"
+    },
+    {
+      "code": "BILT_POINTS",
+      "name": "Bilt Points"
+    },
+    {
+      "code": "BOA_POINTS",
+      "name": "Bank of America Rewards"
+    },
+    {
+      "code": "BRAND_POINTS",
+      "name": "Brand rewards points (value varies by program)"
+    },
+    {
+      "code": "C1_MILES",
+      "name": "Capital One Miles"
+    },
+    {
+      "code": "CHASE_UR",
+      "name": "Chase Ultimate Rewards"
+    },
+    {
+      "code": "CHOICE_POINTS",
+      "name": "Choice Privileges Points"
+    },
+    {
+      "code": "CITI_TYP",
+      "name": "Citi ThankYou Rewards"
+    },
+    {
+      "code": "DELTA_MILES",
+      "name": "Delta SkyMiles"
+    },
+    {
+      "code": "EMIRATES_MILES",
+      "name": "Emirates Skywards Miles"
+    },
+    {
+      "code": "FLYING_BLUE_MILES",
+      "name": "Flying Blue Miles"
+    },
+    {
+      "code": "FRONTIER_MILES",
+      "name": "Frontier Miles"
+    },
+    {
+      "code": "GM_POINTS",
+      "name": "GM Rewards Points"
+    },
+    {
+      "code": "HILTON_POINTS",
+      "name": "Hilton Honors Points"
+    },
+    {
+      "code": "HYATT_POINTS",
+      "name": "World of Hyatt Points"
+    },
+    {
+      "code": "IHG_POINTS",
+      "name": "IHG One Rewards Points"
+    },
+    {
+      "code": "JETBLUE_POINTS",
+      "name": "JetBlue TrueBlue Points"
+    },
+    {
+      "code": "MARRIOTT_POINTS",
+      "name": "Marriott Bonvoy Points"
+    },
+    {
+      "code": "MILES_AND_MORE",
+      "name": "Miles & More Miles"
+    },
+    {
+      "code": "NFCU_POINTS",
+      "name": "Navy Federal Rewards Points"
+    },
+    {
+      "code": "PENFED_POINTS",
+      "name": "PenFed Rewards Points"
+    },
+    {
+      "code": "SOUTHWEST_POINTS",
+      "name": "Southwest Rapid Rewards Points"
+    },
+    {
+      "code": "UNITED_MILES",
+      "name": "United MileagePlus Miles"
+    },
+    {
+      "code": "USB_REWARDS",
+      "name": "US Bank Rewards"
+    },
+    {
+      "code": "WF_REWARDS",
+      "name": "Wells Fargo Rewards"
+    },
+    {
+      "code": "WYNDHAM_POINTS",
+      "name": "Wyndham Rewards Points"
+    }
+  ],
+  "networks": [
+    "VISA",
+    "MASTERCARD",
+    "AMEX",
+    "DISCOVER"
+  ]
+}

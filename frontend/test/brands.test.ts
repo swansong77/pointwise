@@ -14,24 +14,52 @@ describe('brand library', () => {
     }
     expect(BRANDS.length).toBeGreaterThanOrEqual(85);
   });
-  it('every icon file exists, is a plain SVG (shapes only: no scripts, links, images or styles) and nothing is left over', () => {
+  it('every icon file exists and is a plain, safe SVG (shapes, gradients and colours only: no scripts, links, images, styles or text) and nothing is left over', async () => {
+    const { ALLOWED_ELEMENTS } = await import('../scripts/svg-safe.mjs');
+    const manifest = JSON.parse(readFileSync(join(__dirname, '../src/lib/brands.generated.json'), 'utf8')) as Record<string, { source: string; hex: string | null; license: string }>;
     const withFile = BRANDS.filter((b) => b.file);
-    expect(withFile.length).toBeGreaterThanOrEqual(45);
+    expect(withFile.length).toBeGreaterThanOrEqual(75);
     for (const b of withFile) {
       const path = join(PUBLIC, b.file!);
       expect(existsSync(path)).toBe(true);
       const svg = readFileSync(path, 'utf8');
       expect(svg.startsWith('<svg')).toBe(true);
-      expect(b.hex).toMatch(/^#[0-9A-Fa-f]{6}$/);
-      expect(svg).toContain(`fill="${b.hex}"`);
-      expect([...svg.matchAll(/<([a-zA-Z]+)/g)].map((m) => m[1]).every((t) => ['svg', 'title', 'path'].includes(t))).toBe(true);
-      expect(svg).not.toMatch(/script|javascript:|on\w+=|href|<style|foreignObject|<image/i);
+      const m = manifest[b.key];
+      if (m.source === 'simple-icons') {
+        expect(b.hex).toMatch(/^#[0-9A-Fa-f]{6}$/);
+        expect(svg).toContain(`fill="${b.hex}"`);
+        expect([...svg.matchAll(/<([a-zA-Z]+)/g)].map((x) => x[1]).every((t) => ['svg', 'title', 'path'].includes(t))).toBe(true);
+      } else {
+        // logos from Wikimedia Commons or a company's own page keep their colours; the element set is the cleaner's allow-list
+        expect(m.license.length).toBeGreaterThan(10);
+        expect([...svg.matchAll(/<([a-zA-Z]+)/g)].map((x) => x[1].toLowerCase()).every((t) => ALLOWED_ELEMENTS.has(t))).toBe(true);
+      }
+      expect(svg).not.toMatch(/script|javascript:|data:|\son\w+=|xlink:href="(?!#)|href="(?!#)|<style|foreignObject|<image|<text|<use/i);
       expect(logoUrl(b)).toBe(`/brands/${b.file}`);
     }
     const onDisk = readdirSync(PUBLIC).filter((f) => f.endsWith('.svg'));
     expect(onDisk.sort()).toEqual(withFile.map((b) => b.file!).sort());
     expect(existsSync(join(PUBLIC, 'LICENSE-simple-icons.md'))).toBe(true);
+    expect(existsSync(join(PUBLIC, 'NOTICE-commons-logos.md'))).toBe(true);
     expect(logoUrl(BRANDS.find((b) => !b.file)!)).toBeNull();
+  });
+  it('every logo that does not come from Simple Icons is recorded with its source page and licence', () => {
+    const sources = JSON.parse(readFileSync(join(__dirname, '../brands/sources.json'), 'utf8')) as { assets: Array<{ key: string; page: string; licence: string; retrieved: string }>; skipped: Array<[string, string]> };
+    const manifest = JSON.parse(readFileSync(join(__dirname, '../src/lib/brands.generated.json'), 'utf8')) as Record<string, { source: string; url?: string }>;
+    for (const [key, m] of Object.entries(manifest)) {
+      if (m.source === 'simple-icons') continue;
+      const rec = sources.assets.find((a) => a.key === key);
+      expect(rec, key).toBeTruthy();
+      expect(rec!.page).toMatch(/^https:\/\/(commons\.wikimedia\.org|[a-z.]*)\//);
+      expect(rec!.licence).toMatch(/PD-|CC0|public domain/i);
+      expect(rec!.retrieved).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(m.url).toBe(rec!.page);
+    }
+    // a brand that was looked at and refused has a reason on record
+    for (const [key, why] of sources.skipped) {
+      expect(why.length).toBeGreaterThan(10);
+      expect(manifest[key]?.source === 'wikimedia-commons').toBe(false);
+    }
   });
   it('the programs, banks and bank currencies in the catalog all have a brand', () => {
     for (const code of ['AA_AADVANTAGE', 'UA_MILEAGEPLUS', 'DL_SKYMILES', 'WN_RAPIDREWARDS', 'AS_MILEAGEPLAN', 'B6_TRUEBLUE', 'AC_AEROPLAN', 'BA_AVIOS', 'VS_FLYINGCLUB', 'AF_FLYINGBLUE', 'SQ_KRISFLYER', 'QR_PRIVILEGE', 'EK_SKYWARDS', 'EY_GUEST', 'HA_HAWAIIANMILES', 'MAR_BONVOY', 'HH_HONORS', 'WOH_HYATT', 'IHG_ONE', 'WYN_REWARDS', 'CHOICE_PRIV', 'BW_REWARDS', 'ACCOR_ALL', 'AMEX_MR', 'CHASE_UR', 'C1_MILES', 'CITI_TYP', 'BILT_POINTS', 'WF_REWARDS', 'BOA_POINTS', 'USB_REWARDS', 'RAKUTEN', 'TOPCASHBACK', 'HILTON_POINTS', 'MARRIOTT_POINTS', 'HYATT_POINTS', 'UNITED_MILES', 'DELTA_MILES'])

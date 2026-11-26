@@ -66,7 +66,7 @@ function AddCard({ onDone }: { onDone: () => void }) {
             const badge = verificationBadge(c);
             return (
               <li key={c.id} className="flex items-center gap-3 py-2">
-                <CardArt name={c.name} color={c.color} issuer={c.issuer.name} network={c.network} />
+                <CardArt name={c.name} color={c.color} issuer={c.issuer.name} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{c.name}</p>
                   {badge && (
@@ -110,7 +110,7 @@ function WalletCardRow({ wc }: { wc: WalletCard }) {
   return (
     <li className="rounded-2xl border border-slate-200 bg-white p-4" data-testid="wallet-card">
       <div className="flex flex-wrap items-center gap-3">
-        <CardArt name={wc.card.name} color={wc.card.color} issuer={wc.card.issuer.name} network={wc.card.network} />
+        <CardArt name={wc.card.name} color={wc.card.color} issuer={wc.card.issuer.name} />
         <div className="min-w-0 flex-1">
           <p className="font-medium text-slate-900">
             {wc.nickname || wc.card.name} {wc.lastFour && <span className="text-xs text-slate-400">•••• {wc.lastFour}</span>}

@@ -140,7 +140,7 @@ function CardRow({ c, holder }: { c: PortfolioCard; holder: string }) {
     <tr data-testid="portfolio-row">
       <td className="px-5 py-3">
         <div className="flex items-center gap-3">
-          <CardArt name={c.card.name} color={c.card.color} issuer={c.card.issuer} network={c.card.network} />
+          <CardArt name={c.card.name} color={c.card.color} issuer={c.card.issuer} />
           <div className="min-w-0">
             <p className="truncate font-medium text-slate-900">
               {c.name} {c.lastFour && <span className="text-xs font-normal text-slate-500">•••• {c.lastFour}</span>}

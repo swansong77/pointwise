@@ -20,7 +20,7 @@ export interface Brand {
 }
 
 type Def = { key: string; name: string; kind: string; simple?: string; aliases?: string[]; codes?: string[] };
-const files = manifest as Record<string, { file: string; hex: string }>;
+const files = manifest as unknown as Record<string, { file: string; hex: string | null }>;
 
 export const BRANDS: Brand[] = (defs as Def[]).map((d) => ({
   key: d.key,
@@ -68,7 +68,9 @@ export interface BrandQuery {
 export function resolveBrand(input: string | BrandQuery | null | undefined, kinds?: BrandKind[]): Brand | null {
   if (!input) return null;
   const candidates = typeof input === 'string' ? [input] : [input.code, input.slug, input.issuer, input.network, input.name].filter((x): x is string => !!x);
-  const ok = (b: Brand) => !kinds || kinds.includes(b.kind);
+  // a bank filter also takes the bank-owned rewards brands (Bilt is a card issuer and a rewards currency)
+  const wanted = kinds && kinds.includes('ISSUER') && !kinds.includes('BANK_REWARDS') ? [...kinds, 'BANK_REWARDS' as BrandKind] : kinds;
+  const ok = (b: Brand) => !wanted || wanted.includes(b.kind);
   for (const c of candidates) {
     const hit = INDEX.get(normalize(c));
     if (hit && ok(hit)) return hit;

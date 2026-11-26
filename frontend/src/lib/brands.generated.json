@@ -414,5 +414,260 @@
     "source": "simple-icons",
     "license": "CC0-1.0",
     "version": "16.38.1"
+  },
+  "barclays": {
+    "file": "barclays.svg",
+    "hex": "#00AEEF",
+    "title": "Barclays",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "robinhood": {
+    "file": "robinhood.svg",
+    "hex": "#CCFF00",
+    "title": "Robinhood",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "iberia": {
+    "file": "iberia.svg",
+    "hex": "#D7192D",
+    "title": "Iberia",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "avianca": {
+    "file": "avianca.svg",
+    "hex": "#FF0000",
+    "title": "avianca",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "norwegian": {
+    "file": "norwegian.svg",
+    "hex": "#D81939",
+    "title": "Norwegian",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "air-india": {
+    "file": "air-india.svg",
+    "hex": "#DA0E29",
+    "title": "Air India",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "capital-one": {
+    "file": "capital-one.svg",
+    "hex": null,
+    "title": "Capital One",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Capital_One_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "us-bank": {
+    "file": "us-bank.svg",
+    "hex": null,
+    "title": "U.S. Bank",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:US_Bank_logo_2023_color.svg",
+    "retrieved": "2026-11-26"
+  },
+  "pnc": {
+    "file": "pnc.svg",
+    "hex": null,
+    "title": "PNC",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:PNClogo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "synchrony": {
+    "file": "synchrony.svg",
+    "hex": null,
+    "title": "Synchrony",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Synchrony_Financial_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "navy-federal": {
+    "file": "navy-federal.svg",
+    "hex": null,
+    "title": "Navy Federal Credit Union",
+    "source": "wikimedia-commons",
+    "license": "CC0 1.0: \"This file is made available under the Creative Commons CC0 1.0 Universal Public Domain Dedication.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Navy_Federal_Credit_Union_Logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "fnbo": {
+    "file": "fnbo.svg",
+    "hex": null,
+    "title": "First National Bank of Omaha",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:First_National_Bank_of_Omaha_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "bmo": {
+    "file": "bmo.svg",
+    "hex": null,
+    "title": "BMO",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked. The Bank of Montreal logo (parent of BMO Bank).",
+    "url": "https://commons.wikimedia.org/wiki/File:BMO_Logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "alaska": {
+    "file": "alaska.svg",
+    "hex": null,
+    "title": "Alaska Airlines",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Alaska_Airlines_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "hawaiian": {
+    "file": "hawaiian.svg",
+    "hex": null,
+    "title": "Hawaiian Airlines",
+    "source": "wikimedia-commons",
+    "license": "PD-shape: \"This image of simple geometry is ineligible for copyright.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Hawaiian_Airlines_2017_wordmark.svg",
+    "retrieved": "2026-11-26"
+  },
+  "frontier": {
+    "file": "frontier.svg",
+    "hex": null,
+    "title": "Frontier Airlines",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Frontier_Airlines_Logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "spirit": {
+    "file": "spirit.svg",
+    "hex": null,
+    "title": "Spirit Airlines",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Spirit_Airlines_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "wyndham": {
+    "file": "wyndham.svg",
+    "hex": null,
+    "title": "Wyndham Rewards",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Wyndham_Hotels_%26_Resorts_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "best-western": {
+    "file": "best-western.svg",
+    "hex": null,
+    "title": "Best Western Rewards",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked. The file page adds: \"It is still a registered trademark, so full trademark restrictions apply.\"",
+    "url": "https://commons.wikimedia.org/wiki/File:Best_Western_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "hertz": {
+    "file": "hertz.svg",
+    "hex": null,
+    "title": "Hertz",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Hertz-Logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "avis": {
+    "file": "avis.svg",
+    "hex": null,
+    "title": "Avis",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Avis_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "enterprise": {
+    "file": "enterprise.svg",
+    "hex": null,
+    "title": "Enterprise",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Enterprise_Rent-A-Car_Logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "walmart": {
+    "file": "walmart.svg",
+    "hex": null,
+    "title": "Walmart",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Walmart_logo_(2025).svg",
+    "retrieved": "2026-11-26"
+  },
+  "best-buy": {
+    "file": "best-buy.svg",
+    "hex": null,
+    "title": "Best Buy",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Best_Buy_logo_2018.svg",
+    "retrieved": "2026-11-26"
+  },
+  "chevron": {
+    "file": "chevron.svg",
+    "hex": null,
+    "title": "Chevron",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Chevron_Logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "sephora": {
+    "file": "sephora.svg",
+    "hex": null,
+    "title": "Sephora",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Sephora_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "unionpay": {
+    "file": "unionpay.svg",
+    "hex": null,
+    "title": "UnionPay",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo, PD-shape: \"does not meet the threshold of originality\". Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:UnionPay_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "jcb": {
+    "file": "jcb.svg",
+    "hex": null,
+    "title": "JCB",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"does not meet the threshold of originality\". Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:JCB_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "diners-club": {
+    "file": "diners-club.svg",
+    "hex": null,
+    "title": "Diners Club",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"does not meet the threshold of originality\". Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Diners_Club_Logo3.svg",
+    "retrieved": "2026-11-26"
   }
 }

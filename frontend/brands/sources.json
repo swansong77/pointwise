@@ -1,0 +1,383 @@
+{
+ "note": "Every logo vendored from outside the Simple Icons set. Logos stay the trademarks of their owners; the licences below concern the artwork only.",
+ "assets": [
+  {
+   "key": "capital-one",
+   "asset": "assets/capital-one.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Capital_One_logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "us-bank",
+   "asset": "assets/us-bank.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:US_Bank_logo_2023_color.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "pnc",
+   "asset": "assets/pnc.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:PNClogo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "synchrony",
+   "asset": "assets/synchrony.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Synchrony_Financial_logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "navy-federal",
+   "asset": "assets/navy-federal.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Navy_Federal_Credit_Union_Logo.svg",
+   "licence": "CC0 1.0: \"This file is made available under the Creative Commons CC0 1.0 Universal Public Domain Dedication.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "fnbo",
+   "asset": "assets/fnbo.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:First_National_Bank_of_Omaha_logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "bmo",
+   "asset": "assets/bmo.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:BMO_Logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked. The Bank of Montreal logo (parent of BMO Bank).",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "alaska",
+   "asset": "assets/alaska.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Alaska_Airlines_logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "hawaiian",
+   "asset": "assets/hawaiian.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Hawaiian_Airlines_2017_wordmark.svg",
+   "licence": "PD-shape: \"This image of simple geometry is ineligible for copyright.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "frontier",
+   "asset": "assets/frontier.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Frontier_Airlines_Logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "spirit",
+   "asset": "assets/spirit.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Spirit_Airlines_logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "wyndham",
+   "asset": "assets/wyndham.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Wyndham_Hotels_%26_Resorts_logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "best-western",
+   "asset": "assets/best-western.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Best_Western_logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked. The file page adds: \"It is still a registered trademark, so full trademark restrictions apply.\"",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "choice",
+   "asset": "assets/choice.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Choice_Hotels_logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "accor",
+   "asset": "assets/accor.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:AccorHotels_Logo_2016.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "radisson",
+   "asset": "assets/radisson.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Radisson_Hotels_logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "hertz",
+   "asset": "assets/hertz.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Hertz-Logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "avis",
+   "asset": "assets/avis.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Avis_logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "enterprise",
+   "asset": "assets/enterprise.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Enterprise_Rent-A-Car_Logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "walmart",
+   "asset": "assets/walmart.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Walmart_logo_(2025).svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "best-buy",
+   "asset": "assets/best-buy.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Best_Buy_logo_2018.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "walgreens",
+   "asset": "assets/walgreens.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Walgreens_2020_primary_logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "chevron",
+   "asset": "assets/chevron.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Chevron_Logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "sephora",
+   "asset": "assets/sephora.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Sephora_logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "grubhub",
+   "asset": "assets/grubhub.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Grubhub_2025_logo.svg",
+   "licence": "PD-shape: \"ineligible for copyright\". Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "five-guys",
+   "asset": "assets/five-guys.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Five_Guys_logo.svg",
+   "licence": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "tsa-precheck",
+   "asset": "assets/tsa-precheck.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:TSA_PreCheck_Logo_2020.svg",
+   "licence": "PD-USGov-DHS-TSA: \"work prepared by an officer or employee of the United States Federal Government as part of that person's official duties\".",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "priority-pass",
+   "asset": "assets/priority-pass.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Priority_Pass_logo.svg",
+   "licence": "PD-textlogo: \"It does not meet the threshold of originality needed for copyright protection, and is therefore in the public domain.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "bilt",
+   "asset": "assets/bilt.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Bilt_Rewards_logo.svg",
+   "licence": "PD-textlogo: \"It does not meet the threshold of originality needed for copyright protection, and is therefore in the public domain.\" Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "unionpay",
+   "asset": "assets/unionpay.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:UnionPay_logo.svg",
+   "licence": "PD-textlogo, PD-shape: \"does not meet the threshold of originality\". Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "jcb",
+   "asset": "assets/jcb.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:JCB_logo.svg",
+   "licence": "PD-textlogo: \"does not meet the threshold of originality\". Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "diners-club",
+   "asset": "assets/diners-club.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Diners_Club_Logo3.svg",
+   "licence": "PD-textlogo: \"does not meet the threshold of originality\". Also tagged Trademarked.",
+   "retrieved": "2026-11-26"
+  }
+ ],
+ "skipped": [
+  [
+   "costco",
+   "The Commons file is tagged public domain but its original upload says \"may not be used without written permission from Costco Wholesale Corporation\"."
+  ],
+  [
+   "home-depot",
+   "The only file found is a non-free (fair use) upload."
+  ],
+  [
+   "clear",
+   "The only file found is CC BY-SA 4.0 (attribution and share-alike required)."
+  ],
+  [
+   "dragonpass",
+   "The only file found is CC BY-SA 4.0."
+  ],
+  [
+   "citi",
+   "Files found are marked fair use or their licence was not confirmed."
+  ],
+  [
+   "goldman-sachs",
+   "Files found are CC BY-SA 4.0 or non-free."
+  ],
+  [
+   "amazon",
+   "The free file is the logo retired in November 2024."
+  ],
+  [
+   "kroger",
+   "The free file is the logo retired in 2019."
+  ],
+  [
+   "cvs",
+   "The free file is an older wordmark, not the current logo."
+  ],
+  [
+   "t-mobile",
+   "The file page says its source site may not be free."
+  ],
+  [
+   "hyatt",
+   "The licence is tagged public domain but the stated source is not a Hyatt page."
+  ],
+  [
+   "td-bank",
+   "The upload history shows a non-free rationale that conflicts with the current licence."
+  ],
+  [
+   "truist",
+   "The upload history shows a non-free rationale that conflicts with the current licence."
+  ],
+  [
+   "alliant",
+   "The upload history says \"non-free logo\", conflicting with the current licence."
+  ],
+  [
+   "nordstrom",
+   "The stated source is a third-party logo site."
+  ],
+  [
+   "ihg",
+   "The file uses an SVG mask, which the safe cleaner does not allow."
+  ],
+  [
+   "discover",
+   "The Commons file embeds a raster image; the Simple Icons mark is used instead."
+  ],
+  [
+   "global-entry",
+   "Only the reversed-colour (negative) variant was found."
+  ],
+  [
+   "lowes",
+   "Not confirmed to be the current logo."
+  ],
+  [
+   "safeway",
+   "Not confirmed to be the current logo."
+  ],
+  [
+   "exxonmobil",
+   "Not confirmed to be the current logo."
+  ],
+  [
+   "topcashback",
+   "No file on Commons."
+  ],
+  [
+   "regions",
+   "No file on Commons."
+  ],
+  [
+   "keybank",
+   "No file on Commons."
+  ],
+  [
+   "bread-financial",
+   "No file on Commons."
+  ],
+  [
+   "elan",
+   "No file on Commons."
+  ],
+  [
+   "penfed",
+   "No file on Commons."
+  ],
+  [
+   "fifth-third",
+   "Licence not confirmed."
+  ],
+  [
+   "huntington",
+   "Licence not confirmed."
+  ],
+  [
+   "citizens",
+   "Licence not confirmed."
+  ]
+ ]
+}

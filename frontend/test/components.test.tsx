@@ -95,10 +95,10 @@ describe('card bits', () => {
     expect(screen.getByText('5¢/$')).toBeInTheDocument();
     expect(screen.getByText(/pinned/)).toBeInTheDocument();
     expect(screen.getByText('4x × 1.25¢')).toBeInTheDocument();
-    // the issuer's and network's logos are on the card face
+    // one mark on the card face: the bank's, never the payment network's
     const art = screen.getByTestId('card-art');
-    expect(art).toHaveAttribute('aria-label', 'Gold card, Chase, VISA');
-    expect([...art.querySelectorAll('[data-testid=brand-logo]')].map((n) => n.getAttribute('data-brand'))).toEqual(['chase', 'visa']);
+    expect(art).toHaveAttribute('aria-label', 'Gold card, Chase');
+    expect([...art.querySelectorAll('[data-testid=brand-logo]')].map((n) => n.getAttribute('data-brand'))).toEqual(['chase']);
   });
   it('CardSwatch sizes', () => {
     const { container } = render(<CardSwatch color="#000" size="sm" />);

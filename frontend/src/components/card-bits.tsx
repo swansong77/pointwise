@@ -50,27 +50,24 @@ export function CardSwatch({ color, size = 'md', issuer }: { color: string; size
 }
 
 /**
- * A card's face: its colour, the issuer's logo, the network's logo and its name. Logos are the issuer's and
- * network's own marks, shown only to identify the card; the colour comes from the catalog, not a copy of any card art.
+ * A card's face: its colour, the issuing bank's logo and its name. One mark only (the bank's, not the payment network's);
+ * the logo is the issuer's own mark, shown only to identify the card, and the colour comes from the catalog, not a copy of any card art.
  */
-export function CardArt({ name, color, issuer, network, size = 'md' }: { name: string; color: string; issuer?: string | null; network?: string | null; size?: 'sm' | 'md' | 'lg' }) {
+export function CardArt({ name, color, issuer, size = 'md' }: { name: string; color: string; issuer?: string | null; size?: 'sm' | 'md' | 'lg' }) {
   const dims = size === 'lg' ? 'h-24 w-40' : size === 'sm' ? 'h-7 w-11' : 'h-11 w-[4.5rem]';
   const logo = size === 'lg' ? 'md' : 'xs';
   return (
     <span
       data-testid="card-art"
       role="img"
-      aria-label={`${name} card${issuer ? `, ${issuer}` : ''}${network ? `, ${network}` : ''}`}
+      aria-label={`${name} card${issuer ? `, ${issuer}` : ''}`}
       className={`relative inline-block shrink-0 overflow-hidden rounded-lg shadow-sm ${dims}`}
       style={{ background: `linear-gradient(135deg, ${color}, ${color}b3)` }}
     >
       {size === 'sm' ? (
         issuer && <BrandLogo brand={{ name: issuer }} kinds={['ISSUER']} size="xs" decorative className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
       ) : (
-        <>
-          {issuer && <BrandLogo brand={{ name: issuer }} kinds={['ISSUER']} size={logo} decorative className="absolute left-1 top-1" />}
-          {network && <BrandLogo brand={{ network }} kinds={['NETWORK', 'ISSUER']} size={logo} decorative className="absolute bottom-1 right-1" />}
-        </>
+        issuer && <BrandLogo brand={{ name: issuer }} kinds={['ISSUER']} size={logo} decorative className="absolute left-1 top-1" />
       )}
     </span>
   );
@@ -80,16 +77,15 @@ export interface WalletCardInfo {
   name: string;
   color: string;
   issuer: string;
-  network: string;
 }
 
-/** The household's cards by wallet-card id and by catalog-card id, so any list of cards can show issuer and network logos. */
+/** The household's cards by wallet-card id and by catalog-card id, so any list of cards can show the issuer's logo. */
 export function useWalletCardInfo(): Map<string, WalletCardInfo> {
   const w = useWallet();
   return useMemo(() => {
     const m = new Map<string, WalletCardInfo>();
     for (const wc of w.data ?? []) {
-      const info = { name: wc.card.name, color: wc.card.color, issuer: wc.card.issuer.name, network: wc.card.network };
+      const info = { name: wc.card.name, color: wc.card.color, issuer: wc.card.issuer.name };
       m.set(wc.id, info);
       if (!m.has(`card:${wc.card.id}`)) m.set(`card:${wc.card.id}`, info);
     }
@@ -97,11 +93,11 @@ export function useWalletCardInfo(): Map<string, WalletCardInfo> {
   }, [w.data]);
 }
 
-/** A card face for a card the household holds: the issuer and network come from the wallet by id. */
+/** A card face for a card the household holds: the issuer comes from the wallet by id. */
 export function WalletCardArt({ walletCardId, cardId, name, color, size = 'md' }: { walletCardId?: string | null; cardId?: string | null; name?: string; color?: string; size?: 'sm' | 'md' | 'lg' }) {
   const map = useWalletCardInfo();
   const info = (walletCardId ? map.get(walletCardId) : undefined) ?? (cardId ? map.get(`card:${cardId}`) : undefined);
-  return <CardArt name={name ?? info?.name ?? 'Card'} color={color ?? info?.color ?? '#64748b'} issuer={info?.issuer} network={info?.network} size={size} />;
+  return <CardArt name={name ?? info?.name ?? 'Card'} color={color ?? info?.color ?? '#64748b'} issuer={info?.issuer} size={size} />;
 }
 
 export function RankedCardRow({ r, rank, action }: { r: RankedCard; rank: number; action?: ReactNode }) {
