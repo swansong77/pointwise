@@ -17,13 +17,19 @@ test.describe('Brand logos', () => {
     await expect(page.getByTestId('brand-summary')).toContainText('with an icon');
     for (const k of ['ISSUER', 'NETWORK', 'AIRLINE', 'HOTEL', 'BANK_REWARDS', 'SHOPPING', 'MERCHANT', 'MEMBERSHIP', 'SERVICE']) await expect(page.getByTestId(`brand-group-${k}`)).toBeVisible();
     const chase = page.locator('[data-testid=brand-tile][data-brand=chase]');
-    await expect(chase).toContainText('Icon · Simple Icons (CC0)');
+    await expect(chase).toContainText('Logo · open collection');
     const img = chase.locator('img');
     await expect(img).toHaveAttribute('src', '/brands/chase.svg');
     await expect.poll(() => img.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0)).toBe(true);
-    const hyatt = page.locator('[data-testid=brand-tile][data-brand=hyatt]');
-    await expect(hyatt).toContainText('Monogram · no icon available');
-    await expect(hyatt.locator('[data-monogram=true]')).toHaveText('WH');
+    // a brand with no free logo still gets a monogram badge, never an imitation of its mark
+    const topcashback = page.locator('[data-testid=brand-tile][data-brand=topcashback]');
+    await expect(topcashback).toContainText('Monogram · no icon available');
+    await expect(topcashback.locator('[data-monogram=true]')).toBeVisible();
+    // a logo whose licence needs a credit says so, and the credit is listed
+    const clear = page.locator('[data-testid=brand-tile][data-brand=clear]');
+    await expect(clear).toContainText('Logo · credited below');
+    await expect(page.getByTestId('brand-credits')).toContainText('CLEAR logo by');
+    await expect(page.getByTestId('brand-credits')).toContainText('CC BY-SA');
     await noSeriousA11y(page);
   });
 

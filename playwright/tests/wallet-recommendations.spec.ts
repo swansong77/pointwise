@@ -78,7 +78,7 @@ test.describe('Rewards / recommendations', () => {
     await page.getByRole('button', { name: 'Always use Fabrikam Double Cash for Dining' }).click();
     await expect(page.getByTestId('ranked-card').first()).toContainText('pinned');
     await expect(page.getByTestId('ranked-card').first()).toContainText('Fabrikam Double Cash');
-    await page.getByRole('button', { name: /Unpin/ }).click();
+    await page.getByRole('button', { name: 'Unpin Fabrikam Double Cash', exact: true }).click(); // the header button; each row also has its own Unpin
     await expect(page.getByTestId('ranked-card').first()).toContainText('Contoso Gold');
   });
 
