@@ -374,5 +374,45 @@
     "source": "simple-icons",
     "license": "CC0-1.0",
     "version": "16.38.1"
+  },
+  "gmail": {
+    "file": "gmail.svg",
+    "hex": "#EA4335",
+    "title": "Gmail",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "anthropic": {
+    "file": "anthropic.svg",
+    "hex": "#191919",
+    "title": "Anthropic",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "gemini": {
+    "file": "gemini.svg",
+    "hex": "#8E75B2",
+    "title": "Google Gemini",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "ollama": {
+    "file": "ollama.svg",
+    "hex": "#000000",
+    "title": "Ollama",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "openrouter": {
+    "file": "openrouter.svg",
+    "hex": "#94A3B8",
+    "title": "OpenRouter",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
   }
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { WalletCardArt } from '@/components/card-bits';
 import { useState } from 'react';
 import Link from 'next/link';
 import { Badge, EmptyState, ErrorText, PageHeader, Panel, ProgressBar, Spinner, Button, Select } from '@/components/ui';
@@ -86,6 +87,7 @@ export default function BenefitAuditPage() {
           {audit.data?.items.map((i) => (
             <li key={i.benefitId} className="py-3" data-testid="audit-item">
               <div className="flex flex-wrap items-center gap-2 text-sm">
+                <WalletCardArt walletCardId={i.cardAccountId} name={i.card} size="sm" />
                 <span className="font-medium">{i.benefitName}</span>
                 <span className="text-slate-600">{accountLabel(i)}</span>
                 <Badge tone="slate">{i.frequency}</Badge>

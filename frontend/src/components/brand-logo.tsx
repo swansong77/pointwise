@@ -15,6 +15,8 @@ interface Props {
   size?: LogoSize;
   /** the name is written next to the logo, so the image itself adds nothing for a screen reader */
   decorative?: boolean;
+  /** render nothing when no brand is recognised (lists of free-text merchant names) */
+  hideUnknown?: boolean;
   className?: string;
 }
 
@@ -24,8 +26,9 @@ const isBrand = (b: unknown): b is Brand => typeof b === 'object' && b !== null 
  * A brand logo: the vendored icon on a white tile, or a monogram badge when there is no icon. Never loads anything
  * from a third party.
  */
-export function BrandLogo({ brand, name, kinds, size = 'md', decorative = false, className }: Props) {
+export function BrandLogo({ brand, name, kinds, size = 'md', decorative = false, hideUnknown = false, className }: Props) {
   const found = isBrand(brand) ? brand : resolveBrand(brand ?? name, kinds);
+  if (!found && hideUnknown) return null;
   const label = found?.name ?? name ?? (typeof brand === 'string' ? brand : (brand as BrandQuery | null | undefined)?.name) ?? '';
   const px = SIZE[size];
   const a11y = decorative ? { 'aria-hidden': true as const } : { role: 'img' as const, 'aria-label': `${label} logo` };

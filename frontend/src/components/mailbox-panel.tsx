@@ -1,5 +1,6 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand-logo';
 import { useEffect, useState } from 'react';
 import { Badge, Button, ErrorText, Field, Input, Panel, Select } from '@/components/ui';
 import { shortDate } from '@/lib/format';
@@ -43,10 +44,10 @@ export function MailboxPanel() {
       )}
       <div className="mb-4 flex flex-wrap items-center gap-2" data-testid="mailbox-oauth">
         <Button variant="secondary" onClick={() => signIn('google')} disabled={!providers.data?.gmail} data-testid="connect-gmail">
-          Connect Gmail
+          <BrandLogo brand={{ code: 'GMAIL' }} name="Gmail" size="sm" decorative /> Connect Gmail
         </Button>
         <Button variant="secondary" onClick={() => signIn('microsoft')} disabled={!providers.data?.outlook} data-testid="connect-outlook">
-          Connect Outlook
+          <BrandLogo brand={{ code: 'GRAPH' }} name="Outlook" size="sm" decorative /> Connect Outlook
         </Button>
         {providers.data && !(providers.data.gmail && providers.data.outlook) && (
           <span className="text-xs text-slate-600">
@@ -58,6 +59,7 @@ export function MailboxPanel() {
       <ul className="mb-4 divide-y divide-slate-100 rounded-lg border border-slate-200 text-sm" data-testid="mailbox-list">
         {(list.data ?? []).map((m) => (
           <li key={m.id} className="flex flex-wrap items-center gap-2 px-3 py-2" data-testid="mailbox">
+            <BrandLogo brand={{ code: m.kind }} size="sm" decorative />
             <span className="font-medium">{m.label}</span>
             <span className="text-slate-600">{m.username}</span>
             <Badge tone="slate">{KIND_LABEL[m.kind]}</Badge>

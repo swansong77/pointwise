@@ -1,5 +1,6 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand-logo';
 import { useState } from 'react';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, PageHeader, Panel, Select, Spinner } from '@/components/ui';
 import { money, shortDate } from '@/lib/format';
@@ -93,7 +94,8 @@ function Balances() {
             {advice.data.balances.map((a) => (
               <li key={`${a.profileId}-${a.currency}`} className="rounded-lg border border-slate-200 p-3 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-medium">
+                  <span className="flex items-center gap-2 font-medium">
+                    <BrandLogo brand={{ code: a.currency, name: a.currencyName }} size="md" decorative />
                     {a.member} · {points(a.points)} {a.currencyName}
                   </span>
                   {a.best?.bonusPercent ? <Badge tone="green">{a.best.bonusPercent} % transfer bonus</Badge> : null}
@@ -246,8 +248,9 @@ function PartnerTable() {
             {partners.data?.currencies.flatMap((c) =>
               c.options.map((o) => (
                 <tr key={`${c.code}-${o.program}`}>
-                  <td className="py-2">{c.name}</td>
+                  <td className="py-2"><span className="inline-flex items-center gap-2"><BrandLogo brand={{ code: c.code, name: c.name }} size="sm" decorative />{c.name}</span></td>
                   <td className="py-2">
+                    <BrandLogo brand={{ code: o.program, name: o.programName }} size="sm" decorative className="mr-2 align-middle" />
                     {o.programName}
                     {o.bonusPercent > 0 && (
                       <span className="ml-1">

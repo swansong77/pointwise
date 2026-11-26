@@ -1,5 +1,7 @@
 'use client';
 
+import { WalletCardArt } from '@/components/card-bits';
+import { BrandLogo } from '@/components/brand-logo';
 import { useState } from 'react';
 import { Five24Gauge, Five24TimelineChart } from '@/components/charts';
 import { Badge, Button, ErrorText, Field, Input, PageHeader, Panel, Select, Spinner } from '@/components/ui';
@@ -87,7 +89,7 @@ function MemberPanel({ m }: { m: Five24Response['members'][number] }) {
               <tbody className="divide-y divide-slate-100">
                 {s.contributing.map((c) => (
                   <tr key={c.cardId}>
-                    <td className="py-2 pr-2 font-medium">{c.name}</td>
+                    <td className="py-2 pr-2 font-medium"><span className="inline-flex items-center gap-2"><WalletCardArt cardId={c.cardId} name={c.name} size="sm" />{c.name}</span></td>
                     <td className="py-2 pr-2 text-xs text-slate-500">{FIVE24_REASON[c.reason] ?? c.reason}</td>
                     <td className="py-2 pr-2 text-slate-600">{monthYear(c.openedAt)}</td>
                     <td className="py-2 text-right text-slate-600">{shortDate(c.dropsOffAt)}</td>
@@ -102,7 +104,7 @@ function MemberPanel({ m }: { m: Five24Response['members'][number] }) {
               <ul className="mt-2 space-y-1">
                 {[...s.unknown, ...s.excluded].map((c) => (
                   <li key={c.cardId} className="flex justify-between gap-3">
-                    <span>{c.name}</span>
+                    <span className="inline-flex items-center gap-2"><WalletCardArt cardId={c.cardId} name={c.name} size="sm" />{c.name}</span>
                     <span className="text-xs text-slate-500">
                       {FIVE24_REASON[c.reason] ?? c.reason}
                       {c.note ? ` — ${c.note}` : ''}
@@ -181,7 +183,7 @@ function CreditReportPanel() {
           {accounts.data.map((a) => (
             <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
               <span>
-                <span className="font-medium">{a.creditorName}</span> {a.lastDigits && <span className="text-slate-500">•••• {a.lastDigits}</span>} · opened {monthYear(a.openedOn)}
+                <BrandLogo brand={{ name: a.creditorName }} kinds={['ISSUER']} size="sm" decorative hideUnknown /> <span className="font-medium">{a.creditorName}</span> {a.lastDigits && <span className="text-slate-500">•••• {a.lastDigits}</span>} · opened {monthYear(a.openedOn)}
                 {a.isAuthorizedUser && ' · AU'}
               </span>
               <span className="flex items-center gap-2">

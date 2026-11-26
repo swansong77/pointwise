@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { StatTiles, Tabs } from '@/components/charts';
-import { CardSwatch } from '@/components/card-bits';
+import { WalletCardArt } from '@/components/card-bits';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, PageHeader, Panel, ProgressBar, Select, Spinner } from '@/components/ui';
 import { money, shortDate } from '@/lib/format';
 import { parseAmount, periodLabel, STATUS_LABEL, statusTone } from '@/lib/portfolio';
@@ -78,7 +78,7 @@ function BenefitRow({ b, showMissed }: { b: BenefitView; showMissed: boolean }) 
   return (
     <li className="py-4" data-testid="benefit-row">
       <div className="flex flex-wrap items-start gap-3">
-        <CardSwatch color={b.walletCard.color} size="sm" />
+        <WalletCardArt walletCardId={b.walletCard.id} name={b.walletCard.name} color={b.walletCard.color} size="md" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium text-slate-900">{b.name}</p>

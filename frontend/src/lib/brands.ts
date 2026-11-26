@@ -6,7 +6,7 @@ import manifest from './brands.generated.json';
  * brand without an icon gets a generated monogram badge. Logos stay the trademarks of their owners and are shown
  * only to identify the card, bank, program or merchant (docs/brand-assets.md).
  */
-export type BrandKind = 'ISSUER' | 'NETWORK' | 'AIRLINE' | 'HOTEL' | 'BANK_REWARDS' | 'SHOPPING' | 'MERCHANT' | 'MEMBERSHIP';
+export type BrandKind = 'ISSUER' | 'NETWORK' | 'AIRLINE' | 'HOTEL' | 'BANK_REWARDS' | 'SHOPPING' | 'MERCHANT' | 'MEMBERSHIP' | 'SERVICE';
 
 export interface Brand {
   key: string;
@@ -41,8 +41,9 @@ export const KIND_LABEL: Record<BrandKind, string> = {
   SHOPPING: 'Shopping portals',
   MERCHANT: 'Merchants',
   MEMBERSHIP: 'Memberships and clubs',
+  SERVICE: 'Mail, bank-link and AI services',
 };
-export const KIND_ORDER: BrandKind[] = ['ISSUER', 'NETWORK', 'AIRLINE', 'HOTEL', 'BANK_REWARDS', 'SHOPPING', 'MERCHANT', 'MEMBERSHIP'];
+export const KIND_ORDER: BrandKind[] = ['ISSUER', 'NETWORK', 'AIRLINE', 'HOTEL', 'BANK_REWARDS', 'SHOPPING', 'MERCHANT', 'MEMBERSHIP', 'SERVICE'];
 
 /** lower case, letters and digits only ("U.S. Bank" → "usbank"; "Walmart+" keeps its plus). */
 export const normalize = (s: string): string => s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9+]/g, '');

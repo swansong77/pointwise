@@ -1,9 +1,10 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand-logo';
 import { useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { StatTiles } from '@/components/charts';
-import { CardSwatch } from '@/components/card-bits';
+import { WalletCardArt } from '@/components/card-bits';
 import { Badge, Button, EmptyState, ErrorText, Field, PageHeader, Panel, Select, Spinner } from '@/components/ui';
 import { useApi } from '@/lib/api';
 import { money, shortDate } from '@/lib/format';
@@ -95,7 +96,7 @@ function AutoCapture() {
       <ul className="divide-y divide-slate-100 text-sm" aria-label="Cards and how they are imported">
         {s.cards.map((c) => (
           <li key={c.walletCardId} className="flex flex-wrap items-center gap-3 py-2" data-testid="capture-card">
-            <CardSwatch color={c.color} size="sm" />
+            <WalletCardArt walletCardId={c.walletCardId} name={c.name} color={c.color} />
             <span className="min-w-0 flex-1">
               <span className="font-medium">{c.name}</span>
               {c.lastFour && <span className="text-slate-500"> ··{c.lastFour}</span>}
@@ -180,6 +181,7 @@ function AutoCapture() {
           <ul className="divide-y divide-slate-100 text-sm">
             {s.needsCard.map((i) => (
               <li key={i.id} className="flex flex-wrap items-center gap-2 py-2">
+                {i.merchant && <BrandLogo brand={{ name: i.merchant }} size="sm" decorative hideUnknown />}
                 <span className="min-w-0 flex-1">
                   {i.merchant ?? 'Statement'} {i.amountCents != null && `· ${i.credit ? '−' : ''}${money(i.amountCents)}`}
                   {i.occurredAt && ` · ${shortDate(i.occurredAt)}`}
@@ -609,7 +611,8 @@ function Transactions() {
         <ul className="divide-y divide-slate-100">
           {q.data.map((t) => (
             <li key={t.id} className="flex flex-wrap items-center gap-3 py-2.5 text-sm" data-testid="transaction">
-              <CardSwatch color={t.walletCard.color} size="sm" />
+              <WalletCardArt walletCardId={t.walletCard.id} name={t.walletCard.name} color={t.walletCard.color} size="sm" />
+              {t.merchant && <BrandLogo brand={{ name: t.merchant }} size="md" decorative hideUnknown />}
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-slate-900">{t.description || t.merchant || KIND_LABEL[t.kind]}</p>
                 <p className="text-xs text-slate-500">

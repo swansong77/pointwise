@@ -1,9 +1,10 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand-logo';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Badge, Button, EmptyState, ErrorText, Panel, PageHeader, Select, Spinner } from '@/components/ui';
-import { CardSwatch, categoryEmoji } from '@/components/card-bits';
+import { WalletCardArt } from '@/components/card-bits';
 import { useNearby } from '@/lib/queries';
 import { centsPerDollar, distance, money } from '@/lib/format';
 
@@ -68,9 +69,7 @@ export default function NearbyPage() {
         {nearby.data?.map((n) => (
           <li key={n.locationId} className="rounded-2xl border border-slate-200 bg-white p-4" data-testid="nearby-item">
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-2xl" aria-hidden>
-                {categoryEmoji(n.merchant.icon)}
-              </span>
+              <BrandLogo brand={{ slug: n.merchant.slug, name: n.merchant.name ?? n.name }} name={n.name} size="lg" />
               <div className="min-w-0 flex-1">
                 <Link href={`/merchants/${n.merchant.slug}`} className="font-medium text-slate-900 hover:underline">
                   {n.name}
@@ -81,7 +80,7 @@ export default function NearbyPage() {
               </div>
               {n.bestCard ? (
                 <div className="flex items-center gap-2 text-right">
-                  <CardSwatch color={n.bestCard.color} />
+                  <WalletCardArt walletCardId={n.bestCard.walletCardId} cardId={n.bestCard.cardId} name={n.bestCard.name} color={n.bestCard.color} />
                   <div>
                     <p className="text-sm font-semibold">{n.bestCard.name}</p>
                     <p className="text-xs text-slate-500">{centsPerDollar(n.bestCard.centsPerDollar)}</p>

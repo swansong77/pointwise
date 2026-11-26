@@ -1,5 +1,6 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand-logo';
 import { useEffect, useState } from 'react';
 import { Badge, Button, EmptyState, ErrorText, PageHeader, Panel, Select, Spinner } from '@/components/ui';
 import { dollarsToCents, money } from '@/lib/format';
@@ -129,12 +130,15 @@ function ScoreCard({ c, rank }: { c: CardScore; rank: number | null }) {
   return (
     <li className={`rounded-xl border p-4 ${c.eligible ? 'border-slate-200' : 'border-dashed border-slate-300 bg-slate-50'}`} data-testid="nc-card">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <p className="font-semibold text-slate-900">
-            {rank != null && <span className="mr-1 text-slate-500">{rank}.</span>}
-            {c.name}
-          </p>
-          <p className="text-xs text-slate-500">{c.issuer}</p>
+        <div className="flex items-center gap-3">
+          <BrandLogo brand={{ name: c.issuer }} kinds={['ISSUER']} size="lg" />
+          <div>
+            <p className="font-semibold text-slate-900">
+              {rank != null && <span className="mr-1 text-slate-500">{rank}.</span>}
+              {c.name}
+            </p>
+            <p className="text-xs text-slate-500">{c.issuer}</p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {c.eligible ? <Badge tone={conf.tone}>{conf.label}</Badge> : <Badge tone="red">Not eligible</Badge>}
@@ -323,6 +327,7 @@ function SmartCardView({ c, headline }: { c: SmartCard; headline?: boolean }) {
   return (
     <div className={headline ? 'rounded-xl border border-brand-200 bg-brand-50/40 p-4' : 'rounded-lg border border-slate-200 p-3'} data-testid={headline ? 'smart-recommended' : 'smart-alt'}>
       <div className="flex flex-wrap items-center gap-2">
+        <BrandLogo brand={{ name: c.issuer }} kinds={['ISSUER']} size="md" decorative />
         <span className="font-semibold">{c.name}</span>
         <span className="text-sm text-slate-600">{c.issuer}</span>
         <Badge tone={c.probability >= 0.6 ? 'green' : c.probability > 0 ? 'amber' : 'red'}>{probabilityLabel(c.probability)}</Badge>

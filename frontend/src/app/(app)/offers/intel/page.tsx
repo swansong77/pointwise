@@ -1,5 +1,7 @@
 'use client';
 
+import { WalletCardArt } from '@/components/card-bits';
+import { BrandLogo } from '@/components/brand-logo';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Badge, Button, EmptyState, ErrorText, Field, PageHeader, Panel, Select, Spinner } from '@/components/ui';
@@ -42,6 +44,7 @@ function Opportunities() {
         <li key={o.offerId} className="py-3" data-testid="opportunity">
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={scoreTone(o.score)}>Score {o.score}/100</Badge>
+            <BrandLogo brand={{ name: o.merchant }} name={o.merchant ?? o.title} size="md" decorative />
             <span className="font-medium">{o.merchant ?? o.title}</span>
             <span className="text-slate-600">about {money(o.expectedValueCents)} expected</span>
             {o.daysLeft != null && <Badge tone={o.daysLeft <= 7 ? 'red' : 'slate'}>{o.daysLeft} day(s) left</Badge>}
@@ -91,6 +94,7 @@ function Missed() {
         {items.map((m) => (
           <li key={`${m.offerId}-${m.cause}`} className="py-3" data-testid="missed-item">
             <div className="flex flex-wrap items-center gap-2">
+              <BrandLogo brand={{ name: m.offer.merchant }} name={m.offer.merchant ?? m.offer.title} size="md" decorative />
               <span className="font-medium">{m.offer.merchant ?? m.offer.title}</span>
               <Badge tone={CAUSE_LABEL[m.cause].tone}>{CAUSE_LABEL[m.cause].label}</Badge>
               <span className="text-slate-600">{money(m.lostCents)} {m.cause === 'BELOW_MIN_SPEND' ? 'still available' : 'lost'}</span>
@@ -129,10 +133,11 @@ function Activation() {
       <ErrorText error={mark.error} />
       {[...byCard.entries()].map(([card, rows]) => (
         <div key={card} className="mb-4">
-          <h3 className="mb-1 text-sm font-semibold">{card}</h3>
+          <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold"><WalletCardArt walletCardId={rows[0].walletCardId} name={card} size="sm" />{card}</h3>
           <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 text-sm">
             {rows.map((r) => (
               <li key={r.userOfferId} className="flex flex-wrap items-center gap-2 px-3 py-2" data-testid="activation-item">
+                <BrandLogo brand={{ name: r.merchant }} name={r.merchant ?? r.title} size="md" decorative />
                 <span className="font-medium">{r.merchant ?? r.title}</span>
                 <span className="text-slate-600">{money(r.valueCents)}</span>
                 {r.daysLeft != null && <Badge tone={r.daysLeft <= 7 ? 'red' : 'slate'}>{r.daysLeft} day(s) left</Badge>}
@@ -232,7 +237,7 @@ function Inventory() {
               {inv.data.map((r) => (
                 <tr key={r.id} className="border-t border-slate-100" data-testid="inventory-row">
                   <td className="py-2 pr-3 font-medium">
-                    {r.merchant?.name ?? r.title}
+                    <span className="flex items-center gap-2"><BrandLogo brand={{ name: r.merchant?.name }} name={r.merchant?.name ?? r.title} size="md" decorative />{r.merchant?.name ?? r.title}</span>
                     {r.merchant?.parentCompany && <span className="block text-xs font-normal text-slate-600">{r.merchant.parentCompany}</span>}
                   </td>
                   <td className="py-2 pr-3">{r.card}</td>

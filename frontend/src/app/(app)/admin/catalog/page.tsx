@@ -1,5 +1,6 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand-logo';
 import { useState } from 'react';
 import { BarList, StatTiles, Tabs } from '@/components/charts';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, PageHeader, Panel, Select, Spinner } from '@/components/ui';
@@ -404,6 +405,7 @@ function Candidates() {
           return (
             <li key={c.id} className="space-y-2 py-4 text-sm" data-testid="candidate">
               <div className="flex flex-wrap items-center gap-2">
+                <BrandLogo brand={{ name: c.issuerName }} kinds={['ISSUER']} size="md" decorative />
                 <span className="font-medium">{c.name}</span>
                 <span className="text-slate-600">
                   · {c.issuerName}
@@ -931,7 +933,7 @@ function Coverage() {
             <tbody className="divide-y divide-slate-100">
               {rows.map((r) => (
                 <tr key={r.issuer} data-testid="coverage-row">
-                  <td className="py-2 pr-3 font-medium">{r.issuer}</td>
+                  <td className="py-2 pr-3 font-medium"><span className="inline-flex items-center gap-2"><BrandLogo brand={{ name: r.issuer }} kinds={['ISSUER']} size="sm" decorative />{r.issuer}</span></td>
                   <td className="py-2 pr-3">{KIND_LABEL[r.kind]}</td>
                   <td className="py-2 pr-3 text-right">{r.personal}</td>
                   <td className="py-2 pr-3 text-right">{r.business}</td>

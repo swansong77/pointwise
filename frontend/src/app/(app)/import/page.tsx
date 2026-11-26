@@ -1,5 +1,6 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand-logo';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { Tabs } from '@/components/charts';
@@ -148,7 +149,7 @@ export default function ImportPage() {
                     {rows.map((r) => (
                       <tr key={r.id} data-testid="import-row">
                         <td className="px-5 py-2 tabular-nums text-slate-500">{r.rowNumber}</td>
-                        <td className="px-2 py-2 font-medium">{r.data.card?.cardName ?? r.data.benefit?.name}</td>
+                        <td className="px-2 py-2 font-medium"><span className="inline-flex items-center gap-2">{r.data.card?.issuer && <BrandLogo brand={{ name: r.data.card.issuer }} kinds={['ISSUER']} size="sm" decorative hideUnknown />}{r.data.card?.cardName ?? r.data.benefit?.name}</span></td>
                         <td className="px-2 py-2 text-xs text-slate-600">
                           {r.data.card &&
                             [
@@ -297,7 +298,7 @@ function BankConnections() {
             {list.data?.map((c) => (
               <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
                 <span>
-                  {c.institutionName ?? 'Bank'} <span className="text-xs text-slate-500">· synced {c.lastSyncedAt ? shortDate(c.lastSyncedAt) : 'never'}</span>
+                  <BrandLogo brand={{ name: c.institutionName }} kinds={['ISSUER']} size="sm" decorative hideUnknown /> {c.institutionName ?? 'Bank'} <span className="text-xs text-slate-500">· synced {c.lastSyncedAt ? shortDate(c.lastSyncedAt) : 'never'}</span>
                   {c.needsReauth && (
                     <span className="ml-2">
                       <Badge tone="red">Sign-in needed</Badge>

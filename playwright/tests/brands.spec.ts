@@ -15,7 +15,7 @@ test.describe('Brand logos', () => {
     await page.getByRole('link', { name: 'Brand logos' }).first().click();
     await expect(page.getByTestId('brands')).toBeVisible();
     await expect(page.getByTestId('brand-summary')).toContainText('with an icon');
-    for (const k of ['ISSUER', 'NETWORK', 'AIRLINE', 'HOTEL', 'BANK_REWARDS', 'SHOPPING', 'MERCHANT', 'MEMBERSHIP']) await expect(page.getByTestId(`brand-group-${k}`)).toBeVisible();
+    for (const k of ['ISSUER', 'NETWORK', 'AIRLINE', 'HOTEL', 'BANK_REWARDS', 'SHOPPING', 'MERCHANT', 'MEMBERSHIP', 'SERVICE']) await expect(page.getByTestId(`brand-group-${k}`)).toBeVisible();
     const chase = page.locator('[data-testid=brand-tile][data-brand=chase]');
     await expect(chase).toContainText('Icon · Simple Icons (CC0)');
     const img = chase.locator('img');
@@ -52,5 +52,28 @@ test.describe('Brand logos', () => {
     await page.goto('/merchants');
     await expect(page.getByTestId('merchant-results').getByTestId('brand-logo').first()).toBeVisible();
     await noSeriousA11y(page);
+  });
+
+  test('BR-04 card faces and brand logos appear on the dashboard, spending, loyalty and service pages', async ({ page, request }) => {
+    const u = await apiRegister(request);
+    await apiAddCard(request, u.token, 'contoso-gold');
+    const members = await (await request.get('/api/v1/household/members', { headers: { Authorization: `Bearer ${u.token}` } })).json();
+    await request.post('/api/v1/loyalty/accounts', { headers: { Authorization: `Bearer ${u.token}` }, data: { profileId: members[0].id, customName: 'Logo Miles', customKind: 'AIRLINE', balance: 1000 } });
+    await uiLogin(page, u.email);
+    for (const path of ['/dashboard', '/spending']) {
+      await page.goto(path);
+      await expect(page.getByTestId('card-art').first()).toBeVisible();
+      await noSeriousA11y(page);
+    }
+    await page.goto('/loyalty');
+    await page.getByTestId('tab-miles').click();
+    await expect(page.getByTestId('miles-tab').getByTestId('brand-logo').first()).toBeVisible();
+    await page.getByTestId('tab-refresh').click();
+    await expect(page.getByTestId('refresh-account').getByTestId('brand-logo').first()).toBeVisible();
+    await page.getByTestId('tab-transfers').click();
+    await expect(page.getByTestId('transfer-tab')).toBeVisible();
+    await page.goto('/spending');
+    await expect(page.getByTestId('mailbox-oauth').locator('[data-brand=gmail]')).toBeVisible();
+    await expect(page.getByTestId('mailbox-oauth').locator('[data-brand=outlook]')).toBeVisible();
   });
 });
