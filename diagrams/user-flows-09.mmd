@@ -1,0 +1,9 @@
+flowchart LR
+  S[SettingsView] --> PK[ManagePasskeysView: list/add/delete]
+  S --> PR[Profiles: NewProfileView / EditProfileView → /profiles/*]
+  S --> NT[Notifications]
+  S --> IC[AppIconView]
+  S --> DB[EditDashboardView]
+  S --> FB[SendFeedbackView / ReportProblemEmail]
+  S --> SO[SignOutView]
+  S --> DEL[Delete account → /v1/user/delete]

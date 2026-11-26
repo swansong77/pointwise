@@ -1,0 +1,19 @@
+gantt
+  dateFormat YYYY-MM-DD
+  title Pointwise roadmap
+  section Phase 1 MVP
+  Foundation (done in this project)      :done, p1a, 2026-11-20, 2d
+  Catalog curation v1 (500 cards)        :p1b, 2026-11-23, 4w
+  MVP hardening & email verification     :p1c, 2026-11-23, 3w
+  section Phase 2 Beta
+  Stripe billing + webhooks              :p2a, after p1c, 2w
+  Nearby with places provider            :p2b, after p1c, 3w
+  Redis caching + k6 load tests          :p2c, after p1c, 2w
+  Closed beta (500 users)                :p2d, after p2a, 4w
+  section Phase 3 Launch
+  Passkeys + MFA, nonce CSP              :p3a, after p2d, 3w
+  PWA + web push                         :p3b, after p2d, 3w
+  Browser extension (shopping pointers)  :p3c, after p2d, 5w
+  section Phase 4 Scale
+  Multi-region, PostGIS, partitioning    :p4a, after p3c, 6w
+  Ask-my-wallet AI assistant             :p4b, after p3c, 5w

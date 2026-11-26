@@ -1,0 +1,11 @@
+flowchart LR
+  W[My Cards] --> ADD[AddCardMenu]
+  ADD --> S[SearchCardsView]
+  ADD --> N[NewCardView: custom card]
+  ADD --> CAM[CameraView: photo → Vision text recognition]
+  S --> SEL[Select card] --> DET[NewCardsDetail: status, approved date, cardholder, profile]
+  DET --> API[POST /cards/add] --> INV[(DBInventory)]
+  INV --> CUS[CustomizeCard: nickname, color, notes, fee]
+  INV --> BON[CardBonusView: welcome bonus progress]
+  INV --> CAT[EditCategoriesView: choose rotating categories]
+  INV --> PC[ProductChangeView → /inventory/change]

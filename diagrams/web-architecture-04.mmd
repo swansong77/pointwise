@@ -1,0 +1,13 @@
+sequenceDiagram
+  participant B as Browser (merchant page)
+  participant N as Next.js (rewrite)
+  participant A as API RecommendationsService
+  participant D as domain.rankCards
+  participant P as Postgres
+  B->>N: GET /api/v1/recommendations/merchants/freshcart (Bearer)
+  N->>A: proxy (X-Forwarded-For)
+  A->>P: merchant + category; wallet cards + rewards + currency; valuations; pins; fallback category
+  A->>D: rankCards(cards, {merchantId, categoryId, parent, fallback}, {valuations, pinned})
+  D-->>A: ranked[] (¢/$ = multiplier × cpp)
+  A->>P: user's active offers at merchant
+  A-->>B: { merchant, ranked, offers }

@@ -1,0 +1,13 @@
+sequenceDiagram
+  participant B as Browser
+  participant NA as NextAuth (Next server)
+  participant API
+  B->>NA: signIn('credentials', email, pw)
+  NA->>API: POST /auth/login
+  API-->>NA: {accessToken(15m JWT), refreshToken(opaque), user}
+  NA-->>B: httpOnly encrypted session cookie (JWT strategy)
+  B->>NA: useSession() → accessToken
+  B->>API: /api/v1/* Authorization: Bearer
+  Note over NA: on jwt() callback when access token is near expiry
+  NA->>API: POST /auth/refresh (rotation)
+  API-->>NA: new pair (old revoked; reuse → family revoked)

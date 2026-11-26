@@ -1,0 +1,16 @@
+graph TB
+  subgraph docker-compose network
+    frontend[frontend<br/>node:22 standalone] --> backend
+    backend[backend<br/>node:22 · migrate+seed on start] --> postgres[(postgres:16.4)]
+    backend --> redis[(redis:7.4)]
+    worker[worker<br/>same image, node dist/worker.js] --> redis
+    worker --> postgres
+    worker --> mailhog
+    backend --> mailhog[mailhog :8025]
+    pgadmin[pgadmin :5050] --> postgres
+  end
+  subgraph profiles
+    backend-tests[backend-tests · profile test]
+    e2e[e2e Playwright · profile e2e]
+    cypress[cypress · profile cypress]
+  end

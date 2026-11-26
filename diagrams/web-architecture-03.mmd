@@ -1,0 +1,19 @@
+graph TD
+  App[AppModule] --> Auth & Catalog & Wallet & Recs[Recommendations] & Offers & Calc[Calculator] & Nearby & Insights[Dashboard/Insights] & Notif[Notifications] & Subs[Subscriptions] & Tx[Transactions] & Users[Users/Me] & Analytics & Admin & Health & JobsApi
+  Recs --> Domain
+  Calc --> Domain
+  Insights --> Domain
+  Offers --> Domain
+  Nearby --> Domain
+  JobsApi --> Domain
+  subgraph Domain[src/domain — pure TypeScript, no I/O]
+    RE[recommendation.engine]
+    CA[calculator]
+    IN[insights: 5/24, renewals, bonus]
+    OF[offers rules]
+    GE[geo]
+    EN[entitlements]
+  end
+  Wallet --> Prisma[(PrismaService)]
+  Offers --> Prisma
+  Global[Global guards: Throttler → JwtAuth → Roles] -.-> App

@@ -1,0 +1,28 @@
+sequenceDiagram
+  autonumber
+  participant U as User
+  participant A as App (AuthViewModel)
+  participant AS as Apple (ASAuthorization)
+  participant API as api.cardpointers.com
+  participant K as Keychain
+  alt Passkey (default since v4)
+    A->>API: GET /passkey/challenge/?source=mac&nonce=…
+    API-->>A: {challenge}
+    A->>AS: ASAuthorizationPlatformPublicKeyCredentialAssertion
+    AS-->>A: assertion
+    A->>API: POST /passkey/login/?source=mac
+    API-->>A: PasskeyResponse{success, token, email, credential_id}
+  else Sign in with Apple
+    A->>AS: ASAuthorizationAppleIDRequest
+    AS-->>A: identityToken / authorizationCode
+    A->>API: POST /auth/signon
+    API-->>A: AuthResponse{success, token, email}
+  else Email (code)
+    A->>API: POST /auth/login {email}
+    API-->>A: EmailLoginResponse{code, message}
+    U->>A: enters code
+    A->>API: POST /auth/login {email, code}
+    API-->>A: EmailLoginResponse{token}
+  end
+  A->>K: save userToken (access group 489M9V6472.com.getcardpointers.app)
+  A->>API: GET /v1/install/?app=mac&version=… (InstallResponse{code})

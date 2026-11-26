@@ -1,0 +1,5 @@
+graph TB
+  E2E["E2E — Playwright (31 tests, 2 projects) + Cypress (19 tests)<br/>critical user journeys, a11y, security headers"]
+  INT["Integration — Jest + Supertest + real PostgreSQL (31 tests)<br/>every controller, guards, validation, IDOR, jobs"]
+  UNIT["Unit — Jest (149 backend) + Vitest (27 frontend)<br/>pure domain engines, services with mocked Prisma, UI components"]
+  E2E --> INT --> UNIT

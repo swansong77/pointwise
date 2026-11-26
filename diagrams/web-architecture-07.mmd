@@ -1,0 +1,32 @@
+erDiagram
+  User ||--o| Wallet : has
+  User ||--o{ OAuthAccount : links
+  User ||--o{ RefreshToken : sessions
+  User ||--o{ Profile : household
+  User ||--o| Subscription : plan
+  User ||--o{ Notification : receives
+  User ||--o| NotificationPreference : prefs
+  User ||--o{ Transaction : logs
+  User ||--o{ UserValuation : overrides
+  User ||--o{ CategoryPin : pins
+  User ||--o{ OfferAlert : alerts
+  User ||--o{ AnalyticsEvent : emits
+  User ||--o{ AuditLog : "acts (admin)"
+  Wallet ||--o{ WalletCard : contains
+  WalletCard }o--|| CreditCard : "instance of"
+  WalletCard }o--o| Profile : "held by"
+  WalletCard ||--o{ UserOffer : tracks
+  WalletCard ||--o{ Transaction : spend
+  CreditCard }o--|| Issuer : "issued by"
+  CreditCard }o--|| RewardCurrency : earns
+  CreditCard ||--o{ Reward : "earning rules"
+  CreditCard ||--o{ CardFeature : features
+  Reward }o--o| Category : for
+  Reward }o--o| Merchant : at
+  Category ||--o{ Merchant : groups
+  Category ||--o{ Category : parent
+  Merchant ||--o{ Location : stores
+  Offer }o--o| Merchant : at
+  Offer }o--o| CreditCard : "card-specific"
+  Offer }o--o| Issuer : "issuer-wide"
+  Offer ||--o{ UserOffer : "added as"

@@ -1,0 +1,12 @@
+graph TD
+  APP[CardPointers.app<br/>main executable 56.6 MB universal]
+  APP --> W1[CPWidgetExtension.appex<br/>WidgetKit • 9.3 MB]
+  APP --> W2[CPPointersWidgetExtension.appex<br/>Intents service • 6.1 MB]
+  APP --> SF[CPSafariExtension.appex<br/>Safari Web Extension MV3 • 6.1 MB]
+  APP --> MB[CardPointersMenuBar.app<br/>Login item • menu bar]
+  APP --> SH[CardPointersSyncHelper.app<br/>Login item • scheduled Offer Sync]
+  APP -. app group .- DB[(Shared Core Data<br/>group.getcardpointers.app)]
+  W1 -.-> DB
+  W2 -.-> DB
+  MB -.-> DB
+  SF -- nativeMessaging getWallet --> APP

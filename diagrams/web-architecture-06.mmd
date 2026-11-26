@@ -1,0 +1,13 @@
+sequenceDiagram
+  participant S as JobsScheduler (worker boot)
+  participant Q as BullMQ (Redis)
+  participant W as JobsProcessor
+  participant J as JobsService
+  participant DB as Postgres
+  S->>Q: upsertJobScheduler('scan-expiring-offers', '0 13 * * *')
+  Q->>W: job fires
+  W->>J: run('scan-expiring-offers')
+  J->>DB: prefs + active user offers
+  J->>J: domain.isExpiringSoon(offer, uo, now, prefs.expiringDays)
+  J->>DB: notification.upsert(userId, dedupeKey="expiring:<uo>:<date>")
+  Note over J,DB: idempotent — reruns never duplicate

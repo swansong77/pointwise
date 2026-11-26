@@ -1,0 +1,6 @@
+{
+  "name": "pointwise-e2e-cypress",
+  "private": true,
+  "scripts": { "test": "cypress run", "open": "cypress open" },
+  "devDependencies": { "cypress": "13.17.0", "typescript": "~5.7.3" }
+}

@@ -1,0 +1,19 @@
+flowchart TD
+  A[Launch] --> B{Token in Keychain?}
+  B -- yes --> D[DashboardView]
+  B -- no --> L[LoginView]
+  L --> P[Sign in with Passkey]
+  L --> AP[Sign in with Apple]
+  L --> E[ManualLoginView: email → code]
+  P & AP & E --> I[GET /v1/install + /me + /wallet]
+  I --> C{Has cards?}
+  C -- no --> O[OnboardCardsView: pick popular cards]
+  O --> M[POST /cards/add_multiple]
+  M --> PW{Paywall.showAfterLogin?}
+  C -- yes --> PW
+  PW -- yes --> PAY[MasterPaywallView]
+  PW -- no --> OS{showOnboardOfferSync?}
+  PAY --> OS
+  OS -- yes --> AL[AfterLoginBankSyncOnboardingView]
+  OS -- no --> D
+  AL --> D

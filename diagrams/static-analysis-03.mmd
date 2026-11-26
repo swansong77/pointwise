@@ -1,0 +1,7 @@
+graph TD
+  BestCard[Best card for place/category] --> PS[PointersStore]
+  PS --> PC[DBPointerCard rows<br/>points × card value]
+  PS --> INV[DBInventory: user's cards<br/>status, cardholder, bonus categories]
+  PS --> BP[DBBonusPlan / BonusCategoryGroup<br/>rotating 5% selections]
+  PS --> OFF[DBOfferInventory for merchant]
+  PS --> RANK[rank → BestCardStruct]

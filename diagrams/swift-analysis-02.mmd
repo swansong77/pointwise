@@ -1,0 +1,32 @@
+classDiagram
+  class WalletStore {
+    +refresh()
+    +applyWallet()
+    isPaidSubscriber
+    proExpirationDate
+  }
+  class AuthViewModel {
+    +loginEmail()
+    +signInWithApple()
+    +passkeyLogin()
+  }
+  class PointersStore {
+    +bestCards(pointer)
+  }
+  class OffersStore
+  class OfferSyncCoordinator {
+    +run(trigger)
+  }
+  class PersistenceController {
+    container
+  }
+  class KeychainItem {
+    +save()
+    +read()
+  }
+  WalletStore --> PersistenceController
+  WalletStore --> KeychainItem
+  AuthViewModel --> KeychainItem
+  PointersStore --> PersistenceController
+  OffersStore --> PersistenceController
+  OfferSyncCoordinator --> OffersStore

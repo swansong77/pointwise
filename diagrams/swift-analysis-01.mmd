@@ -1,0 +1,102 @@
+classDiagram
+  class Card {
+    card_id
+    title
+    bankName
+    network
+    fee
+    value(cpp)
+    currency
+    type
+    country_code
+  }
+  class Inventory {
+    id
+    status
+    cardholder
+    approvedDate
+    closedDate
+    nickname
+    notes
+    earnedBonus
+    profile_uuid
+  }
+  class Earning {
+    name
+    category_name
+    points
+    symbol
+  }
+  class Pointer {
+    id
+    name
+    symbol
+    color
+    sort_order
+  }
+  class Merchant {
+    id
+    name
+    hosts[]
+    popular
+  }
+  class Subcategory {
+    id
+    name
+    other
+  }
+  class PointerCard {
+    points
+    total_value
+    order
+    sponsored
+    feature
+  }
+  class Offer {
+    id
+    title
+    value
+    start
+    end
+    terms
+    type
+    grade
+  }
+  class OfferInventory {
+    checked
+    redeemed_date
+    total_used
+    times_used
+    is_favorite
+    hide_until
+    auto_*
+  }
+  class UserProfile {
+    uuid
+    nickname
+    email
+    isAccepted
+  }
+  class BonusPlan {
+    name
+    duration
+    start_date
+    end_date
+  }
+  class OfferAlert {
+    keywords
+    value_type
+    bank
+    flags
+  }
+  Card "1" --> "*" Earning
+  Card "1" --> "*" Inventory : owned as
+  Inventory "*" --> "0..1" UserProfile
+  Pointer "1" --> "*" Merchant
+  Pointer "1" --> "*" Subcategory
+  Pointer "1" --> "*" PointerCard
+  Card "1" --> "*" PointerCard
+  Card "1" --> "*" Offer
+  Offer "1" --> "*" OfferInventory
+  Inventory "1" --> "*" OfferInventory
+  Inventory "1" --> "*" BonusPlan

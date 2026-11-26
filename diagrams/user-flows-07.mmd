@@ -1,0 +1,7 @@
+flowchart TD
+  SRV[Server: new offers / card changes / 5-24 / alerts] -->|APNs| PUSH[Push]
+  LOCAL[Local: expiring offer, location reminder, sync complete] --> PUSH
+  PUSH --> TAP[Tap → deep link cardpointers://… or /open/offers/]
+  APP[MessageListView] -->|GET /notifications?since=| SRV
+  APP -->|POST /notifications/read| SRV
+  SET[CustomizeNotifications] --> PREF[new offers / card changes / 5-24 / favorites only]

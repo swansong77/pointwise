@@ -1,0 +1,3196 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CardPointers API (observed, reverse-engineered)",
+    "version": "8.1.4-observed",
+    "description": "Reconstructed from static analysis of CardPointers 8.1.4 for macOS. Paths from binary string literals; schemas from Swift Codable field metadata. Request bodies and HTTP methods for mutations are inferred. Not an official specification."
+  },
+  "servers": [
+    {
+      "url": "https://api.cardpointers.com/api"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "APIPointerSubcategory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PointerCard"
+            }
+          },
+          "other": {
+            "type": "boolean"
+          },
+          "offer_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "other_offer_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "pinned_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "cards"
+        ]
+      },
+      "AllOtherCardsResponse": {
+        "type": "object",
+        "properties": {
+          "cards": {
+            "description": "opaque/indirect type (Date or nested model)"
+          }
+        },
+        "required": [
+          "cards"
+        ]
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "token": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "BackfillPastOffersResult": {
+        "type": "object",
+        "properties": {
+          "addedCount": {
+            "type": "integer"
+          },
+          "returnedOfferCount": {
+            "type": "integer"
+          },
+          "backfilledOfferCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "addedCount",
+          "returnedOfferCount",
+          "backfilledOfferCount"
+        ]
+      },
+      "BonusCategory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ]
+      },
+      "BonusCategoryGroup": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "points": {
+            "type": "number",
+            "format": "float"
+          },
+          "frequency": {
+            "type": "string"
+          },
+          "bonus_categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BonusCategory"
+            }
+          },
+          "selected": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "title",
+          "points",
+          "frequency",
+          "bonus_categories"
+        ]
+      },
+      "BonusPlan": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "duration": {
+            "type": "integer"
+          },
+          "start_date": {
+            "description": "opaque/indirect type (Date or nested model)"
+          },
+          "end_date": {
+            "description": "opaque/indirect type (Date or nested model)"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BonusPlanCategory"
+            }
+          },
+          "is_default": {
+            "type": "boolean"
+          },
+          "is_editable": {
+            "type": "boolean"
+          },
+          "default_name": {
+            "type": "string"
+          },
+          "default_points": {
+            "type": "number",
+            "format": "float"
+          },
+          "default_spend": {
+            "type": "number",
+            "format": "float"
+          },
+          "is_user_default": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "start_date",
+          "end_date",
+          "categories",
+          "is_default",
+          "is_editable"
+        ]
+      },
+      "BonusPlanCategory": {
+        "type": "object",
+        "properties": {
+          "pointer_id": {
+            "type": "integer"
+          },
+          "value": {
+            "type": "number",
+            "format": "float"
+          },
+          "spend": {
+            "type": "number",
+            "format": "float"
+          },
+          "name": {
+            "type": "string"
+          },
+          "is_default": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pointer_id",
+          "value",
+          "spend",
+          "name"
+        ]
+      },
+      "Card": {
+        "type": "object",
+        "properties": {
+          "card_id": {
+            "type": "integer"
+          },
+          "bonus": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "reconsideration": {
+            "type": "string"
+          },
+          "months": {
+            "type": "integer"
+          },
+          "fee": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number",
+            "format": "float"
+          },
+          "foreignFees": {
+            "type": "boolean"
+          },
+          "spend": {
+            "type": "string"
+          },
+          "createdDate": {
+            "type": "string"
+          },
+          "approvedDate": {
+            "type": "string"
+          },
+          "inventory": {
+            "type": "integer"
+          },
+          "external_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "earned_bonus": {
+            "type": "boolean"
+          },
+          "sort_order": {
+            "type": "integer"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "url_mobile": {
+            "type": "string"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Feature"
+            }
+          },
+          "earnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Earning"
+            }
+          },
+          "bankName": {
+            "type": "string"
+          },
+          "affiliate": {
+            "type": "boolean"
+          },
+          "website": {
+            "type": "string"
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "bonus_category_group1": {
+            "$ref": "#/components/schemas/BonusCategoryGroup"
+          },
+          "bonus_category_group2": {
+            "$ref": "#/components/schemas/BonusCategoryGroup"
+          },
+          "bonus_category_group3": {
+            "$ref": "#/components/schemas/BonusCategoryGroup"
+          },
+          "pdp": {
+            "type": "boolean"
+          },
+          "cardMatch": {
+            "type": "boolean"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "original_value": {
+            "type": "number",
+            "format": "float"
+          },
+          "original_title": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "original_color": {
+            "type": "string"
+          },
+          "network": {
+            "type": "string"
+          },
+          "userNetwork": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "integer"
+          },
+          "bonusPlans": {
+            "description": "opaque/indirect type (Date or nested model)"
+          },
+          "selectedBonusPlan": {
+            "type": "integer"
+          },
+          "applicationNotes": {
+            "type": "string"
+          },
+          "bank_id": {
+            "type": "integer"
+          },
+          "url_rates": {
+            "type": "string"
+          },
+          "country_code": {
+            "type": "string"
+          },
+          "updatedTime": {
+            "type": "integer"
+          },
+          "closedDate": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "profile_uuid": {
+            "type": "string"
+          },
+          "boaTiers": {
+            "type": "boolean"
+          },
+          "boaTier": {
+            "type": "integer"
+          },
+          "cardholder": {
+            "type": "integer"
+          },
+          "debit": {
+            "type": "boolean"
+          },
+          "recurring_favorite_checklists": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "recurring_redeem_checklists": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "recurring_delete_checklists": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "card_id",
+          "bonus",
+          "phone",
+          "reconsideration",
+          "months",
+          "fee",
+          "title",
+          "color",
+          "value",
+          "foreignFees",
+          "spend",
+          "sort_order",
+          "features",
+          "earnings",
+          "bonusPlans"
+        ]
+      },
+      "Checklist": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "external_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "checked": {
+            "type": "boolean"
+          },
+          "value": {
+            "type": "number",
+            "format": "float"
+          },
+          "start": {
+            "description": "opaque/indirect type (Date or nested model)"
+          },
+          "end": {
+            "description": "opaque/indirect type (Date or nested model)"
+          },
+          "redeemed_date": {
+            "description": "opaque/indirect type (Date or nested model)"
+          },
+          "inventory_id": {
+            "type": "integer"
+          },
+          "card": {
+            "description": "opaque/indirect type (Date or nested model)"
+          },
+          "sort_order": {
+            "type": "integer"
+          },
+          "is_repeatable": {
+            "type": "boolean"
+          },
+          "total_available": {
+            "type": "number",
+            "format": "float"
+          },
+          "total_used": {
+            "type": "number",
+            "format": "float"
+          },
+          "type": {
+            "type": "integer"
+          },
+          "is_signup": {
+            "type": "boolean"
+          },
+          "is_backfilled": {
+            "type": "boolean"
+          },
+          "hide_until": {
+            "description": "opaque/indirect type (Date or nested model)"
+          },
+          "category_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "bank_id": {
+            "type": "integer"
+          },
+          "is_min": {
+            "type": "boolean"
+          },
+          "terms": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "offer_id": {
+            "type": "integer"
+          },
+          "recurring_key": {
+            "type": "string"
+          },
+          "frequency": {
+            "type": "string"
+          },
+          "standard": {
+            "type": "boolean"
+          },
+          "bonus_points": {
+            "type": "number",
+            "format": "float"
+          },
+          "total_points": {
+            "type": "number",
+            "format": "float"
+          },
+          "discount_percent": {
+            "type": "number",
+            "format": "float"
+          },
+          "discount_max": {
+            "type": "number",
+            "format": "float"
+          },
+          "url": {
+            "type": "string"
+          },
+          "max_times": {
+            "type": "integer"
+          },
+          "times_used": {
+            "type": "integer"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "is_favorite": {
+            "type": "boolean"
+          },
+          "smart_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cardholder": {
+            "type": "integer"
+          },
+          "created": {
+            "type": "integer"
+          },
+          "grade": {
+            "type": "integer"
+          },
+          "user_grade": {
+            "type": "integer"
+          },
+          "custom": {
+            "type": "boolean"
+          },
+          "custom_bonus_type": {
+            "type": "integer"
+          },
+          "custom_amount_value": {
+            "type": "number",
+            "format": "float"
+          },
+          "custom_is_bonus_limited": {
+            "type": "boolean"
+          },
+          "custom_bonus_limit_value": {
+            "type": "number",
+            "format": "float"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "checked",
+          "start",
+          "end",
+          "redeemed_date",
+          "card",
+          "hide_until"
+        ]
+      },
+      "Earning": {
+        "type": "object",
+        "properties": {
+          "points": {
+            "type": "number",
+            "format": "float"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "category_name": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "points",
+          "icon",
+          "symbol",
+          "category_name",
+          "name"
+        ]
+      },
+      "EmailLoginResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          }
+        }
+      },
+      "Feature": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "InstallResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "ManageLinkResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "store": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "MeDataResponse": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "updated": {
+            "type": "integer"
+          },
+          "newest_card": {
+            "type": "integer"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "newest_offer": {
+            "type": "integer"
+          },
+          "newest_message": {
+            "type": "integer"
+          },
+          "newest_merchant": {
+            "type": "integer"
+          },
+          "newest_offer_inventory_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "email",
+          "updated",
+          "newest_card",
+          "success"
+        ]
+      },
+      "MeResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/MeDataResponse"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Merchant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "integer"
+          },
+          "subcategories": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "ci_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PointerCard"
+            }
+          },
+          "hosts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "user": {
+            "type": "boolean"
+          },
+          "popular": {
+            "type": "boolean"
+          },
+          "pinned_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "MerchantsDataResponse": {
+        "type": "object",
+        "properties": {
+          "merchants": {
+            "description": "opaque/indirect type (Date or nested model)"
+          }
+        },
+        "required": [
+          "merchants"
+        ]
+      },
+      "NewestOffersResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "offers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Checklist"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "added_count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "NotificationMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "number",
+            "format": "double"
+          },
+          "is_local": {
+            "type": "boolean"
+          },
+          "is_read": {
+            "type": "boolean"
+          },
+          "is_linked": {
+            "type": "boolean"
+          },
+          "offer_alert_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "card_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "inventory_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "offer_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "offer_inventory_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "timestamp"
+        ]
+      },
+      "OfferAlert": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "keyword_type": {
+            "type": "string"
+          },
+          "keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "value_type": {
+            "type": "string"
+          },
+          "grade_type": {
+            "type": "string"
+          },
+          "bank_type": {
+            "type": "string"
+          },
+          "amex": {
+            "type": "boolean"
+          },
+          "boa": {
+            "type": "boolean"
+          },
+          "chase": {
+            "type": "boolean"
+          },
+          "citi": {
+            "type": "boolean"
+          },
+          "wells_fargo": {
+            "type": "boolean"
+          },
+          "us_bank": {
+            "type": "boolean"
+          },
+          "auto_favorite": {
+            "type": "boolean"
+          },
+          "is_active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "keyword_type",
+          "value_type",
+          "bank_type",
+          "is_active"
+        ]
+      },
+      "OfferDetailsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "offers": {
+            "description": "opaque/indirect type (Date or nested model)"
+          }
+        },
+        "required": [
+          "success",
+          "offers"
+        ]
+      },
+      "OfferStreak": {
+        "type": "object",
+        "properties": {
+          "iso_week": {
+            "type": "string"
+          },
+          "iso_timestamp": {
+            "type": "integer"
+          },
+          "num_payloads": {
+            "type": "integer"
+          },
+          "num_offers": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "iso_week",
+          "iso_timestamp",
+          "num_payloads",
+          "num_offers"
+        ]
+      },
+      "OfferStreakResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "profile_uuid": {
+            "type": "string"
+          },
+          "streaks": {
+            "description": "opaque/indirect type (Date or nested model)"
+          }
+        },
+        "required": [
+          "success",
+          "streaks"
+        ]
+      },
+      "OfferSyncCard": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "lastDigits": {
+            "type": "string"
+          },
+          "accountKey": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "cardArt": {
+            "type": "string"
+          },
+          "setupDate": {
+            "type": "string"
+          },
+          "extensionCardName": {
+            "type": "string"
+          },
+          "offersSupported": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "lastDigits"
+        ]
+      },
+      "OfferSyncPendingBatch": {
+        "type": "object",
+        "properties": {
+          "cards": {
+            "description": "opaque/indirect type (Date or nested model)"
+          },
+          "offers": {
+            "type": "array",
+            "items": {
+              "description": "opaque/indirect type (Date or nested model)"
+            }
+          }
+        },
+        "required": [
+          "cards",
+          "offers"
+        ]
+      },
+      "PasskeyDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "PasskeyListResponse": {
+        "type": "object",
+        "properties": {
+          "passkeys": {
+            "description": "opaque/indirect type (Date or nested model)"
+          }
+        },
+        "required": [
+          "passkeys"
+        ]
+      },
+      "PasskeyResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "challenge": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "credential_id": {
+            "type": "string"
+          },
+          "existing_credential_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bad_credential_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "Paywall": {
+        "type": "object",
+        "properties": {
+          "showAfterLogin": {
+            "type": "boolean"
+          },
+          "showOnboardOfferSync": {
+            "type": "boolean"
+          },
+          "buttonTitle": {
+            "type": "string"
+          },
+          "buttonSubtitle": {
+            "type": "string"
+          },
+          "showButtonSubtitle": {
+            "type": "boolean"
+          },
+          "showSanta": {
+            "type": "boolean"
+          },
+          "afterLoginTitle": {
+            "type": "string"
+          },
+          "showSkip": {
+            "type": "boolean"
+          },
+          "showSkipToolbar": {
+            "type": "boolean"
+          },
+          "showX": {
+            "type": "boolean"
+          },
+          "showBenefitsView": {
+            "type": "boolean"
+          },
+          "showFreeTrialText": {
+            "type": "boolean"
+          },
+          "lastBulletSymbol": {
+            "type": "string"
+          },
+          "lastBulletText": {
+            "type": "string"
+          },
+          "showTop10Button": {
+            "type": "boolean"
+          },
+          "showMonthly": {
+            "type": "boolean"
+          },
+          "showLifetime": {
+            "type": "boolean"
+          },
+          "showAnnualMonthly": {
+            "type": "boolean"
+          },
+          "showPaywallReminder": {
+            "type": "boolean"
+          },
+          "showTable": {
+            "type": "boolean"
+          },
+          "normalTitle": {
+            "type": "string"
+          },
+          "showBlinkist": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "showAfterLogin"
+        ]
+      },
+      "Pointer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PointerCard"
+            }
+          },
+          "sort_order": {
+            "type": "integer"
+          },
+          "top_card_id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "feature": {
+            "type": "string"
+          },
+          "topCard": {
+            "description": "opaque/indirect type (Date or nested model)"
+          },
+          "subcategories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APIPointerSubcategory"
+            }
+          },
+          "offer_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "pinned_id": {
+            "type": "integer"
+          },
+          "top_inventory_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "icon",
+          "symbol",
+          "color",
+          "cards",
+          "sort_order",
+          "top_card_id",
+          "name",
+          "feature",
+          "topCard"
+        ]
+      },
+      "PointerCard": {
+        "type": "object",
+        "properties": {
+          "points": {
+            "type": "number",
+            "format": "float"
+          },
+          "total_value": {
+            "type": "number",
+            "format": "float"
+          },
+          "feature": {
+            "type": "string"
+          },
+          "sponsored": {
+            "type": "boolean"
+          },
+          "card_id": {
+            "type": "integer"
+          },
+          "card": {
+            "description": "opaque/indirect type (Date or nested model)"
+          },
+          "color": {
+            "type": "string"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "inventory_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "points",
+          "total_value",
+          "feature",
+          "card"
+        ]
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string"
+          },
+          "sort_order": {
+            "type": "integer"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "is_accepted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "uuid",
+          "sort_order",
+          "nickname",
+          "is_accepted"
+        ]
+      },
+      "SimpleCard": {
+        "type": "object",
+        "properties": {
+          "card_id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "bankName": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "inventory": {
+            "type": "integer"
+          },
+          "original_title": {
+            "type": "string"
+          },
+          "num_inventories": {
+            "type": "integer"
+          },
+          "weight": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "card_id",
+          "title",
+          "color"
+        ]
+      },
+      "Status524": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "date": {
+            "description": "opaque/indirect type (Date or nested model)"
+          }
+        },
+        "required": [
+          "count",
+          "date"
+        ]
+      },
+      "SuccessMessageResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ]
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "inventory_id": {
+            "type": "integer"
+          },
+          "refresh": {
+            "type": "boolean"
+          },
+          "bank_id": {
+            "type": "integer"
+          },
+          "offer_alert_id": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "Top10": {
+        "type": "object",
+        "properties": {
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Top10Card"
+            }
+          }
+        },
+        "required": [
+          "cards"
+        ]
+      },
+      "Top10Card": {
+        "type": "object",
+        "properties": {
+          "card_id": {
+            "type": "integer"
+          },
+          "card": {
+            "description": "opaque/indirect type (Date or nested model)"
+          }
+        },
+        "required": [
+          "card_id",
+          "card"
+        ]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "generated_password": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "profiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Profile"
+            }
+          }
+        },
+        "required": [
+          "generated_password"
+        ]
+      },
+      "Wallet": {
+        "type": "object",
+        "properties": {
+          "cards_sponsored": {
+            "description": "opaque/indirect type (Date or nested model)"
+          },
+          "cards_user": {
+            "description": "opaque/indirect type (Date or nested model)"
+          },
+          "pointers_user": {
+            "description": "opaque/indirect type (Date or nested model)"
+          },
+          "cards_popular": {
+            "description": "opaque/indirect type (Date or nested model)"
+          },
+          "offers_user": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Checklist"
+            }
+          },
+          "top10": {
+            "$ref": "#/components/schemas/Top10"
+          },
+          "status_524": {
+            "$ref": "#/components/schemas/Status524"
+          },
+          "offer_alerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OfferAlert"
+            }
+          },
+          "favorite_pointers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "merchants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Merchant"
+            }
+          },
+          "cards_524": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": [
+          "cards_sponsored",
+          "cards_user",
+          "pointers_user",
+          "cards_popular"
+        ]
+      }
+    }
+  },
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Email login / code verification",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailLoginResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/signon": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Sign in with Apple",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/passkey/challenge/": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "WebAuthn challenge",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nonce",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/passkey/login/": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "WebAuthn assertion",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/passkey/signup/": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "WebAuthn registration",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/cards/": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Card catalog",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllOtherCardsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/install/": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Install registration",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "app",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/user/cards/add": {
+      "post": {
+        "tags": [
+          "cards"
+        ],
+        "summary": "cards add",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/cards/add_multiple": {
+      "post": {
+        "tags": [
+          "cards"
+        ],
+        "summary": "cards add multiple",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/cards/delete": {
+      "post": {
+        "tags": [
+          "cards"
+        ],
+        "summary": "cards delete",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/cards/new": {
+      "post": {
+        "tags": [
+          "cards"
+        ],
+        "summary": "cards new",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/cards/order": {
+      "post": {
+        "tags": [
+          "cards"
+        ],
+        "summary": "cards order",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/checklist/update": {
+      "post": {
+        "tags": [
+          "checklist"
+        ],
+        "summary": "checklist update",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/checklist/update/automation": {
+      "post": {
+        "tags": [
+          "checklist"
+        ],
+        "summary": "checklist update automation",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/checklist/update/favorite": {
+      "post": {
+        "tags": [
+          "checklist"
+        ],
+        "summary": "checklist update favorite",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/delete": {
+      "post": {
+        "tags": [
+          "delete"
+        ],
+        "summary": "delete",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/extension/offers/add": {
+      "post": {
+        "tags": [
+          "extension"
+        ],
+        "summary": "extension offers add",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/inventory/change": {
+      "post": {
+        "tags": [
+          "inventory"
+        ],
+        "summary": "inventory change",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/inventory/external/reassign": {
+      "post": {
+        "tags": [
+          "inventory"
+        ],
+        "summary": "inventory external reassign",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/inventory/update": {
+      "post": {
+        "tags": [
+          "inventory"
+        ],
+        "summary": "inventory update",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/manage/link/": {
+      "get": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Subscription management link",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManageLinkResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/me/": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "Account watermarks (path inferred)",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/merchants/new": {
+      "post": {
+        "tags": [
+          "merchants"
+        ],
+        "summary": "merchants new",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/notifications/": {
+      "get": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Messages since timestamp",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/user/notifications/read": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "notifications read",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/offer_alerts/active": {
+      "get": {
+        "tags": [
+          "offer_alerts"
+        ],
+        "summary": "Active alerts",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/offer_alerts/addedit": {
+      "post": {
+        "tags": [
+          "offer_alerts"
+        ],
+        "summary": "offer alerts addedit",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/offer_alerts/delete": {
+      "post": {
+        "tags": [
+          "offer_alerts"
+        ],
+        "summary": "offer alerts delete",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/offers/add_custom": {
+      "post": {
+        "tags": [
+          "offers"
+        ],
+        "summary": "offers add custom",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/offers/add_existing": {
+      "post": {
+        "tags": [
+          "offers"
+        ],
+        "summary": "offers add existing",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/offers/backfill": {
+      "post": {
+        "tags": [
+          "offers"
+        ],
+        "summary": "Backfill past offers",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackfillPastOffersResult"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/offers/newest/": {
+      "get": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "New offers since id",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewestOffersResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "since_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/user/offers/other/{cardId}": {
+      "get": {
+        "tags": [
+          "offers"
+        ],
+        "summary": "Other offers for card",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferDetailsResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cardId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/user/offers/streak/": {
+      "get": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Offer streak",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferStreakResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/user/offers/update_custom": {
+      "post": {
+        "tags": [
+          "offers"
+        ],
+        "summary": "offers update custom",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/passkeys/": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "List passkeys",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/passkeys/delete/{id}": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "Delete passkey",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyDeleteResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/user/paywall/answers": {
+      "post": {
+        "tags": [
+          "paywall"
+        ],
+        "summary": "paywall answers",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/pointers/favorites": {
+      "post": {
+        "tags": [
+          "pointers"
+        ],
+        "summary": "pointers favorites",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/pointers/pinned_cards": {
+      "post": {
+        "tags": [
+          "pointers"
+        ],
+        "summary": "pointers pinned cards",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/profiles/add": {
+      "post": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "profiles add",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/profiles/delete": {
+      "post": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "profiles delete",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/profiles/edit": {
+      "post": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "profiles edit",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/profiles/link": {
+      "post": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "profiles link",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/profiles/order": {
+      "post": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "profiles order",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/purchase/link": {
+      "post": {
+        "tags": [
+          "purchase"
+        ],
+        "summary": "purchase link",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/token/refresh": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Refresh bearer token",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "snake_case body; fields not recoverable statically"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/wallet/": {
+      "get": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Full wallet payload",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Wallet"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "app",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

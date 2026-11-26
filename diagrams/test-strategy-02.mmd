@@ -1,0 +1,8 @@
+graph LR
+  A[lint + typecheck] --> B[backend unit + cov gate]
+  A --> C[frontend unit + cov gate]
+  B --> D[docker build]
+  C --> D
+  D --> E[compose up postgres/redis → integration]
+  E --> F[compose up full → Playwright + Cypress]
+  F --> G[publish reports, screenshots]

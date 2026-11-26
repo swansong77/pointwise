@@ -1,0 +1,84 @@
+# Phase 5 — Resource Analysis
+
+Raw data: `raw/assets-info.json` (assetutil), `raw/seed-schema.sql`.
+
+## 1. Assets.car
+
+127 renditions, 82 named assets. Types: Image 80, PackedImage 19, Color 11, IconGroup 9, IconImageStack 3, Named Gradient 3, Icon Image 1, MultiSized Image 1.
+
+| Group | Assets | Usage |
+|---|---|---|
+| Brand colors | `AccentColor`, `CPBlue`, `CPink`, `CPWhite` | Accent / icon complementing colors (Info.plist `NSAppIconComplementingColorNames`) |
+| App icon (layered, Icon Composer) | `AppIcon`, `AppIcon/Group…`, `AppIcon_Assets/*` (Color-1…7, Gradient-1/3, fill, highlight, symbol, system-dark), `MacAppIcon`, `CircularAppIcon`, `DefaultAppIcon` | Liquid-Glass layered icon |
+| Alternate icon previews (24) | `icon{Default,Monochrome,Rainbow,Xmas,Halloween,USA,Gradient*,Launched,…}_preview`, partner icons (`iconDansDeals`, `iconOmaat`, `iconPointMe`, `iconMileValue`, `iconDOC`, `iconBTB`, `iconHelms`, `iconHermes`) | Settings → App Icon picker; partner co-branding |
+| Bank logos | `BankLogo{AmericanExpress,BankOfAmerica,Chase,Citi,USBank,WellsFargo}` + `OfferSyncWidgetBankLogo*` | Offer Sync accounts & widget |
+| Marketing/onboarding | `banner1`, `banner2`, `bestCard`, `homeScreen`, `premium`, `safari`, `whatsNew`, `LoginIcon`, `LoginIconColored` | Paywall, onboarding, What's New |
+| Easter eggs | `cat_canelle`, `cat_epice`, `cat_vanille` (`CatView`) | Fun tip / tip jar |
+| Watch faces | `Activity Analog`, `Infograph`, `Infograph Modular`, `Meridian`, `Modular` | Previews for shareable `.watchface` files |
+| Menu bar | `MenuBarIcon` | Menu-bar helper |
+
+## 2. Storyboards / XIB
+
+| File | Content |
+|---|---|
+| `LaunchScreen.storyboardc` | Single `UIViewController` (`01J-lp-oVM`) — blank launch screen (also `UIMainStoryboardFile`; real UI is SwiftUI `MainApp`) |
+| `ARViewController.nib` | AR overlay view for nearby-store pointers |
+
+All other UI is SwiftUI (392 view types; see swift-analysis.md).
+
+## 3. Localizations
+
+Development region `en`; only `Base.lproj` (3 `.intentdefinition` files: CardsWidget, PointersWidget, PointersWidgetOne) and `Settings.bundle/en.lproj`. The Safari extension has `_locales/` for its manifest strings. **The app is English-only.**
+
+## 4. Fonts
+
+No custom fonts are bundled; SF Pro / SF Symbols are used (category icons are SF Symbol names stored in data, e.g. `cart`, `airplane`, `largecircle.fill.circle`).
+
+## 5. Data resources
+
+| Resource | Size | Notes |
+|---|---|---|
+| `cp_seed.sqlite` | 4.1 MB | Core Data SQLite pre-seeded catalog for first launch/offline. Counts: banks 684 (US 649, CA 22, AU 7, GB 5…), card definitions 3,429 (personal 3,132 / business 297; Visa 2,327, Mastercard 794, Amex 220, Discover 40), earnings 4,212, features 8,355, categories 18, merchants 3,706, merchant hosts 3,708, sponsored pointer cards 54, offer-streak weeks 266 |
+| `coredata.momd` | 38 KB | Model, see storage.md |
+| `Metadata.appintents` | — | 70 actions, 22 entities, 20 queries, 10 auto shortcuts |
+| `Heartbeats.ahap` | 4.8 KB | Core Haptics pattern |
+| `*.watchface` (5) | — | Shareable watch faces |
+
+### The 18 base categories ("Pointers")
+
+| id | Name | SF Symbol |
+|---|---|---|
+| 1 | Department Store | bag |
+| 2 | Drug Store | staroflife |
+| 3 | Entertainment | film |
+| 4 | Gas Station | gauge |
+| 5 | Hotel | bed.double |
+| 7 | Office Supply Store | rectangle.and.paperclip |
+| 8 | Online Shopping | desktopcomputer |
+| 9 | Telephone Service | phone |
+| 10 | Cable Satellite TV | tv |
+| 11 | Supermarket | cart |
+| 12 | Utility | bolt |
+| 13 | Airline | airplane |
+| 14 | Car Rental | car.fill |
+| 16 | Restaurant | largecircle.fill.circle |
+| 18 | Everywhere Else | star |
+| 19 | Home Improvement Store | hammer |
+| 20 | Ride Sharing | person.2.fill |
+| 21 | Warehouse Clubs | rectangle.grid.1x2.fill |
+
+## 6. Scripts (JavaScript)
+
+| File | Size | Role |
+|---|---|---|
+| `amex-bootstrap.js`, `amex-transit.js`, `amex-bridge.js` | 230 KB | Injected into Amex web session (WKWebView); bridge posts `{type, payload}` to `window.webkit.messageHandlers` → `AmexBridgeEvent` |
+| `offer-bank-bootstrap.js` | 122 KB | Generic bank bootstrap → `OfferBankBridgeEvent` |
+| `ChaseFunctions.js`, `CitiFunctions.js`, `BoaFunctions.js`, `USBankFunctions.js`, `WellsFargoFunctions.js` | 265 KB | Per-bank offer enumeration / enrollment |
+| Safari ext: `content.js` (1.2 MB), `popup.js` (375 KB), `background.js`, `products.js` | — | Shopping Pointers on merchant sites; offer activation; talks to native app via `sendNativeMessage("getWallet")` and to `x.cardpointers.com` |
+
+All are obfuscator.io-protected (string-array rotation + hex arithmetic).
+
+## 7. Screenshots
+
+Screenshots of the CardPointers app were **not captured**: the app requires an authenticated account, and runtime UI capture was out of scope. The public App Store listing (`lookup.json`) contains 10 iPhone + 10 iPad screenshot URLs, kept there for reference and not redistributed.
+Screenshots of the **recreated web app** are generated by the Playwright suite into `screenshots/` (see docker-validation.md).

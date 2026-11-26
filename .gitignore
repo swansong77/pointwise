@@ -1,0 +1,32 @@
+# secrets — never commit (only the placeholder template is tracked)
+.env
+.env.*
+!.env.example
+
+# dependencies and build output
+node_modules/
+.next/
+dist/
+coverage/
+test-results/
+cypress/results/
+cypress/videos/
+cypress/screenshots/
+playwright-report/
+*.tsbuildinfo
+
+# personal data and local artefacts — never commit
+docker/logs/
+docker/backups/
+*.sql
+*.dump
+*.sqlite
+*.xlsx
+*.xls
+~$*
+*.pdf
+*.log
+raw/
+
+# OS / editor
+.DS_Store

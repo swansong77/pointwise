@@ -1,0 +1,12 @@
+sequenceDiagram
+  participant S as OfferSyncCoordinator
+  participant WV as WKWebView (bank site, user's session)
+  participant JS as injected bank JS
+  participant API as CardPointers API
+  S->>WV: load bank login (credentials from Keychain, OfferSyncAccountCredentials)
+  WV->>JS: inject *-bootstrap.js / *Functions.js
+  JS-->>S: BridgeEvent{type:"cards", payload} → OfferSyncCard[]
+  JS-->>S: BridgeEvent{type:"offers", payload} → OfferSyncLoadedOffer[]
+  JS->>WV: enroll ("add to card") each eligible offer
+  S->>API: POST /v1/user/extension/offers/add (OfferSyncPendingBatch)
+  S->>S: DBOfferSyncHistory{offers_added, cards_count, status}

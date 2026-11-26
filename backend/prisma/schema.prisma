@@ -1,0 +1,1770 @@
+// Pointwise — PostgreSQL schema (Prisma)
+// Canonical location: project-analysis/database/schema.prisma
+// Domain mapping to the analyzed app (see docs/storage.md):
+//   DBCard -> CreditCard, DBEarning/DBPointerCard -> Reward, DBPointer -> Category,
+//   PointerMerchantEntity -> Merchant, DBInventory -> WalletCard, DBOffer -> Offer,
+//   DBOfferInventory -> UserOffer, DBUserProfile -> Profile, DBBank -> Issuer.
+// Portfolio revision naming (docs/portfolio-revision-review.md):
+//   Cardholder -> Profile (household member), CreditAccount -> WalletCard, CardIssuer -> Issuer,
+//   RewardProgram -> RewardCurrency, FiveTwentyFourCalculation -> FiveTwentyFourSnapshot (+ domain/five24.ts).
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x", "debian-openssl-3.0.x", "linux-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── Identity ─────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(uuid())
+  recommendations Recommendation[]
+  agentRuns     AgentRun[]
+  mailboxes     Mailbox[]
+  email         String    @unique
+  name          String?
+  passwordHash  String?
+  role          Role      @default(USER)
+  emailVerified DateTime?
+  countryCode   String    @default("US")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  accounts        OAuthAccount[]
+  refreshTokens   RefreshToken[]
+  wallet          Wallet?
+  profiles        Profile[]
+  household       Household?
+  bankConnections BankConnection[]
+  emailInbox      EmailInbox?
+  inboundEmails   InboundEmail[]
+  creditReportAccounts CreditReportAccount[]
+  importJobs      CardImportJob[]
+  retentionReports RetentionOfferReport[]
+  spendProfile    SpendProfileEntry[]
+  loyaltyBalances LoyaltyBalance[]
+  pushSubscriptions PushSubscription[]
+  aiSettings      AiSettings?
+  aiConversations AiConversation[]
+  aiUsage         AiUsage[]
+  aiPendingActions AiPendingAction[]
+  accessTokens    PersonalAccessToken[]
+  subscription    Subscription?
+  notifications   Notification[]
+  notificationPrefs NotificationPreference?
+  transactions    Transaction[]
+  analytics       AnalyticsEvent[]
+  valuations      UserValuation[]
+  categoryPins    CategoryPin[]
+  offerAlerts     OfferAlert[]
+  auditLogs       AuditLog[]
+  passwordResets  PasswordResetToken[]
+  statementImports StatementImport[]
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model OAuthAccount {
+  id                String @id @default(uuid())
+  userId            String
+  provider          String // google | apple
+  providerAccountId String
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String
+  tokenHash  String    @unique
+  familyId   String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  replacedBy String?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+}
+
+// ───────────────────────────── Household ─────────────────────────────
+
+/// One household per owning user; members are Profiles ("cardholders").
+model Household {
+  id        String    @id @default(uuid())
+  ownerId   String    @unique
+  name      String    @default("My household")
+  createdAt DateTime  @default(now())
+  owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members   Profile[]
+}
+
+enum CardholderRelationship {
+  SELF
+  SPOUSE
+  PARTNER
+  CHILD
+  PARENT
+  OTHER
+}
+
+/// A cardholder in the user's household (the "Cardholder" entity of the portfolio spec).
+model Profile {
+  id           String                 @id @default(uuid())
+  userId       String
+  householdId  String?
+  nickname     String
+  email        String?
+  relationship CardholderRelationship @default(OTHER)
+  birthYear    Int?
+  /// self-reported credit score band (optional input to the next-card scorer; never sent to an AI provider)
+  creditBand   CreditBand?
+  /// self-reported reward goals (TRAVEL, CASHBACK, HOTEL, AIRLINE, LOW_FEE); used by the recommendation engine, never sent to an AI provider
+  goals        String[]               @default([])
+  /// self-reported: can apply for business cards
+  hasBusiness  Boolean                @default(false)
+  isPrimary    Boolean                @default(false)
+  sortOrder    Int                    @default(0)
+  createdAt    DateTime               @default(now())
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  household    Household?             @relation(fields: [householdId], references: [id], onDelete: SetNull)
+  cards        WalletCard[]
+  creditReportAccounts CreditReportAccount[]
+  five24Snapshots FiveTwentyFourSnapshot[]
+  loyaltyBalances LoyaltyBalance[]
+
+  @@index([userId])
+  @@index([householdId])
+}
+
+// ───────────────────────────── Catalog ─────────────────────────────
+
+model Issuer {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  countryCode String       @default("US")
+  website     String?
+  /// Business cards from this issuer appear on personal credit reports (count toward 5/24).
+  businessReportsToPersonal Boolean @default(false)
+  /// Issuer usually denies applicants at 5/24 or above (Phase D scorer).
+  enforcesFive24 Boolean @default(false)
+  aliases     String[]     // alternative names used by imports ("Amex", "Chase")
+  kind        IssuerKind   @default(BANK)
+  /// last DISCOVER run of the card-research agent for this issuer
+  lastResearchedAt DateTime?
+  cards       CreditCard[]
+  offers      Offer[]
+}
+
+enum IssuerKind {
+  BANK
+  CREDIT_UNION
+  CARD_COMPANY   // e.g. American Express, Discover
+  FINTECH
+}
+
+enum CardNetwork {
+  VISA
+  MASTERCARD
+  AMEX
+  DISCOVER
+  OTHER
+}
+
+enum CardType {
+  PERSONAL
+  BUSINESS
+}
+
+model RewardCurrency {
+  id           String       @id @default(uuid())
+  code         String       @unique // e.g. CASH, NW_MILES
+  name         String
+  centsPerPoint Decimal     @db.Decimal(6, 3) // default valuation (¢ per point)
+  isCash       Boolean      @default(false)
+  /// points can be combined between members of one household (Phase D award planner)
+  householdPooling Boolean  @default(false)
+  /// transfers to partners move in multiples of this many points
+  transferIncrement Int     @default(1000)
+  cards        CreditCard[]
+  userValuations UserValuation[]
+  transferPartners TransferPartner[]
+  balances     LoyaltyBalance[]
+}
+
+model CreditCard {
+  id             String      @id @default(uuid())
+  slug           String      @unique
+  name           String
+  issuerId       String
+  network        CardNetwork
+  type           CardType    @default(PERSONAL)
+  annualFeeCents Int         @default(0)
+  foreignTxFee   Boolean     @default(false)
+  currencyId     String
+  color          String      @default("#334155")
+  bonusDescription String?
+  bonusPoints    Int?        // welcome bonus in currency units
+  bonusSpendCents Int?
+  bonusMonths    Int?
+  applyUrl       String?
+  countryCode    String      @default("US")
+  isActive       Boolean     @default(true)
+  /// set for private cards created by a user's import/bank sync — never shown in the public catalog
+  ownerId        String?
+  // ── master data (Phase C) ──
+  description           String?
+  productFamily         String?   // e.g. "Voyager" — cards that can be product-changed into each other
+  productStatus         CardProductStatus @default(OPEN)
+  launchDate            DateTime?
+  authorizedUserFeeCents Int?
+  bonusType             BonusType?
+  bonusValuationCents   Int?      // estimated value of the current welcome bonus
+  offerExpiresAt        DateTime?
+  /// credit typically needed for approval (catalog, admin-entered)
+  recommendedCredit     CreditBand?
+  /// where the catalog entry came from; SEED = curated real-card list awaiting verification
+  catalogSource         CatalogSource @default(ADMIN)
+  /// facts as of this date (curated seed) — shown as "unverified, as of …" until a source confirms them
+  dataAsOf              DateTime?
+  /// last time an issuer page confirmed the card's facts (approved proposal or verified research)
+  lastVerifiedAt        DateTime?
+  /// what confirmed it: ISSUER_LISTING (issuer's all-cards page: name, type, fee, headline rates) or PRODUCT_PAGE
+  verifiedScope         String?
+  popularity     Int         @default(0)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  issuer       Issuer         @relation(fields: [issuerId], references: [id])
+  currency     RewardCurrency @relation(fields: [currencyId], references: [id])
+  rewards      Reward[]
+  features     CardFeature[]
+  walletCards  WalletCard[]
+  offers       Offer[]
+  benefits     Benefit[]
+  dataSources  CardDataSource[]
+  proposals    CardChangeProposal[]
+  researchRuns CardResearchRun[]
+  offerHistory CardOffer[]
+  retentionReports RetentionOfferReport[]
+
+  @@index([issuerId])
+  @@index([name])
+  @@index([ownerId])
+}
+
+model CardFeature {
+  id        String     @id @default(uuid())
+  cardId    String
+  text      String
+  sortOrder Int        @default(0)
+  card      CreditCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
+}
+
+model Category {
+  id          String     @id @default(uuid())
+  slug        String     @unique
+  name        String
+  icon        String     @default("star")
+  sortOrder   Int        @default(0)
+  isFallback  Boolean    @default(false) // "Everywhere else"
+  parentId    String?
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryTree")
+  merchants   Merchant[]
+  rewards     Reward[]
+  pins        CategoryPin[]
+  spendProfile SpendProfileEntry[]
+  transactions Transaction[]
+}
+
+model Merchant {
+  id         String     @id @default(uuid())
+  slug       String     @unique
+  name       String
+  categoryId String
+  hosts      String[]   // web domains, e.g. ["example.com"]
+  logoUrl    String?
+  isPopular  Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  category   Category   @relation(fields: [categoryId], references: [id])
+  locations  Location[]
+  rewards    Reward[]
+  offers     Offer[]
+  pins       CategoryPin[]
+  transactions Transaction[]
+
+  @@index([categoryId])
+  @@index([name])
+}
+
+model Location {
+  id         String   @id @default(uuid())
+  merchantId String
+  name       String
+  address    String?
+  latitude   Float
+  longitude  Float
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([latitude, longitude])
+  @@index([merchantId])
+}
+
+// Earning rule: card earns `multiplier` x in a category or at a merchant.
+model Reward {
+  id          String     @id @default(uuid())
+  cardId      String
+  categoryId  String?
+  merchantId  String?
+  multiplier  Decimal    @db.Decimal(6, 2)
+  description String
+  capCents    Int?       // annual/quarterly spend cap
+  capPeriod   String?    // QUARTER | YEAR
+  isRotating  Boolean    @default(false) // must be activated/selected
+  startsAt    DateTime?
+  endsAt      DateTime?
+  card        CreditCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  category    Category?  @relation(fields: [categoryId], references: [id])
+  merchant    Merchant?  @relation(fields: [merchantId], references: [id])
+
+  @@index([cardId])
+  @@index([categoryId])
+  @@index([merchantId])
+}
+
+// ───────────────────────────── Wallet ─────────────────────────────
+
+model Wallet {
+  id        String       @id @default(uuid())
+  userId    String       @unique
+  createdAt DateTime     @default(now())
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards     WalletCard[]
+}
+
+enum CardStatus {
+  APPLIED
+  APPROVED
+  DENIED
+  CLOSED
+}
+
+enum Cardholder {
+  PRIMARY
+  AUTHORIZED_USER
+}
+
+enum OpenDatePrecision {
+  DAY
+  MONTH
+}
+
+enum CardSource {
+  MANUAL
+  SPREADSHEET
+  BANK
+  CREDIT_REPORT
+}
+
+model WalletCard {
+  id               String     @id @default(uuid())
+  walletId         String
+  cardId           String
+  profileId        String?
+  nickname         String?
+  notes            String?
+  status           CardStatus @default(APPROVED)
+  cardholder       Cardholder @default(PRIMARY)
+  /// 4 digits (5 for Amex) — never a full card number
+  lastFour         String?    @db.VarChar(5)
+  approvedAt       DateTime?
+  openDatePrecision OpenDatePrecision @default(DAY)
+  creditLimitCents Int?
+  excludeFrom524   Boolean    @default(false)
+  excludeReason    String?
+  source           CardSource @default(MANUAL)
+  sourceRef        String?    // provider account id / import row key
+  sourceMeta       Json?
+  closedAt         DateTime?
+  annualFeeOverrideCents Int?
+  bonusEarned      Boolean    @default(false)
+  bonusSpendCents  Int        @default(0)
+  selectedCategoryIds String[] // chosen rotating/selectable categories
+  sortOrder        Int        @default(0)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  wallet       Wallet      @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  card         CreditCard  @relation(fields: [cardId], references: [id])
+  profile      Profile?    @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  userOffers   UserOffer[]
+  transactions Transaction[]
+  pins         CategoryPin[]
+  benefits     UserBenefit[]
+  creditReportAccounts CreditReportAccount[]
+
+  @@index([walletId])
+  @@index([cardId])
+  statementImports StatementImport[]
+}
+
+model UserValuation {
+  id            String         @id @default(uuid())
+  userId        String
+  currencyId    String
+  centsPerPoint Decimal        @db.Decimal(6, 3)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currency      RewardCurrency @relation(fields: [currencyId], references: [id])
+
+  @@unique([userId, currencyId])
+}
+
+model CategoryPin {
+  id           String     @id @default(uuid())
+  userId       String
+  walletCardId String
+  categoryId   String?
+  merchantId   String?
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletCard   WalletCard @relation(fields: [walletCardId], references: [id], onDelete: Cascade)
+  category     Category?  @relation(fields: [categoryId], references: [id])
+  merchant     Merchant?  @relation(fields: [merchantId], references: [id])
+
+  @@unique([userId, categoryId])
+  @@unique([userId, merchantId])
+}
+
+// ───────────────────────────── Offers ─────────────────────────────
+
+enum OfferKind {
+  CASH      // $ back
+  POINTS    // bonus points
+  PERCENT   // % off up to max
+}
+
+model Offer {
+  id              String     @id @default(uuid())
+  title           String
+  description     String?
+  terms           String?
+  kind            OfferKind  @default(CASH)
+  valueCents      Int        @default(0)  // cash value or max discount
+  points          Int?
+  percent         Decimal?   @db.Decimal(5, 2)
+  minSpendCents   Int?
+  startsAt        DateTime?
+  endsAt          DateTime?
+  isRepeatable    Boolean    @default(false)
+  maxTimes        Int?
+  url             String?
+  issuerId        String?
+  cardId          String?
+  merchantId      String?
+  isCustom        Boolean    @default(false)
+  createdById     String?
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  issuer          Issuer?     @relation(fields: [issuerId], references: [id])
+  card            CreditCard? @relation(fields: [cardId], references: [id])
+  merchant        Merchant?   @relation(fields: [merchantId], references: [id])
+  userOffers      UserOffer[]
+
+  @@index([merchantId])
+  @@index([cardId])
+  @@index([endsAt])
+}
+
+enum UserOfferStatus {
+  ACTIVE
+  REDEEMED
+  EXPIRED
+}
+
+model UserOffer {
+  id            String          @id @default(uuid())
+  walletCardId  String
+  offerId       String
+  status        UserOfferStatus @default(ACTIVE)
+  amountUsedCents Int           @default(0)
+  timesUsed     Int             @default(0)
+  isFavorite    Boolean         @default(false)
+  snoozedUntil  DateTime?
+  redeemedAt    DateTime?
+  addedAt       DateTime        @default(now())
+  walletCard    WalletCard      @relation(fields: [walletCardId], references: [id], onDelete: Cascade)
+  offer         Offer           @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@unique([walletCardId, offerId])
+  @@index([status])
+}
+
+model OfferAlert {
+  id        String   @id @default(uuid())
+  userId    String
+  keywords  String[]
+  minValueCents Int?
+  issuerIds String[]
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ───────────────────────────── Money & engagement ─────────────────────────────
+
+model Transaction {
+  id           String     @id @default(uuid())
+  userId       String
+  walletCardId String
+  merchantId   String?
+  categoryId   String?
+  /// always positive; the direction is in `kind`
+  amountCents  Int
+  description  String?
+  occurredAt   DateTime   @default(now())
+  kind         TransactionKind   @default(PURCHASE)
+  source       TransactionSource @default(MANUAL)
+  /// bank transaction id, or a hash of date+amount+description for statement imports (dedupe key)
+  externalId   String?
+  /// the bank's own category label, kept for display / re-mapping
+  bankCategory String?
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletCard   WalletCard @relation(fields: [walletCardId], references: [id], onDelete: Cascade)
+  category     Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  merchant     Merchant?  @relation(fields: [merchantId], references: [id], onDelete: SetNull)
+  benefitUsages   BenefitUsage[] @relation("UsageTransaction")
+  benefitCredits  BenefitUsage[] @relation("UsageCreditTransaction")
+
+  @@unique([walletCardId, externalId])
+  @@index([userId, occurredAt])
+}
+
+enum TransactionKind {
+  PURCHASE
+  CREDIT    // statement credit from the issuer (benefit credits post as these)
+  REFUND
+  PAYMENT
+  FEE
+}
+
+enum TransactionSource {
+  MANUAL
+  CSV
+  PDF
+  BANK
+  EMAIL   // card transaction alert forwarded to the user's Pointwise address
+}
+
+/// A user's private forwarding address for card alert emails: <token>@INBOUND_EMAIL_DOMAIN.
+model EmailInbox {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  token          String    @unique
+  enabled        Boolean   @default(true)
+  received       Int       @default(0)
+  lastReceivedAt DateTime?
+  createdAt      DateTime  @default(now())
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum InboundKind {
+  ALERT                 // a transaction alert
+  STATEMENT             // a statement PDF attachment
+  FORWARD_CONFIRMATION  // Gmail asks to confirm forwarding
+  IGNORED               // not a transaction (marketing, payment confirmation, declined …)
+}
+
+enum InboundStatus {
+  PROCESSED
+  NEEDS_CARD   // which card? (no or ambiguous last digits) — the user assigns it
+  DUPLICATE
+  REJECTED     // sender not an allow-listed issuer, or failed authentication
+}
+
+/// What arrived at the inbox — parsed facts only; the email body is never stored. Kept 90 days.
+/// One imported statement file (upload, bulk drop or emailed PDF). Only a SHA-256 of the file and its
+/// period are kept — never the file itself — so the same statement is not imported twice and each
+/// card shows which months are covered.
+model StatementImport {
+  id           String     @id @default(uuid())
+  userId       String
+  walletCardId String
+  fileSha256   String     @db.VarChar(64)
+  format       String     @db.VarChar(8)
+  /// UPLOAD | BULK | EMAIL
+  channel      String     @db.VarChar(8)
+  periodStart  DateTime?
+  periodEnd    DateTime?
+  rows         Int        @default(0)
+  imported     Int        @default(0)
+  duplicates   Int        @default(0)
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletCard   WalletCard @relation(fields: [walletCardId], references: [id], onDelete: Cascade)
+  validation   StatementValidation?
+  usages       BenefitUsage[]
+  detections   BenefitDetection[]
+
+  @@unique([walletCardId, fileSha256])
+  @@index([userId, createdAt])
+}
+
+/// Completeness check of one imported statement (counts and amounts, found vs imported).
+model StatementValidation {
+  id                 String           @id @default(uuid())
+  statementImportId  String           @unique
+  statementCount     Int
+  importedCount      Int
+  differenceCount    Int
+  statementCents     Int
+  importedCents      Int
+  missingCents       Int
+  /// 0-100
+  confidence         Int
+  status             ValidationStatus
+  details            Json?
+  createdAt          DateTime         @default(now())
+  statementImport    StatementImport  @relation(fields: [statementImportId], references: [id], onDelete: Cascade)
+}
+
+/// One candidate benefit match for a transaction (audit trail, manual overrides, AI reasoning).
+model BenefitDetection {
+  id                String          @id @default(uuid())
+  userBenefitId     String
+  transactionId     String
+  usageId           String?
+  statementImportId String?
+  method            String          @db.VarChar(8)
+  confidence        Int
+  rule              String          @db.VarChar(120)
+  merchant          String          @db.VarChar(120)
+  /// ASSIGN | REVIEW
+  tier              String          @db.VarChar(8)
+  status            DetectionStatus @default(DETECTED)
+  /// AI classifier's stated reasoning (stored for audit); null for rule-based matches
+  aiReasoning       String?
+  duplicateRisk     Boolean         @default(false)
+  decidedAt         DateTime?
+  createdAt         DateTime        @default(now())
+  userBenefit       UserBenefit     @relation(fields: [userBenefitId], references: [id], onDelete: Cascade)
+  statementImport   StatementImport? @relation(fields: [statementImportId], references: [id], onDelete: SetNull)
+
+  @@unique([userBenefitId, transactionId])
+  @@index([transactionId])
+}
+
+model InboundEmail {
+  id            String        @id @default(uuid())
+  userId        String
+  receivedAt    DateTime      @default(now())
+  fromDomain    String
+  subject       String
+  kind          InboundKind
+  status        InboundStatus
+  verified      Boolean       @default(false)
+  lastDigits    String?       @db.VarChar(5)
+  amountCents   Int?
+  merchant      String?
+  occurredAt    DateTime?
+  credit        Boolean       @default(false)
+  walletCardId  String?
+  transactionId String?
+  note          String?
+  confirmationCode String?
+  confirmationUrl  String?
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, receivedAt])
+}
+
+enum UsageSource {
+  MANUAL
+  AUTO_PURCHASE   // a matching purchase — credit expected
+  AUTO_CREDIT     // the issuer's statement credit posted
+}
+
+enum UsageVerification {
+  UNVERIFIED
+  VERIFIED
+  REJECTED
+}
+
+enum DetectionStatus {
+  DETECTED
+  ACCEPTED
+  REJECTED
+}
+
+enum ValidationStatus {
+  PASS
+  WARNING
+  FAILED
+}
+
+enum UsageStatus {
+  CONFIRMED
+  EXPECTED    // purchase matched; waiting for the statement credit
+  DISMISSED   // user said "not this benefit" — kept so the transaction is never matched again
+}
+
+enum Plan {
+  FREE
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  CANCELED
+  PAST_DUE
+}
+
+model Subscription {
+  id                 String             @id @default(uuid())
+  userId             String             @unique
+  plan               Plan               @default(FREE)
+  status             SubscriptionStatus @default(ACTIVE)
+  interval           String?            // month | year | lifetime
+  provider           String             @default("mock")
+  providerCustomerId String?
+  providerSubId      String?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum NotificationType {
+  BENEFIT_EXPIRING
+  OFFER_EXPIRING
+  CARD_RENEWAL
+  BONUS_DEADLINE
+  OFFER_ALERT
+  TRANSFER_BONUS
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  link      String?
+  dedupeKey String?
+  readAt    DateTime?
+  emailedAt DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt])
+}
+
+model NotificationPreference {
+  userId            String  @id
+  offerExpiring     Boolean @default(true)
+  cardRenewal       Boolean @default(true)
+  bonusDeadline     Boolean @default(true)
+  offerAlerts       Boolean @default(true)
+  emailDigest       Boolean @default(true)
+  expiringDays      Int     @default(7)
+  benefitExpiring   Boolean @default(true)
+  benefitEmail      Boolean @default(true)
+  benefitPush       Boolean @default(false)
+  transferBonuses   Boolean @default(true)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(uuid())
+  userId     String?
+  name       String
+  properties Json     @default("{}")
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([name, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String
+  action    String
+  entity    String
+  entityId  String
+  diff      Json?
+  createdAt DateTime @default(now())
+  actor     User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([entity, entityId])
+}
+
+// ───────────────────────────── Benefits ─────────────────────────────
+
+model BenefitCategory {
+  id        String    @id @default(uuid())
+  slug      String    @unique
+  name      String
+  sortOrder Int       @default(0)
+  benefits  Benefit[]
+  userBenefits UserBenefit[]
+}
+
+enum BenefitPeriod {
+  MONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  ANNUAL
+  MULTI_YEAR
+  ONE_TIME
+  CUSTOM
+}
+
+enum PeriodBasis {
+  CALENDAR
+  CARDMEMBER_YEAR
+}
+
+enum BenefitKind {
+  CREDIT
+  CERTIFICATE
+  MEMBERSHIP
+  ACCESS
+}
+
+/// Catalog template: a benefit that comes with a card product.
+model Benefit {
+  id                   String          @id @default(uuid())
+  cardId               String
+  categoryId           String?
+  name                 String
+  kind                 BenefitKind     @default(CREDIT)
+  period               BenefitPeriod   @default(ANNUAL)
+  periodMonths         Int             @default(12) // 1/3/6/12, or e.g. 48 for MULTI_YEAR
+  basis                PeriodBasis     @default(CALENDAR)
+  amountPerPeriodCents Int             @default(0)
+  howIssued            String?
+  actionNeeded         String?
+  notes                String?
+  isActive             Boolean         @default(true)
+  /// matching rules copied to tracked benefits; null = suggested from name / category
+  autoRules            Json?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  card                 CreditCard      @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  category             BenefitCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  userBenefits         UserBenefit[]
+
+  @@unique([cardId, name])
+}
+
+/// A benefit tracked on one of the user's cards (copied from a template or custom).
+model UserBenefit {
+  id                   String        @id @default(uuid())
+  walletCardId         String
+  benefitId            String?
+  categoryId           String?
+  name                 String
+  kind                 BenefitKind   @default(CREDIT)
+  period               BenefitPeriod @default(ANNUAL)
+  periodMonths         Int           @default(12)
+  basis                PeriodBasis   @default(CALENDAR)
+  amountPerPeriodCents Int
+  howIssued            String?
+  actionNeeded         String?
+  notes                String?
+  enabled              Boolean       @default(true)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  walletCard           WalletCard    @relation(fields: [walletCardId], references: [id], onDelete: Cascade)
+  benefit              Benefit?      @relation(fields: [benefitId], references: [id], onDelete: SetNull)
+  category             BenefitCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  usages               BenefitUsage[]
+  notifications        BenefitNotification[]
+  /// automatic tracking from transactions (on by default)
+  autoTrack            Boolean       @default(true)
+  /// {keywords, categories, creditKeywords}; null = rules suggested from name / category
+  autoRules            Json?
+  /// the benefit stops being usable on this date (certificates, one-time offers)
+  expiresOn            DateTime?
+  /// ONE_TIME: the single usable window
+  windowStart          DateTime?
+  windowEnd            DateTime?
+  detections           BenefitDetection[]
+
+  @@unique([walletCardId, name])
+  @@index([walletCardId])
+}
+
+/// Money (or a certificate) used within one period instance of a benefit.
+model BenefitUsage {
+  id            String      @id @default(uuid())
+  userBenefitId String
+  periodStart   DateTime
+  amountCents   Int
+  usedOn        DateTime    @default(now())
+  note          String?
+  source        UsageSource @default(MANUAL)
+  status        UsageStatus @default(CONFIRMED)
+  /// purchase (or credit) that created this usage; deleting it removes the usage
+  transactionId String?
+  /// statement credit that confirmed an EXPECTED usage
+  creditTransactionId String?
+  /// how the usage was found: MANUAL | EXACT | ALIAS | REGEX | FUZZY | AI
+  detectionMethod String?   @db.VarChar(8)
+  /// 0-100
+  confidence    Int?
+  verification  UsageVerification @default(UNVERIFIED)
+  /// the statement import that supplied the evidence
+  statementImportId String?
+  /// {merchant, rule, line}
+  evidence      Json?
+  createdAt     DateTime    @default(now())
+  statementImport StatementImport? @relation(fields: [statementImportId], references: [id], onDelete: SetNull)
+  userBenefit   UserBenefit @relation(fields: [userBenefitId], references: [id], onDelete: Cascade)
+  transaction   Transaction? @relation("UsageTransaction", fields: [transactionId], references: [id], onDelete: Cascade)
+  creditTransaction Transaction? @relation("UsageCreditTransaction", fields: [creditTransactionId], references: [id], onDelete: SetNull)
+
+  @@unique([userBenefitId, transactionId])
+  @@index([creditTransactionId])
+  @@index([userBenefitId, periodStart])
+  @@index([statementImportId])
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  PUSH
+}
+
+/// Delivery log: one row per (benefit, period, threshold, channel) — makes alerts idempotent.
+model BenefitNotification {
+  id            String              @id @default(uuid())
+  userBenefitId String
+  periodEnd     DateTime
+  thresholdDays Int
+  channel       NotificationChannel
+  success       Boolean             @default(true)
+  sentAt        DateTime            @default(now())
+  userBenefit   UserBenefit         @relation(fields: [userBenefitId], references: [id], onDelete: Cascade)
+
+  @@unique([userBenefitId, periodEnd, thresholdDays, channel])
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ───────────────────────────── Imports & connections ─────────────────────────────
+
+enum ImportSource {
+  SPREADSHEET
+  CSV
+  BANK
+  CREDIT_REPORT
+}
+
+enum ImportStatus {
+  PREVIEW
+  COMMITTED
+  FAILED
+  DISCARDED
+}
+
+enum ImportRowResult {
+  NEW
+  UPDATE
+  DUPLICATE
+  SKIPPED
+  ERROR
+}
+
+model CardImportJob {
+  id         String       @id @default(uuid())
+  userId     String
+  source     ImportSource
+  status     ImportStatus @default(PREVIEW)
+  fileName   String?
+  summary    Json         @default("{}")
+  errors     Json         @default("[]")
+  createdAt  DateTime     @default(now())
+  committedAt DateTime?
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rows       ImportRow[]
+
+  @@index([userId, createdAt])
+}
+
+model ImportRow {
+  id           String          @id @default(uuid())
+  jobId        String
+  kind         String          // CARD | BENEFIT
+  rowNumber    Int
+  data         Json
+  result       ImportRowResult
+  message      String?
+  matchedId    String?         // existing wallet card id (UPDATE/DUPLICATE) or catalog card id
+  job          CardImportJob   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+}
+
+enum BankProvider {
+  PLAID
+}
+
+model BankConnection {
+  id              String       @id @default(uuid())
+  userId          String
+  provider        BankProvider
+  institutionName String?
+  itemId          String
+  accessTokenEnc  String       // AES-256-GCM, key from TOKEN_ENC_KEY
+  lastSyncedAt    DateTime?
+  /// transactions sync cursor (Plaid /transactions/sync)
+  txCursor        String?
+  /// the bank needs the user to sign in again (Plaid ITEM_LOGIN_REQUIRED / PENDING_EXPIRATION)
+  needsReauth     Boolean      @default(false)
+  lastError       String?
+  lastTxSyncAt    DateTime?
+  createdAt       DateTime     @default(now())
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, itemId])
+  @@index([userId])
+}
+
+enum Bureau {
+  EXPERIAN
+  EQUIFAX
+  TRANSUNION
+  OTHER
+}
+
+/// A tradeline transcribed from a credit report (manual entry or CSV), matched to a wallet card.
+model CreditReportAccount {
+  id            String      @id @default(uuid())
+  userId        String
+  profileId     String?
+  bureau        Bureau      @default(OTHER)
+  creditorName  String
+  lastDigits    String?     @db.VarChar(5)
+  openedOn      DateTime
+  isBusiness    Boolean     @default(false)
+  isAuthorizedUser Boolean  @default(false)
+  status        String      @default("OPEN") // OPEN | CLOSED
+  creditLimitCents Int?
+  /// DAY when the report shows the full date (Credit Karma usually does), else MONTH
+  openedPrecision OpenDatePrecision @default(MONTH)
+  closedOn      DateTime?
+  accountType   String?
+  /// MANUAL | CREDIT_KARMA_PDF | CREDIT_KARMA_TEXT | BUREAU_PDF | BUREAU_TEXT | MULTIPLE
+  source        String      @default("MANUAL")
+  /// bureaus whose reports listed this account (merged import)
+  reportedBy    Bureau[]
+  walletCardId  String?
+  createdAt     DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile       Profile?    @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  walletCard    WalletCard? @relation(fields: [walletCardId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}
+
+/// Daily per-cardholder history of the 5/24 count (charting / audit).
+model FiveTwentyFourSnapshot {
+  id        String   @id @default(uuid())
+  profileId String
+  takenOn   DateTime @db.Date
+  count     Int
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, takenOn])
+}
+
+// ───────────────────────────── AI platform ─────────────────────────────
+
+enum AiProviderKind {
+  ANTHROPIC
+  OPENAI
+  AZURE_OPENAI
+  GEMINI
+  OPENAI_COMPATIBLE // xAI Grok, Mistral, DeepSeek, OpenRouter, …
+  OLLAMA
+  MOCK              // deterministic provider for tests / demos without keys
+}
+
+enum AiStatus {
+  ACTIVE
+  DISABLED
+}
+
+/// An LLM provider account. API keys are AES-256-GCM encrypted and never returned by the API.
+model AiProvider {
+  id         String         @id @default(uuid())
+  name       String         @unique
+  kind       AiProviderKind
+  baseUrl    String?
+  apiVersion String?
+  apiKeyEnc  String?
+  /// read the key from this environment variable instead of the database (e.g. ANTHROPIC_API_KEY)
+  apiKeyEnv  String?
+  status     AiStatus       @default(DISABLED)
+  settings   Json           @default("{}")
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  models     AiModel[]
+}
+
+model AiModel {
+  id                 String     @id @default(uuid())
+  providerId         String
+  modelId            String     // the provider's model identifier, e.g. claude-opus-5-5
+  displayName        String
+  contextWindow      Int?
+  maxOutputTokens    Int?
+  /// USD per 1M tokens
+  inputPrice         Decimal?   @db.Decimal(10, 4)
+  outputPrice        Decimal?   @db.Decimal(10, 4)
+  cacheReadPrice     Decimal?   @db.Decimal(10, 4)
+  capabilities       String[]   // tools, vision, thinking, streaming, caching
+  rateLimitRpm       Int?
+  status             AiStatus   @default(ACTIVE)
+  sortOrder          Int        @default(0)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  provider           AiProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  usage              AiUsage[]
+
+  @@unique([providerId, modelId])
+}
+
+/// One of the specialised assistants: prompt + allowed tools + ordered model chain (failover).
+model AgentProfile {
+  id           String   @id @default(uuid())
+  key          String   @unique
+  name         String
+  description  String
+  systemPrompt String
+  tools        String[] // Pointwise tool names
+  mcpToolIds   String[] // approved external MCP tools
+  modelChain   String[] // AiModel ids, in failover order
+  effort       String?  // low | medium | high (providers that support it)
+  maxSteps     Int      @default(6)
+  maxTokens    Int      @default(4096)
+  enabled      Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  updatedAt    DateTime @updatedAt
+}
+
+model AiSettings {
+  userId          String    @id
+  consentedAt     DateTime? // required before any data is sent to an AI provider
+  preferredModelId String?
+  monthlyTokenBudget Int?   // overrides AI_MONTHLY_TOKEN_BUDGET
+  /// opt-in: let the user's chosen model classify cleaned merchant names (never amounts, dates, digits or names) for benefit detection
+  classifyMerchants Boolean @default(false)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AiConversation {
+  id        String      @id @default(uuid())
+  userId    String
+  agentKey  String
+  title     String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  AiMessage[]
+
+  @@index([userId, updatedAt])
+}
+
+enum AiRole {
+  USER
+  ASSISTANT
+}
+
+/// Normalised transcript entry (provider-neutral); `content` holds text, tool calls and tool results.
+model AiMessage {
+  id             String         @id @default(uuid())
+  conversationId String
+  role           AiRole
+  content        Json
+  modelId        String?
+  createdAt      DateTime       @default(now())
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+model AiUsage {
+  id              String   @id @default(uuid())
+  userId          String?
+  conversationId  String?
+  agentKey        String
+  modelId         String?
+  providerKind    AiProviderKind
+  inputTokens     Int      @default(0)
+  outputTokens    Int      @default(0)
+  cacheReadTokens Int      @default(0)
+  cacheWriteTokens Int     @default(0)
+  costMicroUsd    Int?     // null when the model has no price row
+  latencyMs       Int      @default(0)
+  success         Boolean  @default(true)
+  errorCode       String?
+  createdAt       DateTime @default(now())
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  model           AiModel? @relation(fields: [modelId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+enum PendingActionStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  FAILED
+}
+
+/// A write action proposed by the assistant; it runs only after the user confirms it.
+model AiPendingAction {
+  id             String              @id @default(uuid())
+  userId         String
+  conversationId String?
+  tool           String
+  input          Json
+  summary        String
+  status         PendingActionStatus @default(PENDING)
+  result         Json?
+  createdAt      DateTime            @default(now())
+  decidedAt      DateTime?
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+}
+
+/// Personal access tokens (for the Pointwise MCP server). Only a SHA-256 hash is stored.
+model PersonalAccessToken {
+  id         String    @id @default(uuid())
+  userId     String
+  name       String
+  prefix     String    // first characters, for display
+  tokenHash  String    @unique
+  scopes     String[]  // e.g. mcp:read
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ───────────────────────────── MCP client registry (admin only) ─────────────────────────────
+
+enum McpAuthType {
+  NONE
+  BEARER
+}
+
+enum McpHealth {
+  UNKNOWN
+  UP
+  DOWN
+}
+
+model McpServer {
+  id            String      @id @default(uuid())
+  name          String      @unique
+  url           String
+  authType      McpAuthType @default(NONE)
+  authSecretEnc String?
+  status        AiStatus    @default(DISABLED)
+  version       String?
+  health        McpHealth   @default(UNKNOWN)
+  lastCheckedAt DateTime?
+  lastError     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  tools         McpTool[]
+}
+
+/// A tool discovered on a remote MCP server. Usable only when enabled AND the approved description
+/// hash still matches the current one (tool definitions that change must be re-approved).
+model McpTool {
+  id              String    @id @default(uuid())
+  serverId        String
+  name            String
+  description     String
+  inputSchema     Json
+  descriptionHash String
+  approvedHash    String?
+  enabled         Boolean   @default(false)
+  readOnly        Boolean   @default(true)
+  updatedAt       DateTime  @updatedAt
+  server          McpServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@unique([serverId, name])
+}
+
+// ───────────────────────────── Card knowledge base (Phase C) ─────────────────────────────
+
+enum CardProductStatus {
+  OPEN            // accepting applications
+  CLOSED_TO_NEW   // existing cardholders only
+  DISCONTINUED
+}
+
+enum BonusType {
+  POINTS
+  MILES
+  CASH
+  NIGHTS
+  OTHER
+}
+
+enum CardSourceKind {
+  ISSUER_PAGE
+  MANUAL
+}
+
+/// A public page (issuer product page) the refresh engine reads for one catalog card.
+model CardDataSource {
+  id            String         @id @default(uuid())
+  cardId        String
+  url           String
+  kind          CardSourceKind @default(ISSUER_PAGE)
+  active        Boolean        @default(true)
+  etag          String?
+  lastModified  String?
+  contentHash   String?
+  lastFetchedAt DateTime?
+  lastStatus    String?        // UNCHANGED | PROPOSED | NO_CHANGE | ERROR | BLOCKED
+  lastError     String?
+  failureCount  Int            @default(0)
+  createdAt     DateTime       @default(now())
+  card          CreditCard     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  proposals     CardChangeProposal[]
+
+  @@unique([cardId, url])
+}
+
+enum ProposalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUPERSEDED
+}
+
+/// One field change found by the refresh engine; applied only when an admin approves it.
+model CardChangeProposal {
+  id         String         @id @default(uuid())
+  cardId     String
+  sourceId   String?
+  field      String
+  oldValue   Json?
+  newValue   Json
+  evidence   String         // quoted text from the page that supports the value
+  confidence Float
+  method     String         // LLM | HEURISTIC | MANUAL
+  status     ProposalStatus @default(PENDING)
+  reviewerId String?
+  decidedAt  DateTime?
+  createdAt  DateTime       @default(now())
+  card       CreditCard     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  source     CardDataSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([cardId])
+}
+
+enum OfferVersionKind {
+  WELCOME
+  ELEVATED
+  LIMITED_TIME
+}
+
+/// Versioned offer history (SCD type 2): exactly one open version (validTo NULL) per card and kind.
+model CardOffer {
+  id             String           @id @default(uuid())
+  cardId         String
+  kind           OfferVersionKind @default(WELCOME)
+  bonusType      BonusType?
+  bonusAmount    Int?
+  minSpendCents  Int?
+  spendMonths    Int?
+  annualFeeCents Int
+  valuationCents Int?
+  description    String?
+  elevated       Boolean          @default(false)
+  validFrom      DateTime
+  validTo        DateTime?
+  source         String           // proposal id, "seed" or "admin"
+  changeNote     String?
+  card           CreditCard       @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, kind, validFrom])
+}
+
+/// Retention offers reported by users (shown aggregated, never with the reporter).
+model RetentionOfferReport {
+  id         String     @id @default(uuid())
+  userId     String
+  cardId     String
+  reportedOn DateTime   @default(now())
+  offer      String
+  accepted   Boolean
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card       CreditCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, reportedOn])
+}
+
+// ───────────────────────────── Phase D: recommendations & travel ─────────────────────────────
+
+/// The household's typical monthly spend per category (input to the next-card scorer).
+model SpendProfileEntry {
+  id           String   @id @default(uuid())
+  userId       String
+  categoryId   String
+  monthlyCents Int
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId])
+}
+
+/// Self-reported credit score bands (FICO-style ranges: excellent 800+, very good 740–799, good 670–739, fair 580–669, poor < 580).
+enum CreditBand {
+  EXCELLENT
+  VERY_GOOD
+  GOOD
+  FAIR
+  POOR
+}
+
+enum LoyaltyKind {
+  AIRLINE
+  HOTEL
+  OTHER
+}
+
+/// Airline / hotel loyalty program (catalog, admin-curated).
+model LoyaltyProgram {
+  id               String            @id @default(uuid())
+  code             String            @unique
+  name             String
+  kind             LoyaltyKind       @default(AIRLINE)
+  centsPerPoint    Decimal           @db.Decimal(6, 3)
+  householdPooling Boolean           @default(false)
+  isActive         Boolean           @default(true)
+  partners         TransferPartner[]
+  balances         LoyaltyBalance[]
+}
+
+/// Bank currency → loyalty program transfer (ratio, timing, current bonus).
+model TransferPartner {
+  id           String         @id @default(uuid())
+  currencyId   String
+  programId    String
+  ratioFrom    Int            @default(1)
+  ratioTo      Int            @default(1)
+  transferDays Int            @default(0)
+  bonusPercent Int            @default(0)
+  bonusEndsAt  DateTime?
+  notes        String?
+  updatedAt    DateTime       @updatedAt
+  currency     RewardCurrency @relation(fields: [currencyId], references: [id], onDelete: Cascade)
+  program      LoyaltyProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([currencyId, programId])
+}
+
+/// A member's balance in a bank currency or a loyalty program (manually entered).
+model LoyaltyBalance {
+  id         String          @id @default(uuid())
+  userId     String
+  profileId  String
+  currencyId String?
+  programId  String?
+  points     Int
+  updatedAt  DateTime        @updatedAt
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile    Profile         @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  currency   RewardCurrency? @relation(fields: [currencyId], references: [id], onDelete: Cascade)
+  program    LoyaltyProgram? @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([profileId])
+}
+
+enum CatalogSource {
+  DEMO      // fictional demo/test catalog
+  SEED      // curated real-card list (unverified until a source confirms it)
+  ADMIN     // entered by an admin
+  RESEARCH  // created from an approved card-research candidate
+}
+
+enum CardResearchKind {
+  DISCOVER  // find an issuer's current cards
+  VERIFY    // find the official page of one catalog card and re-check its facts
+  NEWS      // scan card news / community sites for new cards and offers, confirmed on issuer pages
+}
+
+enum CardResearchStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum CardCandidateStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// One run of the card-research agent (Claude + web search limited to issuer domains). Admin-only.
+model CardResearchRun {
+  id            String             @id @default(uuid())
+  kind          CardResearchKind
+  issuer        String?
+  cardId        String?
+  focus         String?
+  /// DISCOVER: at most this many cards
+  maxCards      Int                @default(10)
+  /// let the agent read card news / community sites (leads only; facts still come from issuer pages)
+  useLeads      Boolean            @default(true)
+  status        CardResearchStatus @default(QUEUED)
+  model         String?
+  searches      Int                @default(0)
+  fetches       Int                @default(0)
+  inputTokens   Int                @default(0)
+  outputTokens  Int                @default(0)
+  candidates    Int                @default(0)
+  sources       Json?              // [{url,title}] pages the agent searched/fetched
+  notes         String?
+  error         String?
+  requestedById String?
+  createdAt     DateTime           @default(now())
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  card          CreditCard?        @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  results       CardCandidate[]
+
+  @@index([status, createdAt])
+}
+
+/// A card found by a research run, with evidence-checked facts. Nothing reaches the catalog until an admin approves it.
+model CardCandidate {
+  id             String              @id @default(uuid())
+  runId          String
+  issuerName     String
+  name           String
+  network        CardNetwork?
+  type           CardType            @default(PERSONAL)
+  annualFeeCents Int?
+  productUrl     String
+  data           Json                // validated facts (rewards, bonus, features …) each with its evidence
+  verification   String              // VERIFIED | PARTIAL | UNVERIFIED
+  evidenceFrom   String              // POINTWISE (our fetch) | AGENT (page fetched by the agent) | NONE
+  verifiedFacts  Int                 @default(0)
+  totalFacts     Int                 @default(0)
+  matchedCardId  String?
+  status         CardCandidateStatus @default(PENDING)
+  createdCardId  String?
+  reviewerId     String?
+  decidedAt      DateTime?
+  note           String?
+  createdAt      DateTime            @default(now())
+  run            CardResearchRun     @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([runId])
+}
+
+
+// ───────────── recommendation audit, agent runs, prompts, mailboxes ─────────────
+
+/// One stored recommendation: the inputs snapshot (no card numbers) and every factor's contribution.
+model Recommendation {
+  id                  String   @id @default(uuid())
+  userId              String
+  profileId           String?
+  cardId              String
+  engineVersion       String
+  /// counts / flags the engine used (goals, recent applications, balances by currency, utilization %)
+  inputs              Json
+  /// the versioned weights in force
+  weights             Json
+  scoreCents          Int
+  firstYearValueCents Int
+  longTermValueCents  Int
+  /// 0-1, an estimate banded from the self-reported credit band and issuer rules
+  probability         Float
+  confidence          Float
+  eligible            Boolean
+  risks               Json
+  advice              Json
+  createdAt           DateTime @default(now())
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  factors             RecommendationFactor[]
+
+  @@index([userId, createdAt])
+}
+
+model RecommendationFactor {
+  id               String         @id @default(uuid())
+  recommendationId String
+  key              String
+  label            String
+  deltaCents       Int
+  note             String?
+  recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+
+  @@index([recommendationId])
+}
+
+enum RunStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+/// One orchestrated workflow execution (auditable reasoning).
+model AgentRun {
+  id            String    @id @default(uuid())
+  userId        String
+  workflow      String
+  question      String?
+  status        RunStatus @default(RUNNING)
+  engineVersion String
+  /// prompt template versions used by narration steps, by key
+  promptVersions Json?
+  result        Json?
+  error         String?
+  startedAt     DateTime  @default(now())
+  finishedAt    DateTime?
+  durationMs    Int?
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  steps         AgentStep[]
+
+  @@index([userId, startedAt])
+}
+
+model AgentStep {
+  id          String   @id @default(uuid())
+  runId       String
+  ordinal     Int
+  agentKey    String
+  engine      String
+  /// PUBLIC (catalog data) or USER (the user's own data; never sent to a non-local model)
+  privacy     String   @db.VarChar(8)
+  /// OK | SKIPPED | FAILED
+  status      String   @db.VarChar(8)
+  inputHash   String   @db.VarChar(64)
+  output      Json?
+  /// model that narrated this step (local only for USER steps), if any
+  narratedBy  String?
+  promptKey   String?
+  promptVersion Int?
+  durationMs  Int      @default(0)
+  error       String?
+  run         AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId, ordinal])
+}
+
+enum PromptStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// Versioned prompt text. Exactly one PUBLISHED version per key is in force.
+model PromptTemplate {
+  id        String       @id @default(uuid())
+  key       String
+  version   Int
+  body      String
+  status    PromptStatus @default(DRAFT)
+  note      String?
+  createdBy String?
+  createdAt DateTime     @default(now())
+
+  @@unique([key, version])
+  @@index([key, status])
+}
+
+enum MailboxKind {
+  IMAP
+  GMAIL
+  GRAPH
+}
+
+/// A connected mailbox (read-only). The secret is encrypted with TOKEN_ENC_KEY; bodies are never stored.
+model Mailbox {
+  id         String      @id @default(uuid())
+  userId     String
+  kind       MailboxKind @default(IMAP)
+  label      String
+  host       String?
+  port       Int?
+  username   String
+  secretEnc  String
+  folder     String      @default("INBOX")
+  /// IMAP UIDVALIDITY:UID or provider delta token
+  cursor     String?
+  active     Boolean     @default(true)
+  lastSyncAt DateTime?
+  lastStatus String?
+  lastError  String?
+  processed  Int         @default(0)
+  createdAt  DateTime    @default(now())
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind, username])
+  @@index([active, lastSyncAt])
+}

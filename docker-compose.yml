@@ -1,0 +1,251 @@
+# Pointwise — full local stack.
+#   docker compose up -d --build                         # app stack
+#   docker compose --profile test run --rm backend-tests # unit + integration tests
+#   docker compose --profile e2e run --rm e2e            # Playwright E2E against the running stack
+#   docker compose --profile cypress run --rm cypress    # Cypress E2E against the running stack
+# Services: frontend · backend · worker · scheduler · notification-service · postgres · redis · mailhog · pgadmin
+#
+# Ports: frontend 3000 · api 4000 (docs /api/docs) · mailhog 8025 · pgadmin 5050 · postgres 5432 · redis 6379
+name: pointwise
+
+x-backend-env: &backend-env
+  NODE_ENV: production
+  PORT: "4000"
+  # POINTWISE_DB: the app uses "pointwise"; docker/validate-portfolio.sh runs E2E on its own "pointwise_e2e" database
+  DATABASE_URL: postgresql://pointwise:${POSTGRES_PASSWORD:-pointwise}@postgres:5432/${POINTWISE_DB:-pointwise}?schema=public
+  REDIS_URL: redis://redis:6379
+  JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret-change-me-0123456789abcdef}
+  JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-me-0123456789abcdef}
+  INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-dev-internal-secret-change-me}
+  CORS_ORIGINS: http://localhost:3000
+  SMTP_HOST: mailhog
+  SMTP_PORT: "1025"
+  MAIL_FROM: "Pointwise <no-reply@pointwise.local>"
+  APP_URL: http://localhost:3000
+  BILLING_PROVIDER: mock
+  AUTH_RATE_LIMIT_PER_MIN: ${AUTH_RATE_LIMIT_PER_MIN:-30}
+  RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-100}
+  # Bank connections (optional): BANK_PROVIDER=plaid + PLAID_CLIENT_ID/PLAID_SECRET (sandbox keys are free)
+  BANK_PROVIDER: ${BANK_PROVIDER:-none}
+  PLAID_ENV: ${PLAID_ENV:-sandbox}
+  PLAID_CLIENT_ID: ${PLAID_CLIENT_ID:-}
+  PLAID_SECRET: ${PLAID_SECRET:-}
+  # public HTTPS URL of /api/v1/connections/plaid/webhook (new transactions arrive without waiting for the daily sync)
+  PLAID_WEBHOOK_URL: ${PLAID_WEBHOOK_URL:-}
+  # Alert-email forwarding (optional): users forward card alerts to <token>@INBOUND_EMAIL_DOMAIN; the inbound mail
+  # provider POSTs raw MIME to /api/v1/inbound/email with header X-Inbound-Secret (see docs/auto-capture.md)
+  INBOUND_EMAIL_DOMAIN: ${INBOUND_EMAIL_DOMAIN:-}
+  INBOUND_EMAIL_SECRET: ${INBOUND_EMAIL_SECRET:-}
+  INBOUND_AUTHSERV_ID: ${INBOUND_AUTHSERV_ID:-}
+  INBOUND_EXTRA_SENDER_DOMAINS: ${INBOUND_EXTRA_SENDER_DOMAINS:-}
+  # AES-256-GCM key for bank access tokens at rest (≥ 32 chars)
+  TOKEN_ENC_KEY: ${TOKEN_ENC_KEY:-dev-token-encryption-key-change-me-0123456789}
+  # Web push (optional): generate with `npx web-push generate-vapid-keys`
+  VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+  VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+  VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:alerts@pointwise.local}
+  # AI platform — keys are optional; without any, only the offline demo model answers (AI_ENABLE_MOCK)
+  AI_ENABLE_MOCK: ${AI_ENABLE_MOCK:-true}
+  AI_MONTHLY_TOKEN_BUDGET: ${AI_MONTHLY_TOKEN_BUDGET:-2000000}
+  AI_RATE_LIMIT_PER_MIN: ${AI_RATE_LIMIT_PER_MIN:-20}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  # card-research agent (admin): optional preferred AiModel.modelId, e.g. claude-sonnet-5-5
+  CARD_RESEARCH_MODEL: ${CARD_RESEARCH_MODEL:-}
+  # card news / community sites the research agent may read for leads only (empty = none)
+  CARD_RESEARCH_LEAD_DOMAINS: ${CARD_RESEARCH_LEAD_DOMAINS-doctorofcredit.com,thepointsguy.com,milemoa.com}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+  XAI_API_KEY: ${XAI_API_KEY:-}
+  MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+  DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+  OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
+  OPENCLAW_BASE_URL: ${OPENCLAW_BASE_URL:-http://host.docker.internal:18789/v1}
+  OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
+  # external MCP servers reachable over plain http (internal hosts only); others must use https
+  MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-}
+  # card data refresh: extra issuer domains beyond the built-in list; politeness delay per host
+  CARD_SOURCE_ALLOWED_DOMAINS: ${CARD_SOURCE_ALLOWED_DOMAINS:-}
+  OFFER_AUTO_PUBLISH: ${OFFER_AUTO_PUBLISH:-true}
+  MAILBOX_ALLOW_PRIVATE_HOSTS: ${MAILBOX_ALLOW_PRIVATE_HOSTS:-false}
+  GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
+  GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
+  MICROSOFT_OAUTH_CLIENT_ID: ${MICROSOFT_OAUTH_CLIENT_ID:-}
+  MICROSOFT_OAUTH_CLIENT_SECRET: ${MICROSOFT_OAUTH_CLIENT_SECRET:-}
+  CARD_SOURCE_MIN_INTERVAL_MS: ${CARD_SOURCE_MIN_INTERVAL_MS:-5000}
+
+services:
+  postgres:
+    image: postgres:16.4-alpine
+    environment:
+      POSTGRES_USER: pointwise
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pointwise}
+      POSTGRES_DB: pointwise
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init-test-db.sql:/docker-entrypoint-initdb.d/10-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pointwise -d pointwise"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["6379:6379"]
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: { context: ./backend, target: runtime }
+    image: pointwise/backend:local
+    environment:
+      <<: *backend-env
+      RUN_MIGRATIONS: "true"
+      RUN_SEED: "true"
+      # demo = fictional catalog + demo family (tests); real = curated real cards; both = demo data + real cards
+      SEED_CATALOG: ${SEED_CATALOG:-both}
+      # with both: hide the fictional cards from the public catalog (demo accounts keep them)
+      SEED_RETIRE_DEMO: ${SEED_RETIRE_DEMO:-true}
+    ports: ["4000:4000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      mailhog: { condition: service_started }
+
+  # Executes queued / scheduled jobs (offer + benefit scans, digests, 5/24 snapshots, bank sync).
+  worker:
+    image: pointwise/backend:local
+    command: ["node", "dist/worker.js"]
+    environment:
+      <<: *backend-env
+      RUN_MIGRATIONS: "false"
+    healthcheck:
+      disable: true
+    depends_on:
+      backend: { condition: service_healthy }
+
+  # Registers the cron schedule (BullMQ job schedulers) and re-asserts it hourly.
+  scheduler:
+    image: pointwise/backend:local
+    command: ["node", "dist/scheduler.js"]
+    environment:
+      <<: *backend-env
+      RUN_MIGRATIONS: "false"
+    healthcheck:
+      disable: true
+    depends_on:
+      backend: { condition: service_healthy }
+
+  # Delivers email and web-push notifications from the notifications queue (retries with backoff).
+  notification-service:
+    image: pointwise/backend:local
+    command: ["node", "dist/notification.js"]
+    environment:
+      <<: *backend-env
+      RUN_MIGRATIONS: "false"
+    healthcheck:
+      disable: true
+    depends_on:
+      backend: { condition: service_healthy }
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:4000
+    image: pointwise/frontend:local
+    environment:
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-nextauth-secret-change-me-0123456789}
+      API_INTERNAL_URL: http://backend:4000
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-dev-internal-secret-change-me}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      APPLE_ID: ${APPLE_ID:-}
+      APPLE_SECRET: ${APPLE_SECRET:-}
+    ports: ["3000:3000"]
+    depends_on:
+      backend: { condition: service_healthy }
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    platform: linux/amd64
+    ports: ["1025:1025", "8025:8025"]
+
+  pgadmin:
+    image: dpage/pgadmin4:8.12
+    # The arm64 variant of 8.12 fails with "exec format error" on Docker Desktop 4.54 (Apple Silicon);
+    # the amd64 variant runs under emulation.
+    platform: linux/amd64
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@pointwise.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-pointwise}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports: ["5050:80"]
+    volumes:
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  # ───────── test profiles ─────────
+  backend-tests:
+    profiles: ["test"]
+    build: { context: ./backend, target: test }
+    image: pointwise/backend-test:local
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://pointwise:${POSTGRES_PASSWORD:-pointwise}@postgres:5432/pointwise_test?schema=public
+      # Redis DB 1: test jobs must not be consumed by the running worker / notification-service (DB 0)
+      REDIS_URL: redis://redis:6379/1
+      INTERNAL_API_SECRET: integration-internal-secret
+      MAIL_DISABLED: "true"
+    volumes:
+      - ./backend/coverage:/app/coverage
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  e2e:
+    profiles: ["e2e"]
+    build: { context: ./playwright }
+    image: pointwise/e2e:local
+    # Share the frontend's network namespace so the browser uses http://localhost:3000 — the same
+    # origin as NEXTAUTH_URL (redirects/cookies) and a secure context (geolocation).
+    network_mode: "service:frontend"
+    environment:
+      BASE_URL: http://localhost:3000
+      API_URL: http://backend:4000
+      MAILHOG_URL: http://mailhog:8025
+      INBOUND_EMAIL_SECRET: ${INBOUND_EMAIL_SECRET:-}
+    volumes:
+      - ./playwright/test-results:/e2e/test-results
+      - ./playwright/playwright-report:/e2e/playwright-report
+      - ./screenshots:/e2e/screenshots
+    depends_on:
+      frontend: { condition: service_started }
+
+  cypress:
+    profiles: ["cypress"]
+    build: { context: ./cypress }
+    image: pointwise/cypress:local
+    network_mode: "service:frontend"
+    environment:
+      CYPRESS_baseUrl: http://localhost:3000
+      CYPRESS_apiUrl: http://backend:4000
+    volumes:
+      - ./cypress/results:/e2e/cypress/results
+    depends_on:
+      frontend: { condition: service_started }
+
+volumes:
+  pgdata:
+  redisdata:

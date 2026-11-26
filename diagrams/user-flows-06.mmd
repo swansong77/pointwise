@@ -1,0 +1,9 @@
+stateDiagram-v2
+  [*] --> NotDetermined
+  NotDetermined --> WhenInUse: user allows
+  NotDetermined --> Denied: user denies
+  Denied --> DeniedInstructions
+  WhenInUse --> Nearby: NearbyLocationOffersView
+  WhenInUse --> Always: enable reminders/AutoPilot
+  Always --> Reminders: LocationRemindersView (arrive/depart region triggers)
+  Always --> AutoPilot: Live Activity updates per store

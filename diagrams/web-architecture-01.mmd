@@ -1,0 +1,15 @@
+graph LR
+  U((User<br/>browser)) -->|HTTPS| FE[Next.js frontend<br/>:3000]
+  A((Admin)) -->|HTTPS| FE
+  FE -->|/api/auth/*| NA[NextAuth route handlers]
+  FE -->|rewrite /api/v1/* same-origin| API[NestJS API<br/>:4000]
+  NA -->|server-to-server<br/>login / refresh / oauth| API
+  NA -->|OAuth 2 / OIDC| G[Google]
+  NA -->|Sign in with Apple| AP[Apple]
+  API --> PG[(PostgreSQL)]
+  API -->|enqueue| R[(Redis / BullMQ)]
+  W[Worker<br/>BullMQ processor + scheduler] --> R
+  W --> PG
+  W -->|SMTP| M[MailHog / SMTP]
+  API -->|SMTP password reset| M
+  PGA[pgAdmin] --> PG

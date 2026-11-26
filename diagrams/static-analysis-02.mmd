@@ -1,0 +1,19 @@
+sequenceDiagram
+  participant V as DashboardView
+  participant W as WalletStore
+  participant G as WalletTokenRefreshGate
+  participant API as api.cardpointers.com
+  participant P as PersistenceController (Core Data)
+  V->>W: onAppear / refresh
+  W->>API: GET /v1/user/me/ (Bearer token)
+  alt 401
+    W->>G: serialize refresh
+    G->>API: POST /v1/user/token/refresh
+    G-->>W: new token (Keychain)
+    W->>API: retry /me/
+  end
+  API-->>W: MeDataResponse{updated, newest_card, newest_offer...}
+  W->>API: GET /v1/user/wallet/?app=mac&version=
+  API-->>W: Wallet{cards_user, pointers_user, offers_user, merchants, top10...}
+  W->>P: diff (lastAppliedWalletPayloadDigest) & upsert DB*
+  P-->>V: @FetchRequest updates

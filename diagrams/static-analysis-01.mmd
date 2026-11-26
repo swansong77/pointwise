@@ -1,0 +1,27 @@
+graph LR
+  subgraph App[CardPointers module]
+    UI[SwiftUI Views<br/>392 types]
+    ST[Stores / ViewModels<br/>WalletStore, OffersStore, PointersStore, CardStore, AuthViewModel...]
+    OS[Offer Sync engine<br/>OfferSyncCoordinator, *WebViewController, BackgroundRunner]
+    AI[Apple Intelligence<br/>AskAIIntent, *Tool, OfferAIParseResult]
+    INT[App Intents / Widgets / CarPlay / AR]
+    LOC[LocationManager<br/>BackgroundLocationManager]
+  end
+  subgraph Shared[CardPointersShared module]
+    MODELS[Codable models<br/>Wallet, Card, Pointer, Checklist, Merchant...]
+    CD[PersistenceController + DB* entities]
+    KC[KeychainItem]
+    AN[CPAnalyticsService]
+  end
+  UI --> ST
+  ST --> MODELS
+  ST --> CD
+  ST --> NET[(URLSession → api.cardpointers.com)]
+  OS --> WK[WKWebView + bank JS] 
+  OS --> NET
+  AI --> FM[FoundationModels / PCC]
+  INT --> CD
+  LOC --> MapKit
+  ST --> RC[RevenueCat]
+  AN --> PH[PostHog]
+  ST --> KC

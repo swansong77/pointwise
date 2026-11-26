@@ -1,0 +1,10 @@
+flowchart TD
+  G[Gated feature tapped / GateOffer] --> PW[MasterPaywallView]
+  PW --> PL{Plan}
+  PL --> MO[Monthly] & AN[Annual + trial TrialTimelineView] & LT[Lifetime]
+  MO & AN & LT --> RC[RevenueCat purchase → StoreKit]
+  RC --> ENT[Entitlement active → WalletStore.isPaidSubscriber]
+  PW --> RS[Restore purchases]
+  PW --> LINK[ProLinkView: link web purchase → /purchase/link]
+  SET[ProSettingsView] --> MAN[/manage/link/ → manage subscription]
+  PW --> TIP[TipJarView: tiny…humongous tips]

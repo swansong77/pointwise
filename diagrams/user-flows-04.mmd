@@ -1,0 +1,11 @@
+sequenceDiagram
+  actor U as User
+  participant App
+  participant Loc as LocationManager/MapKit
+  participant PS as PointersStore
+  U->>App: open "Nearby" / ask Siri "CardPointers here"
+  App->>Loc: current location → nearby POIs
+  Loc-->>App: RichNearbyLocation[] (name, category)
+  App->>PS: match POI → merchant/category
+  PS-->>App: ranked cards (points × value) + offers at merchant
+  App-->>U: "Use Amex Gold: 4X (8¢/$)" + "Offer: $10 off $50"

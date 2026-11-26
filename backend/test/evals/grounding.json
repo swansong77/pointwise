@@ -1,0 +1,18 @@
+[
+  { "id": "EV-01", "question": "What is my current 5/24 status?", "expectTool": "get_five24_status", "mustMatch": ["Jordan: 5/24", "Riley: 3/24"], "expectPrivate": true },
+  { "id": "EV-02", "question": "What benefits expire in the next 30 days?", "expectTool": "get_benefit_summary", "mustMatch": ["Benefits: \\$"], "expectPrivate": true },
+  { "id": "EV-03", "question": "What benefits have I not used this year?", "expectTool": "get_benefit_summary", "mustMatch": ["Available:"], "expectPrivate": true },
+  { "id": "EV-04", "question": "Which card should I use at Costco?", "expectTool": "best_card_for", "mustMatch": ["Best for"], "expectPrivate": true },
+  { "id": "EV-05", "question": "What cards should I cancel?", "expectTool": "get_renewals", "expectPrivate": true },
+  { "id": "EV-06", "question": "How much value have I received from my cards?", "expectTool": "get_portfolio_value", "mustMatch": ["Household: fees"], "expectPrivate": true },
+  { "id": "EV-07", "question": "What card should I open next?", "expectTool": "recommend_next_card", "mustMatch": ["first-year value ~\\$"], "mustNotContain": ["Sam →"], "expectPrivate": true },
+  { "id": "EV-08", "question": "Who should apply for Northwind ShopNow Card?", "expectTool": "recommend_next_card", "mustMatch": ["^Riley should apply", "Jordan: Northwind Bank usually denies"], "expectPrivate": true },
+  { "id": "EV-09", "question": "Best transfer partners for my points?", "expectTool": "get_transfer_options", "mustMatch": ["AeroLink Rewards", "30 % transfer bonus"], "expectPrivate": true },
+  { "id": "EV-10", "question": "How do I book an award of 60,000 points on SkyHigh?", "expectTool": "plan_award", "mustMatch": ["12,500 SKYHIGH from Jordan", "one-way"], "expectPrivate": true },
+  { "id": "EV-11", "question": "Show my household", "agent": "family-portfolio", "expectTool": "get_household", "mustMatch": ["Riley", "Sam"], "expectPrivate": true },
+  { "id": "EV-12", "question": "Compare Contoso Gold versus Northwind Voyager Reserve", "expectTool": "compare_cards", "mustMatch": ["Contoso Gold: fee \\$250", "Northwind Voyager Reserve: fee \\$550"], "expectPrivate": false },
+  { "id": "EV-13", "question": "Show transfer partners for CONTOSO_PTS", "expectTool": "get_transfer_partners", "mustMatch": ["AeroLink Rewards: 1\\.3:1"], "expectPrivate": false },
+  { "id": "EV-14", "question": "Is the Contoso Gold offer history good?", "expectTool": "get_card_offer_history", "mustMatch": ["40K → 50K"], "expectPrivate": false },
+  { "id": "EV-15", "question": "Tell me about my Unicorn card", "expectTool": "get_card_details", "allowToolError": true, "mustMatch": ["No card matching"], "mustNotContain": ["Unicorn card: fee"], "expectPrivate": true },
+  { "id": "EV-16", "question": "Does the Northwind Voyager Reserve include lounge access?", "expectTool": "search_card_terms", "mustMatch": ["Airport lounge access"], "expectPrivate": false }
+]

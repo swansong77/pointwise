@@ -1,0 +1,23 @@
+erDiagram
+  DBBank ||--o{ DBCard : issues
+  DBCard ||--o{ DBEarning : earns
+  DBCard ||--o{ DBFeature : has
+  DBCard ||--o{ DBInventory : "held as"
+  DBCard ||--o{ DBOffer : offers
+  DBCard ||--o{ DBPointerCard : rates
+  DBInventory ||--o{ DBOfferInventory : "has offers"
+  DBInventory ||--o{ DBPointerCard : "rates (user)"
+  DBInventory ||--o{ DBBonusPlan : plans
+  DBInventory }o--o| DBBonusCategoryGroup : "group1..3"
+  DBInventory }o--o| DBUserProfile : "belongs to"
+  DBBonusCategoryGroup ||--o{ DBBonusCategory : contains
+  DBBonusPlan ||--o{ DBBonusPlanCategory : contains
+  DBBonusPlanCategory }o--|| DBPointer : for
+  DBOffer ||--o{ DBOfferInventory : "instantiated as"
+  DBPointer ||--o{ PointerMerchantEntity : merchants
+  DBPointer ||--o{ PointerSubcategoryEntity : subcategories
+  PointerMerchantEntity }o--o{ PointerSubcategoryEntity : in
+  PointerMerchantEntity }o--o{ DBHost : hosts
+  DBPointerParent ||--o{ DBPointerCard : ranks
+  DBUserProfile ||--o{ DBOfferStreak : streaks
+  DBOfferSyncAccount ||--o{ DBOfferSyncCard : cards
