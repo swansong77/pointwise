@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, Param, ParseIntPipe, ParseUUIDPipe, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
-import { IsBoolean, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { AuthUser, CurrentUser, Roles } from '../common/decorators';
 import { RolesGuard } from '../common/guards';
 import { OrchestratorService } from './orchestrator.service';
@@ -9,6 +9,8 @@ import { WORKFLOW_KEYS } from './workflows';
 
 export class RunWorkflowDto {
   @ApiPropertyOptional({ description: 'The question being answered (kept in the run log)' }) @IsOptional() @IsString() @MaxLength(500) question?: string;
+  @ApiPropertyOptional({ description: 'purchase-plan: merchant name, e.g. Marriott' }) @IsOptional() @IsString() @MaxLength(120) merchantText?: string;
+  @ApiPropertyOptional({ description: 'purchase-plan: amount in dollars' }) @IsOptional() @IsNumber() @Min(0.01) @Max(1_000_000) amountDollars?: number;
   @ApiPropertyOptional({ description: 'Let a permitted model rewrite the answer. Your own data is only ever shown to a local model.' }) @IsOptional() @IsBoolean() narrate?: boolean;
 }
 
@@ -22,7 +24,7 @@ export class WorkflowsController {
     return this.orch.list();
   }
   @Post('workflows/:key') @HttpCode(200) run(@CurrentUser() u: AuthUser, @Param('key') key: string, @Body() dto: RunWorkflowDto) {
-    return this.orch.run(u.sub, key, dto);
+    return this.orch.run(u.sub, key, { question: dto.question, narrate: dto.narrate, params: { merchantText: dto.merchantText, amountCents: dto.amountDollars ? Math.round(dto.amountDollars * 100) : undefined } });
   }
   @Get('runs') runs(@CurrentUser() u: AuthUser) {
     return this.orch.runs(u.sub);

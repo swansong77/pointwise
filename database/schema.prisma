@@ -28,6 +28,8 @@ enum Role {
 model User {
   id            String    @id @default(uuid())
   recommendations Recommendation[]
+  offerEvents   OfferEvent[]
+  plannedPurchases PlannedPurchase[]
   agentRuns     AgentRun[]
   mailboxes     Mailbox[]
   email         String    @unique
@@ -167,6 +169,8 @@ model Issuer {
   name        String       @unique
   countryCode String       @default("US")
   website     String?
+  /// public page of the issuer's offers; the activation checklist opens it in the user's own browser
+  offersUrl   String?
   /// Business cards from this issuer appear on personal credit reports (count toward 5/24).
   businessReportsToPersonal Boolean @default(false)
   /// Issuer usually denies applicants at 5/24 or above (Phase D scorer).
@@ -309,6 +313,12 @@ model Merchant {
   name       String
   categoryId String
   hosts      String[]   // web domains, e.g. ["example.com"]
+  /// other descriptors this merchant appears under on statements (AMZN MKTPLACE, UBR TECHNOLOGIES…)
+  aliases    String[]   @default([])
+  /// merchant category codes (ISO 18245)
+  mcc        String[]   @default([])
+  parentCompany String?
+  industry   String?
   logoUrl    String?
   isPopular  Boolean    @default(false)
   createdAt  DateTime   @default(now())
@@ -318,6 +328,7 @@ model Merchant {
   offers     Offer[]
   pins       CategoryPin[]
   transactions Transaction[]
+  portalRates PortalRate[]
 
   @@index([categoryId])
   @@index([name])
@@ -489,12 +500,21 @@ model Offer {
   isCustom        Boolean    @default(false)
   createdById     String?
   isActive        Boolean    @default(true)
+  /// where the offer came from, and how far to trust it (100 official, 90 account data, 75 email / public page, 50 AI, 25 user)
+  source          OfferSource @default(ADMIN)
+  sourceRef       String?
+  reliability     Int         @default(75)
+  offerType       OfferType   @default(STATEMENT_CREDIT)
+  enrollmentRequired Boolean  @default(true)
+  verification    OfferVerification @default(UNVERIFIED)
+  lastValidatedAt DateTime?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   issuer          Issuer?     @relation(fields: [issuerId], references: [id])
   card            CreditCard? @relation(fields: [cardId], references: [id])
   merchant        Merchant?   @relation(fields: [merchantId], references: [id])
   userOffers      UserOffer[]
+  events          OfferEvent[]
 
   @@index([merchantId])
   @@index([cardId])
@@ -518,8 +538,12 @@ model UserOffer {
   snoozedUntil  DateTime?
   redeemedAt    DateTime?
   addedAt       DateTime        @default(now())
+  activationStatus ActivationStatus @default(PENDING)
+  activatedAt   DateTime?
+  activationVerifiedBy ActivationVerifier?
   walletCard    WalletCard      @relation(fields: [walletCardId], references: [id], onDelete: Cascade)
   offer         Offer           @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  events        OfferEvent[]
 
   @@unique([walletCardId, offerId])
   @@index([status])
@@ -1767,4 +1791,111 @@ model Mailbox {
 
   @@unique([userId, kind, username])
   @@index([active, lastSyncAt])
+}
+
+
+// ───────────── merchant offer intelligence ─────────────
+
+enum OfferSource {
+  ISSUER_OFFICIAL
+  ACCOUNT_DATA
+  EMAIL
+  PUBLIC_PAGE
+  AI_INFERRED
+  USER_ENTERED
+  ADMIN
+  PORTAL
+}
+
+enum OfferType {
+  STATEMENT_CREDIT
+  CASHBACK_PERCENT
+  POINTS_BONUS
+  SPEND_GET
+  PORTAL_RATE
+  COUPON
+}
+
+enum OfferVerification {
+  UNVERIFIED
+  VERIFIED
+  DISPUTED
+}
+
+enum ActivationStatus {
+  NOT_REQUIRED
+  PENDING
+  ACTIVATED
+  FAILED
+}
+
+enum ActivationVerifier {
+  MANUAL
+  STATEMENT
+  EMAIL
+}
+
+enum OfferEventType {
+  IMPORTED
+  UPDATED
+  ACTIVATED
+  ACTIVATION_FAILED
+  ACTIVATION_VERIFIED
+  EXPIRED
+  REDEEMED
+  RECOMMENDED
+  MISSED_DETECTED
+  PLANNED
+}
+
+/// Traceable history of everything that happens to an offer for a user (import, activation, recommendation…).
+model OfferEvent {
+  id          String         @id @default(uuid())
+  userId      String
+  offerId     String?
+  userOfferId String?
+  type        OfferEventType
+  /// USER | SYSTEM | AGENT
+  actor       String         @db.VarChar(8)
+  /// evidence, confidence, weights, reasoning (no card numbers)
+  detail      Json
+  createdAt   DateTime       @default(now())
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  offer       Offer?         @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  userOffer   UserOffer?     @relation(fields: [userOfferId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([offerId])
+}
+
+/// Shopping-portal cash-back / points rate for a merchant, entered by hand (portals are not scraped).
+model PortalRate {
+  id          String    @id @default(uuid())
+  portal      String
+  merchantId  String
+  ratePercent Decimal?  @db.Decimal(5, 2)
+  pointsPerDollar Decimal? @db.Decimal(6, 2)
+  source      String
+  expiresAt   DateTime?
+  updatedBy   String?
+  updatedAt   DateTime  @updatedAt
+  merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@unique([portal, merchantId])
+  @@index([merchantId])
+}
+
+model PlannedPurchase {
+  id           String    @id @default(uuid())
+  userId       String
+  merchantId   String?
+  merchantText String
+  amountCents  Int
+  plannedFor   DateTime?
+  /// the latest plan: ranked options with evidence and confidence
+  result       Json?
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, plannedFor])
 }

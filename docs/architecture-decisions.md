@@ -55,3 +55,23 @@ Format: Context · Options · Decision · Consequences · Status. Evidence and i
 - **Decision:** a single versioned weights/config object (no magic numbers in code); confidence = base minus penalties with named reasons; **application probability is an estimate** banded from the self-reported credit band and issuer velocity rules, always labelled as such; each recommendation stores its input snapshot and per-factor contributions (`Recommendation`, `RecommendationFactor`).
 - **Consequences:** explainable and reproducible; probabilities are indicative only.
 - **Status:** accepted.
+
+---
+## ADR-009 — Offer intake: user-side and email-side only; reliability scale
+- **Context:** `offer-activation-research.md` — issuers publish no consumer offers API; verified terms (Chase, Rakuten) prohibit scripts/bots; the project forbids server-side bank logins.
+- **Options:** server-side automation with credentials · user-side extension · paste/import + mailbox + statements + public pages.
+- **Decision:** the third now, extension designed later. Every offer stores its source and a reliability score: 100 official issuer data, 90 account data (e.g. statement credit), 75 email, 50 AI-inferred, 25 user-entered. Confidence of any recommendation is capped by the weakest supporting source and by verification status.
+- **Status:** accepted.
+
+## ADR-010 — Assisted activation
+- **Decision:** link to the issuer's public offers page and record the user's activation; verify later from a credit or email; flag activations that never produced a credit. No bot activation.
+- **Consequences:** slower than automation but compliant; verification closes the loop.
+- **Status:** accepted.
+
+## ADR-011 — Merchant identity and opportunity score
+- **Decision:** canonical merchants with aliases, MCC, parent company and industry; resolution = normalised descriptor + alias table + MCC + fuzzy fallback with a confidence value; low confidence never drives a recommendation. Opportunity score 0–100 from named factors with weights in one versioned config (`OPP_WEIGHTS`); each factor returns its contribution and reason, and the weights are stored with the result.
+- **Status:** accepted.
+
+## ADR-012 — Evidence-required recommendations and stacking
+- **Decision:** a recommendation (plan, missed-offer alert, opportunity) is generated only with at least one supporting evidence item (offer ref, transaction ids, rate) and is stored as an `OfferEvent` with evidence and confidence. Stacking rules are data (`STACK_RULES`), marked verified/unverified, and conflicts are shown as warnings.
+- **Status:** accepted.

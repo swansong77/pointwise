@@ -41,20 +41,30 @@ describe('consent, models and agents', () => {
     // no provider keys in tests → only the offline demo model is usable
     expect(models.body).toEqual([expect.objectContaining({ displayName: 'Demo model (offline, no AI)', demo: true, providerKind: 'MOCK' })]);
     const agents = await api(app).get(`${V}/ai/agents`).set(t).expect(200);
-    expect(agents.body.map((a: { key: string }) => a.key)).toEqual([
-      'assistant',
-      'card-strategy',
-      'five24-planning',
-      'travel-rewards',
-      'benefit-utilization',
-      'application-timing',
-      'annual-fee-review',
-      'family-portfolio',
-      'offer-monitoring',
-      'spending',
-      'card-comparison',
-      'portfolio-review',
-    ]);
+    // the list has no guaranteed order, so compare as a set
+    expect(agents.body.map((a: { key: string }) => a.key).sort()).toEqual(
+      [
+        'assistant',
+        'card-strategy',
+        'five24-planning',
+        'travel-rewards',
+        'benefit-utilization',
+        'application-timing',
+        'annual-fee-review',
+        'family-portfolio',
+        'offer-monitoring',
+        'spending',
+        'card-comparison',
+        'portfolio-review',
+        'offer-discovery',
+        'merchant-intelligence',
+        'reward-optimization',
+        'travel-offer',
+        'shopping-offer',
+        'family-optimization',
+        'offer-audit',
+      ].sort(),
+    );
     await api(app).put(`${V}/ai/settings`).set(t).send({ preferredModelId: '00000000-0000-4000-8000-000000000000' }).expect(404);
     await api(app).put(`${V}/ai/settings`).set(t).send({ preferredModelId: models.body[0].id }).expect(200);
     await api(app).put(`${V}/ai/settings`).set(t).send({ consent: false }).expect(200);
@@ -267,7 +277,7 @@ describe('admin: providers, models, agents, usage', () => {
 
   it('agent updates are validated', async () => {
     const agents = await api(app).get(`${V}/admin/ai/agents`).set(bearer(admin)).expect(200);
-    expect(agents.body).toHaveLength(12);
+    expect(agents.body).toHaveLength(19);
     await api(app).patch(`${V}/admin/ai/agents/offer-monitoring`).set(bearer(admin)).send({ tools: ['rm_rf'] }).expect(400);
     await api(app).patch(`${V}/admin/ai/agents/offer-monitoring`).set(bearer(admin)).send({ modelChain: ['00000000-0000-4000-8000-000000000000'] }).expect(400);
     await api(app).patch(`${V}/admin/ai/agents/offer-monitoring`).set(bearer(admin)).send({ maxSteps: 99 }).expect(400);

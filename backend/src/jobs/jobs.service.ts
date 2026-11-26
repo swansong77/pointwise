@@ -15,6 +15,7 @@ import { McpClientService } from "../ai/mcp-client";
 import { CardRefreshService } from "../catalog-refresh/card-refresh.service";
 import { MailboxService } from "../mailbox/mailbox.service";
 import { CardResearchService } from "../catalog-research/card-research.service";
+import { OfferJobsService } from "../offers/offer-jobs.service";
 
 export const JOB_QUEUE = "pointwise-jobs";
 export type JobName =
@@ -31,8 +32,12 @@ export type JobName =
   | "refresh-card-sources"
   | "sync-mailboxes"
   | "scan-transfer-bonuses"
-  | "research-cards";
+  | "research-cards"
+  | "scan-offer-opportunities"
+  | "verify-offer-activation";
 export const JOB_NAMES: JobName[] = [
+  "scan-offer-opportunities",
+  "verify-offer-activation",
   "research-cards",
   "scan-transfer-bonuses",
   "refresh-card-sources",
@@ -71,6 +76,7 @@ export class JobsService {
     @Optional() private readonly cardRefresh?: CardRefreshService,
     @Optional() private readonly mailboxes?: MailboxService,
     @Optional() private readonly cardResearch?: CardResearchService,
+    @Optional() private readonly offerJobs?: OfferJobsService,
   ) {}
 
   async run(
@@ -120,6 +126,12 @@ export class JobsService {
         break;
       case "research-cards":
         created = (await this.cardResearch?.processQueued()) ?? 0;
+        break;
+      case "scan-offer-opportunities":
+        created = (await this.offerJobs?.scanOpportunities(now)) ?? 0;
+        break;
+      case "verify-offer-activation":
+        created = (await this.offerJobs?.verifyActivations(now)) ?? 0;
         break;
     }
     this.logger.log(`job ${name} done: ${created}`);

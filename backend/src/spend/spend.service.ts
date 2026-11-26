@@ -173,7 +173,7 @@ export class SpendService {
     const fresh = rows.filter((r) => !existing.has(r.externalId));
     const [merchants, categories] = await Promise.all([
       this.prisma.merchant.findMany({
-        select: { id: true, name: true, hosts: true, categoryId: true },
+        select: { id: true, name: true, hosts: true, aliases: true, categoryId: true },
       }),
       this.prisma.category.findMany({ select: { id: true, slug: true } }),
     ]);
@@ -785,6 +785,7 @@ export class SpendService {
         select: {
           name: true,
           hosts: true,
+          aliases: true,
           category: { select: { slug: true } },
         },
       }),

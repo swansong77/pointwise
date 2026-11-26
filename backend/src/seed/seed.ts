@@ -18,6 +18,7 @@ import {
 } from "./portfolio";
 import { seedFamilyStrategy, seedStrategyCatalog } from "./strategy";
 import { seedAi } from "./ai";
+import { applyMerchantIdentities } from "./merchant-identities";
 import { CATEGORIES } from "./categories";
 import { importRealCatalog } from "./real-catalog";
 
@@ -910,6 +911,7 @@ async function main() {
       "real catalog",
       JSON.stringify(await importRealCatalog(prisma)),
     );
+    console.log("merchant identities", JSON.stringify(await applyMerchantIdentities(prisma)));
     if (process.env.SEED_DEMO_USERS !== "false") {
       await upsertUser(
         "admin@pointwise.local",
@@ -929,6 +931,7 @@ async function main() {
     await seedPortfolioCatalog(prisma, ctx.cardIds);
     await seedOfferHistory(prisma);
     await seedStrategyCatalog(prisma);
+    console.log("merchant identities", JSON.stringify(await applyMerchantIdentities(prisma)));
     if (process.env.SEED_DEMO_USERS !== "false") {
       await seedDemoUsers(ctx);
       const demo = await prisma.user.findUniqueOrThrow({

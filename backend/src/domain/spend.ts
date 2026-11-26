@@ -495,7 +495,7 @@ export function matchBenefit(
 }
 
 /** Merchant from a descriptor: a known merchant whose name or web host appears in it. */
-export function matchMerchant<M extends { name: string; hosts: string[] }>(
+export function matchMerchant<M extends { name: string; hosts: string[]; aliases?: string[] }>(
   description: string,
   merchants: M[],
 ): M | null {
@@ -504,6 +504,7 @@ export function matchMerchant<M extends { name: string; hosts: string[] }>(
   for (const m of merchants) {
     const terms = [
       normalizeDescriptor(m.name),
+      ...(m.aliases ?? []).map(normalizeDescriptor),
       ...m.hosts.map((h) =>
         normalizeDescriptor(h.replace(/^www\./, "").split(".")[0]),
       ),

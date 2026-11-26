@@ -196,9 +196,9 @@ describe("spend tracking and automatic benefit tracking", () => {
     ).body;
     expect(s.totalCents).toBe(3645);
     expect(s.byCategory[0]).toMatchObject({
-      category: { slug: "travel" },
+      category: { slug: "transit" },
       amountCents: 2345,
-    }); // the bank labels Uber "Travel"
+    }); // Uber is a known merchant (Transit & Rideshare); that wins over the bank's "Travel" label
     expect(s.autoTracked).toMatchObject({
       expectedCents: 1000,
       confirmedCents: 1000,

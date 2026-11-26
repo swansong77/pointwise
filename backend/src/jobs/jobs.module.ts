@@ -22,6 +22,7 @@ import { PortfolioModule } from "../portfolio/portfolio";
 import { ConnectionsModule } from "../portfolio/connections";
 import { AiCoreModule } from "../ai/ai.module";
 import { MailboxCoreModule } from "../mailbox/mailbox.module";
+import { OfferCoreModule } from "../offers/offer-jobs.service";
 import { CardRefreshCoreModule } from "../catalog-refresh/card-refresh.module";
 import { CardResearchCoreModule } from "../catalog-research/card-research.module";
 import { JOB_NAMES, JOB_QUEUE, JobName, JobsService } from "./jobs.service";
@@ -44,6 +45,10 @@ export const SCHEDULE: Record<JobName, string> = {
   "scan-transfer-bonuses": "40 13 * * *",
   /** picks up queued card-research runs (admin-started; no runs → no model calls) */
   "research-cards": "*/2 * * * *",
+  /** expiring high-value offers and newly found missed offers */
+  "scan-offer-opportunities": "50 13 * * *",
+  /** confirms assisted activations from statement credits; flags those that never paid */
+  "verify-offer-activation": "0 7 * * *",
 };
 
 const JobNameEnum = Object.fromEntries(JOB_NAMES.map((n) => [n, n])) as Record<
@@ -150,6 +155,7 @@ const jobDeps = () => [
   CardRefreshCoreModule,
   CardResearchCoreModule,
   MailboxCoreModule,
+  OfferCoreModule,
 ];
 
 @Module({

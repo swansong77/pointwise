@@ -1104,16 +1104,16 @@
         ]
       }
     },
-    "/api/v1/calculator": {
+    "/api/v1/offers/intel/import": {
       "post": {
-        "operationId": "CalculatorController_calculate",
+        "operationId": "OfferIntelController_import",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CalculateDto"
+                "$ref": "#/components/schemas/ImportOffersDto"
               }
             }
           }
@@ -1129,55 +1129,36 @@
           }
         ],
         "tags": [
-          "calculator"
+          "offer-intelligence"
         ]
       }
     },
-    "/api/v1/nearby": {
+    "/api/v1/offers/intel/inventory": {
       "get": {
-        "operationId": "NearbyController_list",
+        "operationId": "OfferIntelController_inventory",
         "parameters": [
           {
-            "name": "lat",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "lng",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "radius",
-            "required": false,
-            "in": "query",
-            "description": "meters (max 25km)",
-            "schema": {
-              "default": 1500,
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/Object"
-                }
-              ]
-            }
-          },
-          {
-            "name": "limit",
+            "name": "walletCardId",
             "required": false,
             "in": "query",
             "schema": {
-              "default": 25,
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/Object"
-                }
-              ]
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activation",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -1192,13 +1173,41 @@
           }
         ],
         "tags": [
-          "nearby"
+          "offer-intelligence"
         ]
       }
     },
-    "/api/v1/dashboard": {
+    "/api/v1/offers/intel/events": {
       "get": {
-        "operationId": "InsightsController_dashboard",
+        "operationId": "OfferIntelController_events",
+        "parameters": [
+          {
+            "name": "offerId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-intelligence"
+        ]
+      }
+    },
+    "/api/v1/offers/intel/activation-queue": {
+      "get": {
+        "operationId": "OfferIntelController_queue",
         "parameters": [],
         "responses": {
           "200": {
@@ -1211,7 +1220,187 @@
           }
         ],
         "tags": [
-          "dashboard"
+          "offer-intelligence"
+        ]
+      }
+    },
+    "/api/v1/offers/intel/activation/{id}": {
+      "post": {
+        "operationId": "OfferIntelController_activation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActivationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-intelligence"
+        ]
+      }
+    },
+    "/api/v1/offers/intel/opportunities": {
+      "get": {
+        "operationId": "OfferIntelController_opportunities",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-intelligence"
+        ]
+      }
+    },
+    "/api/v1/offers/intel/missed": {
+      "get": {
+        "operationId": "OfferIntelController_missed",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-intelligence"
+        ]
+      }
+    },
+    "/api/v1/offers/intel/merchants/{slug}/timeline": {
+      "get": {
+        "operationId": "OfferIntelController_timeline",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-intelligence"
+        ]
+      }
+    },
+    "/api/v1/offers/intel/plan": {
+      "post": {
+        "operationId": "OfferIntelController_plan",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanPurchaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-intelligence"
+        ]
+      }
+    },
+    "/api/v1/offers/intel/planned": {
+      "get": {
+        "operationId": "OfferIntelController_planned",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-intelligence"
+        ]
+      }
+    },
+    "/api/v1/offers/intel/planned/{id}": {
+      "delete": {
+        "operationId": "OfferIntelController_removePlanned",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "offer-intelligence"
         ]
       }
     },
@@ -1365,6 +1554,117 @@
         ],
         "tags": [
           "notifications"
+        ]
+      }
+    },
+    "/api/v1/calculator": {
+      "post": {
+        "operationId": "CalculatorController_calculate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalculateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "calculator"
+        ]
+      }
+    },
+    "/api/v1/nearby": {
+      "get": {
+        "operationId": "NearbyController_list",
+        "parameters": [
+          {
+            "name": "lat",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "radius",
+            "required": false,
+            "in": "query",
+            "description": "meters (max 25km)",
+            "schema": {
+              "default": 1500,
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Object"
+                }
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 25,
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Object"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "nearby"
+        ]
+      }
+    },
+    "/api/v1/dashboard": {
+      "get": {
+        "operationId": "InsightsController_dashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "dashboard"
         ]
       }
     },
@@ -7583,38 +7883,65 @@
           }
         }
       },
-      "SpendLineDto": {
+      "ImportOffersDto": {
         "type": "object",
         "properties": {
-          "categoryId": {
+          "walletCardId": {
             "type": "string"
           },
-          "annualSpendCents": {
-            "type": "number",
-            "description": "annual spend in cents"
+          "text": {
+            "type": "string",
+            "description": "one offer per line, e.g. \"Hilton: spend $500, get $100 back, expires 12/31/2026\""
           }
         },
         "required": [
-          "categoryId",
-          "annualSpendCents"
+          "walletCardId",
+          "text"
         ]
       },
-      "CalculateDto": {
+      "SetActivationDto": {
         "type": "object",
         "properties": {
-          "spend": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SpendLineDto"
-            }
-          },
-          "candidateCardId": {
+          "status": {
             "type": "string",
-            "description": "catalog card to compare against the current wallet (Pro)"
+            "enum": [
+              "ACTIVATED",
+              "FAILED",
+              "PENDING"
+            ]
+          },
+          "note": {
+            "type": "string"
           }
         },
         "required": [
-          "spend"
+          "status"
+        ]
+      },
+      "PlanPurchaseDto": {
+        "type": "object",
+        "properties": {
+          "merchantId": {
+            "type": "string"
+          },
+          "merchantText": {
+            "type": "string",
+            "description": "free text, resolved to a merchant (e.g. \"Marriott\")"
+          },
+          "amountCents": {
+            "type": "number",
+            "description": "planned spend in cents"
+          },
+          "plannedFor": {
+            "type": "string"
+          },
+          "save": {
+            "type": "boolean",
+            "description": "keep this as a planned purchase"
+          }
+        },
+        "required": [
+          "amountCents"
         ]
       },
       "PreferencesDto": {
@@ -7651,6 +7978,40 @@
             "type": "boolean"
           }
         }
+      },
+      "SpendLineDto": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string"
+          },
+          "annualSpendCents": {
+            "type": "number",
+            "description": "annual spend in cents"
+          }
+        },
+        "required": [
+          "categoryId",
+          "annualSpendCents"
+        ]
+      },
+      "CalculateDto": {
+        "type": "object",
+        "properties": {
+          "spend": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SpendLineDto"
+            }
+          },
+          "candidateCardId": {
+            "type": "string",
+            "description": "catalog card to compare against the current wallet (Pro)"
+          }
+        },
+        "required": [
+          "spend"
+        ]
       },
       "CheckoutDto": {
         "type": "object",
@@ -9092,6 +9453,14 @@
           "question": {
             "type": "string",
             "description": "The question being answered (kept in the run log)"
+          },
+          "merchantText": {
+            "type": "string",
+            "description": "purchase-plan: merchant name, e.g. Marriott"
+          },
+          "amountDollars": {
+            "type": "number",
+            "description": "purchase-plan: amount in dollars"
           },
           "narrate": {
             "type": "boolean",

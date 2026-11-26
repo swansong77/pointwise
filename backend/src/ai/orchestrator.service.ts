@@ -10,10 +10,12 @@ import { isLocalProvider } from "./privacy";
 import { PromptsService } from "./prompts.service";
 import { ModelRouter } from "./router";
 import { selectModels } from "./routing";
-import { nextCardWorkflow, portfolioReviewWorkflow, WfCtx, WfDeps } from "./workflows";
+import { nextCardWorkflow, offerReviewWorkflow, portfolioReviewWorkflow, purchasePlanWorkflow, WfCtx, WfDeps } from "./workflows";
+import { OfferAnalysisService } from "../offers/offer-analysis.service";
 
 export interface WorkflowRequest {
   question?: string;
+  params?: WfCtx['params'];
   /** ask a model to rewrite the composed answer (only ever a model allowed to see it) */
   narrate?: boolean;
 }
@@ -36,9 +38,10 @@ export class OrchestratorService {
     private readonly benefits: BenefitAuditService,
     private readonly router: ModelRouter,
     private readonly prompts: PromptsService,
+    private readonly offers: OfferAnalysisService,
   ) {
-    const deps: WfDeps = { prisma, portfolio, strategy, smart, benefits };
-    this.workflows = new Map([nextCardWorkflow(deps), portfolioReviewWorkflow(deps)].map((w) => [w.key, w]));
+    const deps: WfDeps = { prisma, portfolio, strategy, smart, benefits, offers };
+    this.workflows = new Map([nextCardWorkflow(deps), portfolioReviewWorkflow(deps), purchasePlanWorkflow(deps), offerReviewWorkflow(deps)].map((w) => [w.key, w]));
   }
 
   list() {
@@ -57,7 +60,7 @@ export class OrchestratorService {
     });
     const started = Date.now();
     try {
-      const out = await runWorkflow(wf, { userId, now, question: req.question });
+      const out = await runWorkflow(wf, { userId, now, question: req.question, params: req.params });
       const narration = req.narrate ? await this.narrate(userId, out.composed.answer, out.privacy) : null;
       const prompt = narration?.promptVersion ?? null;
       await this.prisma.$transaction([

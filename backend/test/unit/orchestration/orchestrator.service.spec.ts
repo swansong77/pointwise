@@ -8,6 +8,7 @@ function build(models: Array<{ kind: string; name?: string }>, opts: { consent?:
   const prisma = {
     agentRun: { create: jest.fn().mockResolvedValue({ id: "run-1" }), update: jest.fn(async (a: unknown) => created.run.push(a)), findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
     agentStep: { createMany: jest.fn(async (a: { data: unknown[] }) => created.steps.push(...a.data)) },
+    offerEvent: { groupBy: jest.fn().mockResolvedValue([{ type: 'RECOMMENDED', _count: 2 }]) },
     $transaction: jest.fn(async (ops: Array<Promise<unknown>>) => Promise.all(ops)),
     walletCard: { findMany: jest.fn().mockResolvedValue([{ annualFeeOverrideCents: null, card: { annualFeeCents: 25_000 } }]) },
     cardOffer: { findMany: jest.fn().mockResolvedValue([]) },
@@ -15,19 +16,26 @@ function build(models: Array<{ kind: string; name?: string }>, opts: { consent?:
     promptTemplate: { findFirst: jest.fn().mockResolvedValue(null) },
   };
   const rec = { name: "Example Gold", issuer: "Issuer", slug: "gold", firstYearValueCents: 120_000, longTermValueCents: 40_000, probability: 0.8, confidence: 0.7, factors: [{ key: "GOAL_FIT", label: "Matches your goals", deltaCents: 7500, note: "" }], risks: [], advice: [{ code: "NEAR_HIGH", text: "Current offer is near its historic high.", tone: "positive", priority: 3 }] };
-  const services = {
+  const services: Record<string, unknown> & { portfolio: unknown } = {
     portfolio: { five24: jest.fn().mockResolvedValue({ members: [{ profile: { nickname: "Me" }, status: { count: 2, limit: 5, underLimit: true } }] }) },
     strategy: { householdPlan: jest.fn().mockResolvedValue({ members: [{ member: "Me", top: [{ name: "Example Gold" }] }], pick: { name: "Example Gold" } }) },
     smart: { smart: jest.fn(async () => { if (opts.smartFails) throw new Error("scorer down"); return { engine: "recommendation/2", member: { profileId: "p", nickname: "Me" }, recommended: rec, alternatives: [] }; }) },
     benefits: { rollupView: jest.fn().mockResolvedValue({ groups: [{ allocatedCents: 100_000, utilizationPct: 40 }] }), reconciliation: jest.fn().mockResolvedValue({ totals: { unusedCents: 30_000 } }) },
   };
+  const plan = { merchant: { id: "m", name: "Hilton" }, merchantConfidence: 0.97, amountCents: 120_000, plannedPurchaseId: null, plans: [{ kind: "SINGLE", legs: [{ cardName: "Card A", member: "Me", amountCents: 120_000 }], expectedCents: 12_400, maxCents: 12_400, confidence: 75, justification: ["Card A returns $24.00 on $1200.00."], evidence: ["offer o1: Hilton $100 back"], warnings: ["PORTAL + COUPON: risk"], actions: ['Activate "Hilton $100 back" on Card A before paying.'] }] };
+  const offers = {
+    plan: jest.fn(async () => plan),
+    opportunities: jest.fn().mockResolvedValue({ items: [{ merchant: "Hilton", title: "t", score: 82, expectedValueCents: 6_000, daysLeft: 4, confidence: 75, activated: false }] }),
+    missed: jest.fn().mockResolvedValue({ totalLostCents: 10_000, items: [{ cause: "NOT_ACTIVATED", offer: { merchant: "Hilton" } }] }),
+  };
+  services.offers = offers as never;
   const chat = jest.fn().mockResolvedValue({ response: { text: "Narrated text" } });
   const router = {
     usableModels: jest.fn().mockResolvedValue(models.map((m, i) => ({ id: `m${i}`, displayName: m.name ?? m.kind, capabilities: [], inputPrice: null, outputPrice: null, provider: { kind: m.kind } }))),
     chat,
   };
-  const svc = new OrchestratorService(prisma as never, services.portfolio as never, services.strategy as never, services.smart as never, services.benefits as never, router as never, new PromptsService(prisma as never));
-  return { svc, prisma, chat, created, services };
+  const svc = new OrchestratorService(prisma as never, services.portfolio as never, services.strategy as never, services.smart as never, services.benefits as never, router as never, new PromptsService(prisma as never), offers as never);
+  return { svc, prisma, chat, created, services, offers };
 }
 
 describe("TC-ORC: orchestrator service", () => {
@@ -75,7 +83,7 @@ describe("TC-ORC: orchestrator service", () => {
   it("an unknown workflow is a 404 and lists the known ones", async () => {
     const { svc } = build([]);
     await expect(svc.run("u1", "nope")).rejects.toBeInstanceOf(NotFoundException);
-    expect(svc.list().map((w) => w.key)).toEqual(["next-card", "portfolio-review"]);
+    expect(svc.list().map((w) => w.key)).toEqual(["next-card", "portfolio-review", "purchase-plan", "offer-review"]);
     expect(svc.list()[0].steps.map((s) => s.privacy)).toEqual(["PUBLIC", "USER", "USER", "USER", "USER"]);
   });
   it("the portfolio-review workflow reports fees, benefit use and 5/24", async () => {
@@ -127,5 +135,38 @@ describe("TC-ORC: versioned prompts", () => {
     await expect(svc.current("missing.key")).rejects.toBeInstanceOf(NotFoundException);
     await expect(svc.publish("narration.default", "too short", "admin")).rejects.toThrow(/20–4000/);
     await expect(svc.publish("Bad Key!", BODY, "admin")).rejects.toThrow(/Invalid prompt key/);
+  });
+});
+
+describe("TC-ORC: offer workflows", () => {
+  it("purchase-plan runs the planner, records one USER step and states the evidence count", async () => {
+    const { svc, offers } = build([]);
+    const r = await svc.run("u1", "purchase-plan", { question: "Plan", params: { merchantText: "Hilton", amountCents: 120_000 } });
+    expect(r.status).toBe("COMPLETED");
+    expect(r.privacy).toBe("USER");
+    expect(r.steps.map((s) => [s.id, s.agent, s.engine])).toEqual([["plan", "reward-optimization", "purchase-plan/1"]]);
+    expect(offers.plan).toHaveBeenCalledWith("u1", { merchantText: "Hilton", amountCents: 120_000 }, expect.any(Date));
+    expect(r.answer).toMatch(/Best: Card A \(Me\) for \$1200\.00 .* expected return \$124\.00/);
+    expect(r.answer).toMatch(/Do first: Activate "Hilton \$100 back"/);
+    expect(r.answer).toMatch(/Evidence: 1 item\(s\)/);
+  });
+  it("purchase-plan without a merchant and amount fails cleanly", async () => {
+    const { svc } = build([]);
+    const r = await svc.run("u1", "purchase-plan", {});
+    expect(r.status).toBe("FAILED");
+    expect(r.steps[0].error).toMatch(/merchantText and amountDollars are required/);
+  });
+  it("offer-review ranks opportunities, reports misses and summarises the audit trail", async () => {
+    const { svc } = build([]);
+    const r = await svc.run("u1", "offer-review", {});
+    expect(r.status).toBe("COMPLETED");
+    expect(r.steps.map((s) => s.id)).toEqual(["opportunities", "missed", "audit"]);
+    expect(r.steps.map((s) => s.agent)).toEqual(["offer-discovery", "merchant-intelligence", "offer-audit"]);
+    expect(r.answer).toMatch(/Hilton: score 82\/100, \$60\.00 expected, 4 day\(s\) left \(confidence 75%\)/);
+    expect(r.answer).toMatch(/Missed in the last year: \$100\.00 across 1 offer\(s\); the biggest was Hilton \(not activated\)/);
+    expect(r.answer).toMatch(/Audit trail, last 30 days: 2 recommended/);
+  });
+  it("lists the four workflows", () => {
+    expect(build([]).svc.list().map((w) => w.key)).toEqual(["next-card", "portfolio-review", "purchase-plan", "offer-review"]);
   });
 });

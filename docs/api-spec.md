@@ -435,3 +435,21 @@ All routes are per user; every row is one tracked benefit on one card account.
 | GET | `/mailboxes/providers` | which sign-ins the server offers and the redirect URI to register |
 | GET | `/mailboxes/oauth/:provider/start` | `google` or `microsoft`: the provider's consent URL |
 | GET | `/mailboxes/oauth/callback` (public) | the provider redirects here; the sealed `state` identifies the user |
+
+## Merchant offer intelligence (2026-11-25)
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/offers/intel/import` | `{walletCardId, text}` — one offer per line; returns created / skipped / rejected (with reasons) |
+| GET | `/offers/intel/inventory` | offers with source, reliability, verification, confidence cap, activation (`walletCardId`, `source`, `activation` filters) |
+| GET | `/offers/intel/opportunities` | offers ranked by opportunity score (0–100) with nine reasoned factors and a confidence |
+| GET | `/offers/intel/missed` | missed offers with root cause, lost value, evidence and action |
+| GET | `/offers/intel/merchants/:slug/timeline` | a merchant's offer history, frequency and seasonality |
+| GET | `/offers/intel/activation-queue` | offers to activate, by card, soonest first, with the issuer's public offers link |
+| POST | `/offers/intel/activation/:id` | `{status: ACTIVATED \| FAILED \| PENDING, note?}` |
+| POST | `/offers/intel/plan` | `{merchantId \| merchantText, amountCents, plannedFor?, save?}` — ranked plans with evidence |
+| GET · DELETE | `/offers/intel/planned` · `/offers/intel/planned/:id` | saved purchase plans |
+| GET | `/offers/intel/events` | the user's offer audit trail (`offerId` filter) |
+| POST | `/ai/workflows/purchase-plan` | body `merchantText`, `amountDollars`; also workflow `offer-review` |
+
+Design: `docs/merchant-offer-platform.md`.

@@ -4,6 +4,8 @@ import { isoDay } from '../domain/dates';
 import { upcomingRenewals } from '../domain/insights';
 import { norm, tokenSimilarity } from '../domain/import';
 import { OffersService } from '../offers/offers.service';
+import { OfferAnalysisService } from '../offers/offer-analysis.service';
+import { OfferIntelService } from '../offers/offer-intel.service';
 import { BenefitsService } from '../portfolio/benefits';
 import { HouseholdsService } from '../portfolio/households';
 import { PortfolioService } from '../portfolio/portfolio';
@@ -81,6 +83,8 @@ export class ToolRegistry {
     private readonly wallet: WalletService,
     private readonly strategy: StrategyService,
     private readonly terms: TermsService,
+    private readonly offerAnalysis: OfferAnalysisService,
+    private readonly offerIntel: OfferIntelService,
   ) {
     this.tools = this.build();
   }
@@ -558,6 +562,54 @@ export class ToolRegistry {
           const names = new Map((await this.prisma.category.findMany({ select: { id: true, name: true } })).map((c) => [c.id, c.name]));
           const data = lines.map((l) => ({ category: names.get(l.categoryId) ?? l.categoryId, perMonth: $(l.monthlyCents) }));
           return { summary: `Monthly spend about ${$(sp.monthlyTotalCents)} (source: ${sp.source.toLowerCase()}).\n${data.map((d) => `• ${d.category}: ${d.perMonth}`).join('\n')}`, data: { source: sp.source, monthly: $(sp.monthlyTotalCents), lines: data } };
+        },
+      },
+      {
+        name: 'plan_purchase',
+        description: 'Best way to pay for a planned purchase: which household card (and whether to split), the offer to activate first, portal rate, expected return and the evidence behind it.',
+        inputSchema: obj({ merchant: str('Merchant name, e.g. Marriott'), amountDollars: num('Planned spend in dollars', { exclusiveMinimum: 0 }) }, ['merchant', 'amountDollars']),
+        readOnly: true,
+        handler: async (ctx, input) => {
+          const merchant = S(input.merchant);
+          const amount = N(input.amountDollars);
+          if (!merchant || !amount || amount <= 0) throw new NotFoundException('merchant and amountDollars are required');
+          const res = await this.offerAnalysis.plan(ctx.userId, { merchantText: merchant, amountCents: Math.round(amount * 100) }, ctx.now);
+          const best = res.plans[0];
+          if (!best) return { summary: 'No plan with evidence could be produced.', data: res };
+          const legs = best.legs.map((l) => `${l.cardName}${l.member ? ` (${l.member})` : ''} for ${$(l.amountCents)}`).join(' + ');
+          return { summary: `Best: ${legs}. Expected return ${$(best.expectedCents)}, confidence ${best.confidence}%.\n${[...best.justification, ...best.actions.map((a) => `Do first: ${a}`), ...best.warnings.map((w) => `Note: ${w}`)].join('\n')}`, data: res };
+        },
+      },
+      {
+        name: 'get_missed_offers',
+        description: 'Offers the household could have used in the last 12 months but did not, with the root cause (not added, not activated, wrong card, below minimum, expired) and the evidence.',
+        inputSchema: obj({}),
+        readOnly: true,
+        handler: async (ctx) => {
+          const r = await this.offerAnalysis.missed(ctx.userId, ctx.now);
+          const lines = r.items.slice(0, 10).map((m) => `• ${m.offer.merchant ?? m.offer.title}: ${$(m.lostCents)} (${m.cause.toLowerCase().replace(/_/g, ' ')}, confidence ${m.confidence}%) — ${m.action}`);
+          return { summary: lines.length ? `Missed about ${$(r.totalLostCents)}.\n${lines.join('\n')}` : 'No missed offers found.', data: r };
+        },
+      },
+      {
+        name: 'get_offer_opportunities',
+        description: 'Offers ranked by opportunity score (0-100) with a reason for every factor and a confidence.',
+        inputSchema: obj({}),
+        readOnly: true,
+        handler: async (ctx) => {
+          const r = await this.offerAnalysis.opportunities(ctx.userId, ctx.now);
+          const lines = r.items.slice(0, 10).map((o) => `• ${o.merchant ?? o.title}: score ${o.score}/100, ${$(o.expectedValueCents)} expected${o.daysLeft != null ? `, ${o.daysLeft} days left` : ''}${o.activated ? '' : ', not activated'} (confidence ${o.confidence}%)`);
+          return { summary: lines.length ? lines.join('\n') : 'No open offers.', data: r };
+        },
+      },
+      {
+        name: 'get_offer_audit_trail',
+        description: 'Recent offer events: imports, activations, recommendations and detected misses, each with its evidence and confidence.',
+        inputSchema: obj({}),
+        readOnly: true,
+        handler: async (ctx) => {
+          const ev = await this.offerIntel.events(ctx.userId, { limit: 30 });
+          return { summary: ev.length ? ev.map((e) => `• ${e.createdAt.toISOString().slice(0, 10)} ${e.type.toLowerCase()} (${e.actor.toLowerCase()})`).join('\n') : 'No offer events yet.', data: ev };
         },
       },
       {

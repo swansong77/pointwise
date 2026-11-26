@@ -61,3 +61,27 @@ export class UpdateUserOfferDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isFavorite?: boolean;
   @ApiPropertyOptional({ description: 'ISO date to snooze until; null to unsnooze' }) @IsOptional() @IsDateString() snoozedUntil?: string | null;
 }
+
+export class ImportOffersDto {
+  @ApiProperty() @IsUUID() walletCardId: string;
+  @ApiProperty({ description: 'one offer per line, e.g. "Hilton: spend $500, get $100 back, expires 12/31/2026"' }) @IsString() @MinLength(6) @MaxLength(20_000) text: string;
+}
+
+export class SetActivationDto {
+  @ApiProperty({ enum: ['ACTIVATED', 'FAILED', 'PENDING'] }) @IsIn(['ACTIVATED', 'FAILED', 'PENDING']) status: 'ACTIVATED' | 'FAILED' | 'PENDING';
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(300) note?: string;
+}
+
+export class InventoryQuery {
+  @ApiPropertyOptional() @IsOptional() @IsUUID() walletCardId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() source?: string;
+  @ApiPropertyOptional() @IsOptional() @IsIn(['NOT_REQUIRED', 'PENDING', 'ACTIVATED', 'FAILED']) activation?: string;
+}
+
+export class PlanPurchaseDto {
+  @ApiPropertyOptional() @IsOptional() @IsUUID() merchantId?: string;
+  @ApiPropertyOptional({ description: 'free text, resolved to a merchant (e.g. "Marriott")' }) @IsOptional() @IsString() @MaxLength(120) merchantText?: string;
+  @ApiProperty({ description: 'planned spend in cents' }) @IsInt() @Min(1) @Max(100_000_000) amountCents: number;
+  @ApiPropertyOptional() @IsOptional() @IsDateString() plannedFor?: string;
+  @ApiPropertyOptional({ description: 'keep this as a planned purchase' }) @IsOptional() @IsBoolean() save?: boolean;
+}

@@ -21,7 +21,7 @@ export class RecommendationsService {
     return fb?.id ?? null;
   }
 
-  private async context(userId: string) {
+  async context(userId: string) {
     const [cards, valuations, pins, fallbackCategoryId] = await Promise.all([
       this.wallet.domainCards(userId),
       this.wallet.valuations(userId),

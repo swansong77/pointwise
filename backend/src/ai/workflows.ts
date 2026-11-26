@@ -5,12 +5,15 @@ import { PortfolioService } from '../portfolio/portfolio';
 import { currentPublicOffers, PublicOffer } from '../strategy/offer-data';
 import { SmartRecommendationService } from '../strategy/smart-recommendation.service';
 import { StrategyService } from '../strategy/strategy.service';
+import { OfferAnalysisService } from '../offers/offer-analysis.service';
 import { SmartResult } from './workflow-types';
 
 export interface WfCtx {
   userId: string;
   now: Date;
   question?: string;
+  /** workflow inputs, e.g. the purchase being planned */
+  params?: { merchantText?: string; amountCents?: number };
 }
 
 export interface WfDeps {
@@ -19,6 +22,7 @@ export interface WfDeps {
   strategy: StrategyService;
   smart: SmartRecommendationService;
   benefits: BenefitAuditService;
+  offers: OfferAnalysisService;
 }
 
 const $ = (c: number) => `$${Math.round(c / 100).toLocaleString('en-US')}`;
@@ -132,4 +136,77 @@ export function portfolioReviewWorkflow(d: WfDeps): WorkflowDef<WfCtx> {
   };
 }
 
-export const WORKFLOW_KEYS = ['next-card', 'portfolio-review'] as const;
+const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
+
+/** "I am about to spend $X at Y": merchant → household cards → offers/eligibility → stacking → ranked plan with evidence. */
+export function purchasePlanWorkflow(d: WfDeps): WorkflowDef<WfCtx> {
+  return {
+    key: 'purchase-plan',
+    title: 'Plan a purchase',
+    steps: [
+      {
+        id: 'plan',
+        agentKey: 'reward-optimization',
+        engine: 'purchase-plan/1',
+        privacy: 'USER',
+        run: (c) => {
+          if (!c.params?.merchantText || !c.params.amountCents) throw new Error('merchantText and amountDollars are required');
+          return d.offers.plan(c.userId, { merchantText: c.params.merchantText, amountCents: c.params.amountCents }, c.now);
+        },
+      },
+    ],
+    compose: (r): Composed => {
+      const res = r.plan as Awaited<ReturnType<OfferAnalysisService['plan']>> | undefined;
+      const best = res?.plans[0];
+      if (!res || !best) return { answer: 'No plan could be produced with evidence for this purchase. Add cards to your wallet first.', highlights: [] };
+      const lines = [`Best: ${best.legs.map((l) => `${l.cardName}${l.member ? ` (${l.member})` : ''} for ${usd(l.amountCents)}`).join(' + ')} — expected return ${usd(best.expectedCents)} (up to ${usd(best.maxCents)}), confidence ${best.confidence}%.`];
+      lines.push(...best.justification.slice(0, 4));
+      for (const a of best.actions) lines.push(`Do first: ${a}`);
+      for (const w of best.warnings.slice(0, 3)) lines.push(`Note: ${w}`);
+      lines.push(`Evidence: ${best.evidence.length} item(s) recorded in the audit trail.`);
+      lines.push('This is general information, not financial advice.');
+      return { answer: lines.join('\n'), highlights: best.legs.map((l) => l.cardName) };
+    },
+  };
+}
+
+/** Weekly offer review: opportunities → missed offers → audit summary. */
+export function offerReviewWorkflow(d: WfDeps): WorkflowDef<WfCtx> {
+  return {
+    key: 'offer-review',
+    title: 'Review my offers',
+    steps: [
+      { id: 'opportunities', agentKey: 'offer-discovery', engine: 'opportunity/1', privacy: 'USER', run: (c) => d.offers.opportunities(c.userId, c.now) },
+      { id: 'missed', agentKey: 'merchant-intelligence', engine: 'offer-engine/1', privacy: 'USER', run: (c) => d.offers.missed(c.userId, c.now) },
+      {
+        id: 'audit',
+        agentKey: 'offer-audit',
+        engine: 'offer-events/1',
+        privacy: 'USER',
+        optional: true,
+        run: async (c) => {
+          const since = new Date(c.now.getTime() - 30 * 86_400_000);
+          const g = await d.prisma.offerEvent.groupBy({ by: ['type'], where: { userId: c.userId, createdAt: { gte: since } }, _count: true });
+          return { last30Days: Object.fromEntries(g.map((x) => [x.type, x._count])) };
+        },
+      },
+    ],
+    compose: (r): Composed => {
+      const opp = r.opportunities as Awaited<ReturnType<OfferAnalysisService['opportunities']>> | undefined;
+      const missed = r.missed as Awaited<ReturnType<OfferAnalysisService['missed']>> | undefined;
+      const audit = r.audit as { last30Days: Record<string, number> } | undefined;
+      const lines: string[] = [];
+      const top = (opp?.items ?? []).filter((o) => !o.activated).slice(0, 3);
+      if (top.length) {
+        lines.push('Offers worth acting on:');
+        for (const o of top) lines.push(`• ${o.merchant ?? o.title}: score ${o.score}/100, ${usd(o.expectedValueCents)} expected${o.daysLeft != null ? `, ${o.daysLeft} day(s) left` : ''} (confidence ${o.confidence}%).`);
+      } else lines.push('No open offers need action right now.');
+      if (missed?.items.length) lines.push(`Missed in the last year: ${usd(missed.totalLostCents)} across ${missed.items.length} offer(s); the biggest was ${missed.items[0].offer.merchant ?? 'an offer'} (${missed.items[0].cause.toLowerCase().replace(/_/g, ' ')}).`);
+      if (audit && Object.keys(audit.last30Days).length) lines.push(`Audit trail, last 30 days: ${Object.entries(audit.last30Days).map(([k, v]) => `${v} ${k.toLowerCase()}`).join(', ')}.`);
+      lines.push('This is general information, not financial advice.');
+      return { answer: lines.join('\n'), highlights: top.map((o) => o.merchant ?? o.title) };
+    },
+  };
+}
+
+export const WORKFLOW_KEYS = ['next-card', 'portfolio-review', 'purchase-plan', 'offer-review'] as const;
