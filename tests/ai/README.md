@@ -29,7 +29,7 @@ Code under test: `backend/src/ai/**`. Automated in `backend/test/unit/ai/*.spec.
 | TC-AI-23 | NEG | Agent updates validated | admin | unknown tool / model / maxSteps 99 / write MCP tool | 400 | P1 | Major | ✅ INT |
 | TC-AI-24 | POS | Model test call | demo model | POST /admin/ai/models/:id/test | ok; disabled provider → 400 | P2 | Minor | ✅ INT |
 | TC-AI-25 | POS | Usage & cost dashboard | traffic | GET /admin/ai/usage | totals, by model, by agent, daily | P1 | Major | ✅ INT, PW-AI-05 |
-| TC-AI-26 | POS | Pointwise MCP server lists read-only tools, scoped to the token user | PAT | tools/list, tools/call | 11 tools, no write tool; family data | P0 | Critical | ✅ INT, U (in-memory) |
+| TC-AI-26 | POS | PointWise MCP server lists read-only tools, scoped to the token user | PAT | tools/list, tools/call | 11 tools, no write tool; family data | P0 | Critical | ✅ INT, U (in-memory) |
 | TC-AI-27 | SEC | MCP auth | — | no token / session JWT / wrong / revoked PAT | 401 | P0 | Critical | ✅ INT, CY-AI-03 |
 | TC-AI-28 | SEC | PAT storage | — | create | token shown once; only SHA-256 stored; scope mcp:read; expiry | P0 | Major | ✅ U, INT, PW-AI-04 |
 | TC-AI-29 | SEC | MCP URL policy | admin | http to public host, metadata IP, credentials in URL, not allow-listed | 400 | P0 | Critical | ✅ U, INT |

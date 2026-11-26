@@ -1,6 +1,6 @@
-<p align="center"><img src="frontend/public/logo/pointwise-logo.svg" alt="Pointwise" width="280" /></p>
+<p align="center"><img src="frontend/public/logo/pointwise-logo.svg" alt="PointWise" width="280" /></p>
 
-claude rc# project-analysis — CardPointers analysis & Pointwise web app
+claude rc# project-analysis — CardPointers analysis & PointWise web app
 
 Start with **[final-report/final-report.md](final-report/final-report.md)**. Progress log: [docs/progress.md](docs/progress.md).
 
@@ -8,7 +8,7 @@ Start with **[final-report/final-report.md](final-report/final-report.md)**. Pro
 project-analysis/
 ├── docs/            Phase docs 1–25 (analysis, PRD, specs, reviews, validation)
 ├── diagrams/        30 Mermaid sources extracted from docs
-├── api/             openapi.json (Pointwise) · cardpointers-observed.openapi.json (reverse-engineered)
+├── api/             openapi.json (PointWise) · cardpointers-observed.openapi.json (reverse-engineered)
 ├── database/        schema.prisma (canonical)
 ├── backend/         NestJS API + worker (Prisma, BullMQ) — Dockerfile, tests
 ├── frontend/        Next.js 15 app (NextAuth, TanStack Query, Tailwind) — Dockerfile, tests

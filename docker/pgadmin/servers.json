@@ -1,7 +1,7 @@
 {
   "Servers": {
     "1": {
-      "Name": "Pointwise (docker)",
+      "Name": "PointWise (docker)",
       "Group": "Servers",
       "Host": "postgres",
       "Port": 5432,
