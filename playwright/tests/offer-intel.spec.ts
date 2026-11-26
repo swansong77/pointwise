@@ -85,10 +85,10 @@ test.describe('Offer intelligence', () => {
   test('PW-OI-03 pages are reachable from the menu and empty states explain what to do', async ({ page, request }) => {
     const u = await apiRegister(request);
     await uiLogin(page, u.email);
-    await page.getByRole('link', { name: 'Offer intelligence' }).first().click();
+    await page.getByRole('link', { name: 'Offer Intelligence' }).first().click();
     await expect(page.getByTestId('offer-intel')).toBeVisible();
     await expect(page.getByText('No open offers')).toBeVisible();
-    await page.getByRole('link', { name: 'Plan a purchase' }).first().click();
+    await page.getByRole('link', { name: 'Plan a Purchase' }).first().click();
     await expect(page.getByTestId('plan-purchase')).toBeVisible();
   });
 });

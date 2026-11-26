@@ -12,7 +12,7 @@ test.describe('Brand logos', () => {
   test('BR-01 the directory lists every group, real icons actually load, monograms stand in where there is none', async ({ page, request }) => {
     const u = await apiRegister(request);
     await uiLogin(page, u.email);
-    await page.getByRole('link', { name: 'Brand logos' }).first().click();
+    await page.getByRole('link', { name: 'Brand Logos' }).first().click();
     await expect(page.getByTestId('brands')).toBeVisible();
     await expect(page.getByTestId('brand-summary')).toContainText('with an icon');
     for (const k of ['ISSUER', 'NETWORK', 'AIRLINE', 'HOTEL', 'BANK_REWARDS', 'SHOPPING', 'MERCHANT', 'MEMBERSHIP', 'SERVICE']) await expect(page.getByTestId(`brand-group-${k}`)).toBeVisible();
