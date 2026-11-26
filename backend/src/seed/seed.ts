@@ -16,7 +16,8 @@ import {
   seedOfferHistory,
   seedPortfolioCatalog,
 } from "./portfolio";
-import { seedFamilyStrategy, seedStrategyCatalog } from "./strategy";
+import { applyRewardExclusions } from "./reward-exclusions.apply";
+import { purgeFictionalTravelData, seedFamilyStrategy, seedStrategyCatalog } from "./strategy";
 import { seedAi } from "./ai";
 import { applyMerchantIdentities } from "./merchant-identities";
 import { applyLoyaltyRegistry } from "./loyalty-registry";
@@ -915,6 +916,8 @@ async function main() {
     );
     console.log("merchant identities", JSON.stringify(await applyMerchantIdentities(prisma)));
     console.log("loyalty registry", JSON.stringify(await applyLoyaltyRegistry(prisma)));
+    // merchants exist only now in real mode, so the grocery-rate exclusions (Walmart, Target, clubs) are applied again here
+    console.log("reward exclusions", JSON.stringify(await applyRewardExclusions(prisma)));
     if (process.env.SEED_DEMO_USERS !== "false") {
       await upsertUser(
         "admin@pointwise.local",
@@ -933,7 +936,8 @@ async function main() {
     const ctx = await upsertCatalog();
     await seedPortfolioCatalog(prisma, ctx.cardIds);
     await seedOfferHistory(prisma);
-    await seedStrategyCatalog(prisma);
+    // invented airlines/hotels/transfer routes exist only in the pure demo catalog (tests); real stacks never get them
+    if (mode === "demo") await seedStrategyCatalog(prisma);
     console.log("merchant identities", JSON.stringify(await applyMerchantIdentities(prisma)));
     if (process.env.SEED_DEMO_USERS !== "false") {
       await seedDemoUsers(ctx);
@@ -957,7 +961,7 @@ async function main() {
         },
       });
       await seedFamily(prisma, ctx, family);
-      await seedFamilyStrategy(prisma, family.id);
+      if (mode === "demo") await seedFamilyStrategy(prisma, family.id);
     }
     // both: real cards in the catalog; with SEED_RETIRE_DEMO=true the fictional ones leave the
     // public catalog but stay in the demo accounts' wallets
@@ -973,6 +977,7 @@ async function main() {
       // the real bank currencies exist now, so the registry's transfer routes can attach to them
       console.log("loyalty registry", JSON.stringify(await applyLoyaltyRegistry(prisma)));
     }
+    if (mode !== "demo") console.log("fictional travel data removed", JSON.stringify(await purgeFictionalTravelData(prisma)));
   }
   const counts = {
     categories: await prisma.category.count(),

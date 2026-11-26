@@ -47,6 +47,11 @@ describe("TC-MER: canonical merchant resolution", () => {
   it("unknown merchants are not guessed", () => {
     for (const d of ["JOES DINER", "SQ *BEAN STREET COFFEE", "FIXTURE HARDWARE", "", "   "]) expect(slug(d)).toBeNull();
   });
+  it("'UNITED STATES TENNIS A USTA.COM' is not United Airlines", () => {
+    for (const d of ["UNITED STATES TENNIS A USTA.COM NY", "UNITED STATES TENNIS A WHITE PLAINS NY", "AplPay UNITED STATES TENNIS A WHITE PLAINS NY", "UNITED STATES POSTAL SERVICE"]) expect(slug(d)).toBeNull();
+    // United itself still resolves, by name, alias or its whole host
+    for (const d of ["UNITED 0162345 AIRLINES", "UNITED AIR 0162345", "UNITED.COM TX", "UNITED … UNITED.COM TX"]) expect(slug(d)).toBe("united-airlines");
+  });
   it("a bare host word resolves only at low confidence, never trusted", () => {
     const r = resolveMerchant("DELTA FAUCET", merchants)!;
     expect(r).toMatchObject({ slug: "delta-air-lines", via: "HOST", confidence: 0.7 });

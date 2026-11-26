@@ -393,6 +393,8 @@ model Reward {
   /// when an issuer page last confirmed this rate (null = unverified) and which page
   verifiedAt  DateTime?
   sourceUrl   String?
+  /// merchants this category rate does not apply to (superstores and clubs the issuer does not code as supermarkets or grocery stores)
+  excludedMerchantIds String[] @default([])
   card        CreditCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
   category    Category?  @relation(fields: [categoryId], references: [id])
   merchant    Merchant?  @relation(fields: [merchantId], references: [id])

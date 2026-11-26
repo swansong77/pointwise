@@ -221,3 +221,27 @@ export async function seedFamilyStrategy(prisma: PrismaClient, userId: string) {
     }
   }
 }
+
+/** Programs and currencies that exist only in the fictional demo catalog. */
+export const FICTIONAL_PROGRAM_CODES = PROGRAMS.map((p) => p.code);
+export const FICTIONAL_CURRENCY_CODES = Object.keys(CURRENCY_TRAVEL);
+
+/**
+ * Removes the invented airline/hotel programs, the transfer routes into them and every route or
+ * balance that hangs off an invented currency. Real programs and real bank routes are untouched;
+ * the fictional demo cards keep their currencies (they are retired, not deleted). Idempotent.
+ */
+export async function purgeFictionalTravelData(prisma: PrismaClient) {
+  const currencies = await prisma.rewardCurrency.findMany({ where: { code: { in: FICTIONAL_CURRENCY_CODES } }, select: { id: true } });
+  const currencyIds = currencies.map((c) => c.id);
+  const programs = await prisma.loyaltyProgram.findMany({ where: { code: { in: FICTIONAL_PROGRAM_CODES } }, select: { id: true } });
+  const programIds = programs.map((p) => p.id);
+  const routes = await prisma.transferPartner.deleteMany({ where: { OR: [{ currencyId: { in: currencyIds } }, { programId: { in: programIds } }] } });
+  const bonuses = await prisma.transferBonusRecord.deleteMany({ where: { OR: [{ currencyId: { in: currencyIds } }, { programId: { in: programIds } }] } });
+  const balances = await prisma.loyaltyBalance.deleteMany({ where: { OR: [{ currencyId: { in: currencyIds } }, { programId: { in: programIds } }] } });
+  const accounts = await prisma.loyaltyAccount.deleteMany({ where: { programId: { in: programIds } } });
+  const certs = await prisma.loyaltyCertificate.deleteMany({ where: { programId: { in: programIds } } });
+  const elite = await prisma.eliteStatus.deleteMany({ where: { programId: { in: programIds } } });
+  const progs = await prisma.loyaltyProgram.deleteMany({ where: { id: { in: programIds } } });
+  return { routes: routes.count, bonuses: bonuses.count, balances: balances.count, accounts: accounts.count, certificates: certs.count, elite: elite.count, programs: progs.count };
+}

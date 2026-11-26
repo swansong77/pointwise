@@ -15,6 +15,7 @@ import { CATEGORIES, CATEGORY_PARENTS } from "./categories";
 import { applyVerifiedListings, ListingResult } from "./verified-listings.apply";
 import { applyRateVerifications, RateVerificationResult } from "./rate-verification.apply";
 import { applyRotating, RotatingResult } from "./rotating.apply";
+import { applyRewardExclusions } from "./reward-exclusions.apply";
 import { ROTATING_CALENDAR } from "./rotating-calendar";
 import {
   DATA_AS_OF,
@@ -35,6 +36,7 @@ export interface ImportResult {
   listings: ListingResult | null;
   rates: RateVerificationResult | null;
   rotating: RotatingResult | null;
+  exclusions: { grocery: number; updated: number } | null;
 }
 
 export async function importRealCatalog(
@@ -52,6 +54,7 @@ export async function importRealCatalog(
     listings: null,
     rates: null,
     rotating: null,
+    exclusions: null,
   };
   const asOf = new Date(`${DATA_AS_OF}T00:00:00Z`);
 
@@ -213,6 +216,7 @@ export async function importRealCatalog(
   // rates confirmed against issuer product pages (and conditional/portal-only flags) go on top of the curated list and the listings
   out.rates = await applyRateVerifications(prisma);
   out.rotating = await applyRotating(prisma, ROTATING_CALENDAR);
+  out.exclusions = await applyRewardExclusions(prisma);
   if (opts.retireDemo)
     out.retiredDemo = (
       await prisma.creditCard.updateMany({

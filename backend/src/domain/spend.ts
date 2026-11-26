@@ -494,6 +494,32 @@ export function matchBenefit(
   return null;
 }
 
+
+/** Common words that are also the first label of a big company's web host ("united" of united.com). */
+export const GENERIC_HOST_WORDS = new Set([
+  "united", "american", "national", "first", "general", "global", "pacific", "southern", "northern", "western", "eastern", "central",
+  "premier", "express", "direct", "star", "best", "smart", "online", "home", "city", "international", "federal", "state",
+]);
+
+const DOMAIN_RE = /\b([a-z0-9][a-z0-9-]*\.(?:com|net|org|edu|gov|io|co|us|app|shop|store))\b/gi;
+
+/**
+ * The web-host evidence a merchant gets from a descriptor, or null. The host's first label alone ("united" from united.com) is
+ * only a weak hint, so it is ignored when the label is an ordinary word and when the descriptor names a different website
+ * ("UNITED STATES TENNIS A USTA.COM" is usta.com, not united.com). The whole host in the descriptor is always evidence.
+ */
+export function hostTerm(rawDescriptor: string, host: string): string | null {
+  const bare = host.toLowerCase().replace(/^www\./, "");
+  const label = normalizeDescriptor(bare.split(".")[0]);
+  if (!label) return null;
+  const raw = rawDescriptor.toLowerCase();
+  if (raw.includes(bare)) return label; // united.com written out: strong enough
+  const others = [...raw.matchAll(DOMAIN_RE)].map((m) => m[1]).filter((dm) => dm !== bare);
+  if (others.length > 0) return null; // the descriptor names another website
+  if (GENERIC_HOST_WORDS.has(label)) return null;
+  return label;
+}
+
 /** Merchant from a descriptor: a known merchant whose name or web host appears in it. */
 export function matchMerchant<M extends { name: string; hosts: string[]; aliases?: string[] }>(
   description: string,
@@ -505,9 +531,7 @@ export function matchMerchant<M extends { name: string; hosts: string[]; aliases
     const terms = [
       normalizeDescriptor(m.name),
       ...(m.aliases ?? []).map(normalizeDescriptor),
-      ...m.hosts.map((h) =>
-        normalizeDescriptor(h.replace(/^www\./, "").split(".")[0]),
-      ),
+      ...m.hosts.map((h) => hostTerm(description, h)).filter((t): t is string => !!t),
     ].filter((t) => t.length >= 3);
     for (const t of terms)
       if (hasWord(d, t) && (!best || t.length > best.len))

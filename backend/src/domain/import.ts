@@ -523,13 +523,19 @@ export interface CatalogEntry {
  */
 export function matchCatalog(cardName: string, issuer: string | null, catalog: CatalogEntry[], threshold = 0.5, isBusiness: boolean | null = null): { id: string; score: number } | null {
   let best: { id: string; score: number } | null = null;
+  let tied = false;
   for (const e of catalog) {
     let score = catalogNameScore(cardName, e.name);
     if (issuer && canonicalIssuer(issuer) === canonicalIssuer(e.issuerName)) score += 0.2;
     if (isBusiness != null && e.type) score += (e.type === 'BUSINESS') === isBusiness ? 0.15 : -0.6;
-    if (!best || score > best.score) best = { id: e.id, score: Math.round(score * 1000) / 1000 };
+    score = Math.round(score * 1000) / 1000;
+    if (!best || score > best.score) {
+      best = { id: e.id, score };
+      tied = false;
+    } else if (score === best.score) tied = true;
   }
-  return best && best.score >= threshold ? best : null;
+  // two different products fit equally well ("Chase Freedom" vs Unlimited / Flex): guessing would put the card on the wrong product
+  return best && !tied && best.score >= threshold ? best : null;
 }
 
 export interface ExistingCard {

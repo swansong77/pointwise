@@ -12,6 +12,7 @@ import { DomainRewardRule, DomainWalletCard, PurchaseTarget } from './types';
  *  - conditional rules (portal-only, "up to", linked-account rates) are never used to rank;
  *  - a capped rate is blended with the card's base rate for the part of the member's yearly spend in the category that
  *    is above the cap, when that spend is known; otherwise the headline rate ranks and the cap is shown;
+ *  - a category rule can list merchants it excludes (`excludedMerchantIds`); there the card uses its next-best rule;
  *  - each ranked card says whether the rate it used has been confirmed by an issuer page.
  */
 
@@ -126,6 +127,8 @@ export function bestRuleForCard(
     if (rule.conditional || !isRuleActive(rule, now) || !isRuleEnabledForCard(rule, wc)) continue;
     const level = matchLevel(rule, target);
     if (level === 'NONE') continue;
+    // a category rate that names merchants it does not cover (Walmart and Target are not "supermarkets") skips them
+    if (!rule.merchantId && target.merchantId && rule.excludedMerchantIds?.includes(target.merchantId)) continue;
     const m = Number(rule.multiplier);
     const eff = effectiveMultiplier(rule, base, annualSpendCents);
     if (eff > best.effective || (eff === best.effective && m > best.multiplier) || (eff === best.effective && m === best.multiplier && LEVEL_PRIORITY[level] > LEVEL_PRIORITY[best.level])) {

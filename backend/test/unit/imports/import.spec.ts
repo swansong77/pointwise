@@ -346,4 +346,16 @@ describe('catalog matching respects personal vs business', () => {
   it('a type mismatch alone does not create a match below the threshold', () => {
     expect(matchCatalog('Unrelated Card', 'Capital One', catalog, 0.5, false)).toBeNull();
   });
+  it('"Chase Freedom" lands on the original Freedom, not Unlimited, Flex or Rise', () => {
+    const freedom = [
+      { id: 'unl', name: 'Chase Freedom Unlimited', issuerName: 'Chase', type: 'PERSONAL' },
+      { id: 'flex', name: 'Chase Freedom Flex', issuerName: 'Chase', type: 'PERSONAL' },
+      { id: 'rise', name: 'Chase Freedom Rise', issuerName: 'Chase', type: 'PERSONAL' },
+      { id: 'orig', name: 'Chase Freedom', issuerName: 'Chase', type: 'PERSONAL' },
+    ];
+    expect(matchCatalog('Chase Freedom', 'Chase', freedom, 0.5, false)?.id).toBe('orig');
+    expect(matchCatalog('Chase Freedom Flex', 'Chase', freedom, 0.5, false)?.id).toBe('flex');
+    // without the original in the catalog, a bare "Freedom" is ambiguous and must not silently become Unlimited
+    expect(matchCatalog('Chase Freedom', 'Chase', freedom.slice(0, 3), 0.5, false)?.id).not.toBe('unl');
+  });
 });

@@ -17,6 +17,8 @@ export interface DomainRewardRule {
   capPeriod?: 'QUARTER' | 'YEAR' | string | null;
   /** the rate needs something a category match cannot know (a travel portal, a linked account, an "up to" rate): shown on the card, never used to rank */
   conditional?: boolean;
+  /** merchants this category rate does not cover (superstores and clubs are not "supermarkets"); the card falls back to its next rule there */
+  excludedMerchantIds?: string[];
   /** when an issuer page last confirmed this rate; null = unverified */
   verifiedAt?: Date | null;
 }

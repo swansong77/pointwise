@@ -5,7 +5,7 @@
  * known, confirms or contradicts the match. Low confidence never drives a recommendation (ADR-011).
  */
 import { editDistance } from './benefit-detect';
-import { normalizeDescriptor } from './spend';
+import { GENERIC_HOST_WORDS, hostTerm, normalizeDescriptor } from './spend';
 
 export const RESOLVE_ENGINE_VERSION = 'merchant-resolve/1';
 export const MIN_RESOLVE_CONFIDENCE = 0.5;
@@ -45,7 +45,7 @@ interface Candidate {
   base: number;
 }
 
-function candidates(d: string, m: MerchantIdentity): Candidate[] {
+function candidates(d: string, m: MerchantIdentity, raw: string): Candidate[] {
   const out: Candidate[] = [];
   const name = normalizeDescriptor(m.name);
   if (name.length >= 3) {
@@ -59,8 +59,8 @@ function candidates(d: string, m: MerchantIdentity): Candidate[] {
     else if (hasWord(d, t)) out.push({ merchant: m, via: 'ALIAS', term: t, base: 0.92 });
   }
   for (const h of m.hosts) {
-    const t = normalizeDescriptor(h.replace(/^www\./, '').split('.')[0]);
-    if (t.length >= 4 && hasWord(d, t)) out.push({ merchant: m, via: 'HOST', term: t, base: 0.7 }); // a bare host word ("delta") is weak evidence
+    const t = hostTerm(raw, h);
+    if (t && t.length >= 4 && hasWord(d, t)) out.push({ merchant: m, via: 'HOST', term: t, base: 0.7 }); // a bare host word ("delta") is weak evidence
   }
   return out;
 }
@@ -79,7 +79,7 @@ export function resolveMerchant(descriptor: string, merchants: MerchantIdentity[
     if (!best || conf > best.conf || (conf === best.conf && c.term.length > best.c.term.length)) best = { c, conf };
   };
   for (const m of merchants)
-    for (const c of candidates(d, m)) {
+    for (const c of candidates(d, m, descriptor)) {
       let conf = c.base;
       if (opts.mcc && m.mcc?.length) conf += m.mcc.includes(opts.mcc) ? 0.04 : -0.15;
       consider(c, conf);
@@ -87,7 +87,7 @@ export function resolveMerchant(descriptor: string, merchants: MerchantIdentity[
   if (!best) {
     // conservative fuzzy fallback: a descriptor word within one edit of a merchant name word (≥ 5 letters)
     for (const m of merchants) {
-      const words = normalizeDescriptor(m.name).split(' ').filter((w) => w.length >= 5);
+      const words = normalizeDescriptor(m.name).split(' ').filter((w) => w.length >= 5 && !GENERIC_HOST_WORDS.has(w)); // "united" alone is not United Airlines
       for (const w of words)
         for (const t of d.split(' ').filter((x) => x.length >= 5))
           if (editDistance(w, t) <= 1) consider({ merchant: m, via: 'FUZZY', term: w, base: 0.6 }, 0.6);
