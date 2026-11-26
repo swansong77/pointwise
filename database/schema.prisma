@@ -1,4 +1,4 @@
-// Pointwise — PostgreSQL schema (Prisma)
+// PointWise — PostgreSQL schema (Prisma)
 // Canonical location: project-analysis/database/schema.prisma
 // Domain mapping to the analyzed app (see docs/storage.md):
 //   DBCard -> CreditCard, DBEarning/DBPointerCard -> Reward, DBPointer -> Category,
@@ -69,6 +69,11 @@ model User {
   valuations      UserValuation[]
   categoryPins    CategoryPin[]
   offerAlerts     OfferAlert[]
+  offerAccounts   OfferAccount[]
+  enrollmentRules EnrollmentRule[]
+  enrollmentPolicy EnrollmentPolicy?
+  enrollmentAttempts EnrollmentAttempt[]
+  offerSyncRuns   OfferSyncRun[]
   auditLogs       AuditLog[]
   passwordResets  PasswordResetToken[]
   statementImports StatementImport[]
@@ -165,6 +170,7 @@ model Profile {
   creditReportAccounts CreditReportAccount[]
   five24Snapshots FiveTwentyFourSnapshot[]
   loyaltyBalances LoyaltyBalance[]
+  offerAccounts   OfferAccount[]
 
   @@index([userId])
   @@index([householdId])
@@ -183,6 +189,7 @@ model Issuer {
   website     String?
   /// public page of the issuer's offers; the activation checklist opens it in the user's own browser
   offersUrl   String?
+  offerAccounts OfferAccount[]
   /// Business cards from this issuer appear on personal credit reports (count toward 5/24).
   businessReportsToPersonal Boolean @default(false)
   /// Issuer usually denies applicants at 5/24 or above (Phase D scorer).
@@ -456,6 +463,7 @@ model WalletCard {
   card         CreditCard  @relation(fields: [cardId], references: [id])
   profile      Profile?    @relation(fields: [profileId], references: [id], onDelete: SetNull)
   userOffers   UserOffer[]
+  offerAccountCards OfferAccountCard[]
   transactions Transaction[]
   pins         CategoryPin[]
   benefits     UserBenefit[]
@@ -626,7 +634,7 @@ enum TransactionSource {
   CSV
   PDF
   BANK
-  EMAIL   // card transaction alert forwarded to the user's Pointwise address
+  EMAIL   // card transaction alert forwarded to the user's PointWise address
 }
 
 /// A user's private forwarding address for card alert emails: <token>@INBOUND_EMAIL_DOMAIN.
@@ -820,6 +828,11 @@ enum NotificationType {
   OFFER_ALERT
   TRANSFER_BONUS
   SYSTEM
+  OFFER_NEW_HIGH_VALUE
+  OFFER_AUTO_ENROLLED
+  OFFER_ENROLL_FAILED
+  OFFER_SYNC_FAILED
+  OFFER_SAVINGS_DIGEST
 }
 
 model Notification {
@@ -851,6 +864,7 @@ model NotificationPreference {
   benefitEmail      Boolean @default(true)
   benefitPush       Boolean @default(false)
   transferBonuses   Boolean @default(true)
+  offerAutomation   Boolean @default(true)
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   loyaltyExpiring Boolean @default(true)
   loyaltyStale Boolean @default(true)
@@ -1235,7 +1249,7 @@ model AgentProfile {
   name         String
   description  String
   systemPrompt String
-  tools        String[] // Pointwise tool names
+  tools        String[] // PointWise tool names
   mcpToolIds   String[] // approved external MCP tools
   modelChain   String[] // AiModel ids, in failover order
   effort       String?  // low | medium | high (providers that support it)
@@ -1334,7 +1348,7 @@ model AiPendingAction {
   @@index([userId, status])
 }
 
-/// Personal access tokens (for the Pointwise MCP server). Only a SHA-256 hash is stored.
+/// Personal access tokens (for the PointWise MCP server). Only a SHA-256 hash is stored.
 model PersonalAccessToken {
   id         String    @id @default(uuid())
   userId     String
@@ -1849,6 +1863,8 @@ enum OfferSource {
   USER_ENTERED
   ADMIN
   PORTAL
+  EXTENSION
+  CONNECTOR
 }
 
 enum OfferType {
@@ -1877,6 +1893,8 @@ enum ActivationVerifier {
   MANUAL
   STATEMENT
   EMAIL
+  CONNECTOR
+  EXTENSION
 }
 
 enum OfferEventType {
@@ -1890,6 +1908,13 @@ enum OfferEventType {
   RECOMMENDED
   MISSED_DETECTED
   PLANNED
+  DISCOVERED
+  REMOVED
+  DECISION
+  ENROLL_ATTEMPT
+  AUTO_ENROLLED
+  SYNC
+  RULE_CHANGED
 }
 
 /// Traceable history of everything that happens to an offer for a user (import, activation, recommendation…).
@@ -2316,4 +2341,291 @@ model LoyaltySyncRun {
 
   @@index([userId, startedAt])
   @@index([accountId, startedAt])
+}
+
+// ───────────────────────────── Merchant offer automation ─────────────────────────────
+
+enum OfferConnectorKind {
+  MOCK
+  EXTENSION
+  EMAIL
+  MANUAL
+  ISSUER_LOGIN
+}
+
+enum OfferMfaMethod {
+  NONE
+  SMS
+  APP
+  AUTHENTICATOR
+  PASSKEY
+}
+
+enum OfferSyncHealth {
+  HEALTHY
+  DEGRADED
+  NEEDS_MFA
+  NEEDS_LOGIN
+  ERROR
+  LOCKED
+  DISABLED
+}
+
+enum OfferSyncCadence {
+  DAILY
+  WEEKLY
+  MONTHLY
+  MANUAL
+}
+
+/// One issuer login (or other source) for one household member. Credentials are encrypted (AES-256-GCM), write-only through the API and never logged.
+model OfferAccount {
+  id            String             @id @default(uuid())
+  userId        String
+  profileId     String?
+  issuerId      String
+  holderLabel   String
+  connectorKind OfferConnectorKind @default(MANUAL)
+  /// encrypted JSON {username,password}; null for sources that need none
+  credentialEnc String?
+  /// non-secret hint shown in the UI, e.g. "user ••••42"
+  credentialRef String?
+  mfaMethod     OfferMfaMethod     @default(NONE)
+  deviceTrustEnc String?
+  sessionEnc    String?
+  sessionExpiresAt DateTime?
+  lastLoginAt   DateTime?
+  lastSyncAt    DateTime?
+  syncHealth    OfferSyncHealth    @default(DISABLED)
+  failedLogins  Int                @default(0)
+  lockedAt      DateTime?
+  lastError     String?
+  /// per-account opt-in to server-side login, with the time the member acknowledged the terms risk
+  automationOptIn Boolean          @default(false)
+  optInAckAt    DateTime?
+  cadence       OfferSyncCadence   @default(DAILY)
+  /// local hour (0-23) of the scheduled run, default 2 AM
+  syncHour      Int                @default(2)
+  timezone      String             @default("America/New_York")
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile       Profile?           @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  issuer        Issuer             @relation(fields: [issuerId], references: [id])
+  cards         OfferAccountCard[]
+  items         OfferSnapshotItem[]
+  snapshots     OfferSnapshot[]
+  runs          OfferSyncRun[]
+
+  @@index([userId])
+  @@index([issuerId])
+}
+
+/// The wallet cards an offer account covers. Offers stay tied to the actual card; enrollments are never merged.
+model OfferAccountCard {
+  id           String       @id @default(uuid())
+  accountId    String
+  walletCardId String
+  account      OfferAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  walletCard   WalletCard   @relation(fields: [walletCardId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, walletCardId])
+}
+
+model OfferSnapshot {
+  id        String       @id @default(uuid())
+  accountId String
+  runId     String?
+  source    OfferSource
+  takenAt   DateTime     @default(now())
+  /// hash of the normalised inventory; an identical hash is a no-op
+  hash      String
+  itemCount Int
+  account   OfferAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, takenAt])
+}
+
+enum OfferItemStatus {
+  AVAILABLE
+  ENROLLED
+  REDEEMED
+  EXPIRED
+  REMOVED
+}
+
+enum OfferDecisionState {
+  NEW
+  RECOMMENDED
+  PENDING_REVIEW
+  IGNORED
+  APPROVED
+  ENROLLED
+  AUTO_ENROLLED
+  FAILED
+}
+
+/// Current state of one offer on one card of one account. History lives in OfferEvent.
+model OfferSnapshotItem {
+  id           String             @id @default(uuid())
+  userId       String
+  accountId    String
+  /// the wallet card the offer is on, or "" when the source does not say
+  cardKey      String             @default("")
+  walletCardId String?
+  externalId   String
+  merchantText String
+  merchantId   String?
+  title        String
+  category     String?
+  offerType    OfferType          @default(STATEMENT_CREDIT)
+  valueCents   Int                @default(0)
+  percent      Decimal?           @db.Decimal(5, 2)
+  points       Int?
+  minSpendCents Int?
+  endsAt       DateTime?
+  status       OfferItemStatus    @default(AVAILABLE)
+  decision     OfferDecisionState @default(NEW)
+  score        Int?
+  scoreDetail  Json?
+  decisionReason String?
+  ruleId       String?
+  autoEnrolled Boolean            @default(false)
+  userOfferId  String?
+  contentHash  String
+  firstSeenAt  DateTime           @default(now())
+  lastSeenAt   DateTime           @default(now())
+  removedAt    DateTime?
+  enrolledAt   DateTime?
+  savedCents   Int                @default(0)
+  account      OfferAccount       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  attempts     EnrollmentAttempt[]
+
+  @@unique([accountId, cardKey, externalId])
+  @@index([userId, decision])
+  @@index([userId, status])
+  @@index([endsAt])
+}
+
+enum RuleKind {
+  ALWAYS
+  NEVER
+}
+
+enum RuleMatcher {
+  MERCHANT
+  CATEGORY
+  MIN_VALUE
+  OFFER_TYPE
+  KEYWORD
+  SPEND_HISTORY
+}
+
+model EnrollmentRule {
+  id           String      @id @default(uuid())
+  userId       String
+  label        String
+  kind         RuleKind
+  matcher      RuleMatcher
+  matcherValue String
+  /// optional scope: only this account or this wallet card
+  accountId    String?
+  walletCardId String?
+  priority     Int         @default(100)
+  enabled      Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, enabled])
+}
+
+enum EnrollmentMode {
+  RECOMMEND
+  BULK_APPROVAL
+  AUTO
+}
+
+model EnrollmentPolicy {
+  userId     String         @id
+  mode       EnrollmentMode @default(RECOMMEND)
+  /// {allOffers,categories[],minValueCents,preferredMerchants[],matchSpendHistory,minScore}
+  autoFilter Json           @default("{}")
+  updatedAt  DateTime       @updatedAt
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum EnrollResult {
+  SUCCESS
+  FAILURE
+  ALREADY_ADDED
+  SESSION_TIMEOUT
+  MFA_FAILURE
+  PARTIAL
+}
+
+model EnrollmentAttempt {
+  id        String            @id @default(uuid())
+  userId    String
+  itemId    String
+  accountId String
+  mode      EnrollmentMode
+  /// USER | SYSTEM | AGENT
+  actor     String            @db.VarChar(8)
+  result    EnrollResult
+  detail    Json              @default("{}")
+  verifiedBy ActivationVerifier?
+  createdAt DateTime          @default(now())
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item      OfferSnapshotItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([itemId])
+}
+
+enum OfferSyncTrigger {
+  SCHEDULED
+  MANUAL
+  RETRY
+  EXTENSION
+}
+
+enum OfferSyncStatus {
+  QUEUED
+  RUNNING
+  NEEDS_MFA
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+model OfferSyncRun {
+  id        String           @id @default(uuid())
+  userId    String
+  accountId String?
+  /// groups the runs of one household-wide "sync now"
+  batchId   String?
+  trigger   OfferSyncTrigger
+  status    OfferSyncStatus  @default(QUEUED)
+  attempt   Int              @default(1)
+  found     Int              @default(0)
+  added     Int              @default(0)
+  updated   Int              @default(0)
+  removed   Int              @default(0)
+  expired   Int              @default(0)
+  enrolled  Int              @default(0)
+  errors    Int              @default(0)
+  warnings  Int              @default(0)
+  /// step shown in the UI, e.g. "Reading offers"
+  progress  String?
+  messages  Json             @default("[]")
+  error     String?
+  startedAt DateTime?
+  finishedAt DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account   OfferAccount?    @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([batchId])
+  @@index([status])
 }
