@@ -8731,7 +8731,7 @@
     }
   },
   "info": {
-    "title": "Pointwise API",
+    "title": "PointWise API",
     "description": "Credit-card rewards optimization API. All money values are integer cents.",
     "version": "0.1.0",
     "contact": {}

@@ -1,4 +1,4 @@
-# Pointwise — full local stack.
+# PointWise — full local stack.
 #   docker compose up -d --build                         # app stack
 #   docker compose --profile test run --rm backend-tests # unit + integration tests
 #   docker compose --profile e2e run --rm e2e            # Playwright E2E against the running stack
@@ -20,7 +20,7 @@ x-backend-env: &backend-env
   CORS_ORIGINS: http://localhost:3000
   SMTP_HOST: mailhog
   SMTP_PORT: "1025"
-  MAIL_FROM: "Pointwise <no-reply@pointwise.local>"
+  MAIL_FROM: "PointWise <no-reply@pointwise.local>"
   APP_URL: http://localhost:3000
   BILLING_PROVIDER: mock
   AUTH_RATE_LIMIT_PER_MIN: ${AUTH_RATE_LIMIT_PER_MIN:-30}

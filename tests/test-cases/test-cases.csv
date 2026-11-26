@@ -251,7 +251,7 @@ TC-AI-22,AI platform & MCP,SEC,Admin endpoints require ADMIN,user,"GET /admin/ai
 TC-AI-23,AI platform & MCP,NEG,Agent updates validated,admin,unknown tool / model / maxSteps 99 / write MCP tool,400,P1,Major,✅ INT
 TC-AI-24,AI platform & MCP,POS,Model test call,demo model,POST /admin/ai/models/:id/test,ok; disabled provider → 400,P2,Minor,✅ INT
 TC-AI-25,AI platform & MCP,POS,Usage & cost dashboard,traffic,GET /admin/ai/usage,"totals, by model, by agent, daily",P1,Major,"✅ INT, PW-AI-05"
-TC-AI-26,AI platform & MCP,POS,"Pointwise MCP server lists read-only tools, scoped to the token user",PAT,"tools/list, tools/call","11 tools, no write tool; family data",P0,Critical,"✅ INT, U (in-memory)"
+TC-AI-26,AI platform & MCP,POS,"PointWise MCP server lists read-only tools, scoped to the token user",PAT,"tools/list, tools/call","11 tools, no write tool; family data",P0,Critical,"✅ INT, U (in-memory)"
 TC-AI-27,AI platform & MCP,SEC,MCP auth,—,no token / session JWT / wrong / revoked PAT,401,P0,Critical,"✅ INT, CY-AI-03"
 TC-AI-28,AI platform & MCP,SEC,PAT storage,—,create,token shown once; only SHA-256 stored; scope mcp:read; expiry,P0,Major,"✅ U, INT, PW-AI-04"
 TC-AI-29,AI platform & MCP,SEC,MCP URL policy,admin,"http to public host, metadata IP, credentials in URL, not allow-listed",400,P0,Critical,"✅ U, INT"
