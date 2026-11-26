@@ -1,5 +1,6 @@
 'use client';
 
+import { titleCase } from '@/lib/title-case';
 import { BrandLogo } from '@/components/brand-logo';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
@@ -228,7 +229,7 @@ export default function ImportPage() {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl bg-slate-50 p-3">
-      <dt className="text-xs text-slate-500">{label}</dt>
+      <dt className="text-xs text-slate-500">{titleCase(label)}</dt>
       <dd className="text-xl font-semibold tabular-nums">{value}</dd>
     </div>
   );

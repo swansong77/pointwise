@@ -49,7 +49,7 @@ test.describe('Benefit audit & reconciliation', () => {
     await noSeriousA11y(page);
     await det.getByRole('button', { name: 'Not this benefit' }).click();
     await expect(rows.filter({ hasText: '··1001' })).toContainText('$0 / $10');
-    await expect(page.getByTestId('audit-summary')).toContainText('Manual overrides');
+    await expect(page.getByTestId('audit-summary')).toContainText('Manual Overrides');
   });
 
   test('PW-BA-02 reconciliation lists expected, missing and suggested actions per account', async ({ page, request }) => {
@@ -58,7 +58,7 @@ test.describe('Benefit audit & reconciliation', () => {
     await uiLogin(page, u.email);
     await page.goto('/benefits/reconciliation');
     const rec = page.getByTestId('reconciliation');
-    await expect(rec.getByTestId('recon-totals')).toContainText('Expected credits');
+    await expect(rec.getByTestId('recon-totals')).toContainText('Expected Credits');
     await expect(rec.getByTestId('all-row').filter({ hasText: 'Dining credit' })).toContainText('··2001');
     await expect(rec.getByTestId('actions')).toBeVisible();
     await expect(rec.getByTestId('action').first()).toContainText('··2001');
@@ -78,6 +78,6 @@ test.describe('Benefit audit & reconciliation', () => {
     const report = page.getByTestId('validation-report');
     await expect(report).toBeVisible();
     await expect(page.getByTestId('validation-status')).not.toHaveText('PASS');
-    await expect(report).toContainText('Statement transactions');
+    await expect(report).toContainText('Statement Transactions');
   });
 });

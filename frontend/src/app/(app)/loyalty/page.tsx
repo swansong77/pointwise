@@ -1,5 +1,6 @@
 'use client';
 
+import { titleCase } from '@/lib/title-case';
 import { useState } from 'react';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, PageHeader, Panel, Select, Spinner } from '@/components/ui';
 import { money, shortDate } from '@/lib/format';
@@ -59,7 +60,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 const Stat = ({ label, value, tone }: { label: string; value: string; tone?: string }) => (
   <div className="rounded-lg border border-slate-200 p-3">
-    <dt className="text-xs text-slate-600">{label}</dt>
+    <dt className="text-xs text-slate-600">{titleCase(label)}</dt>
     <dd className={`text-lg font-semibold ${tone ?? ''}`}>{value}</dd>
   </div>
 );
@@ -661,7 +662,7 @@ function HouseholdTab() {
       </dl>
       <Panel title="By member">
         <table className="w-full text-sm" data-testid="household-members">
-          <thead className="text-left text-xs text-slate-600"><tr><th className="py-1">Member</th><th>Points</th><th>Value</th><th>At risk</th></tr></thead>
+          <thead className="text-left text-xs text-slate-600"><tr><th className="py-1">Member</th><th>Points</th><th>Value</th><th>At Risk</th></tr></thead>
           <tbody>
             {h.members.map((m) => (
               <tr key={m.memberId} className="border-t border-slate-100"><td className="py-1 font-medium">{m.member}</td><td>{m.points.toLocaleString('en-US')}</td><td>{money(m.currentCents)}</td><td>{money(m.atRiskCents)}</td></tr>
@@ -799,7 +800,7 @@ export default function LoyaltyPage() {
       <div role="tablist" aria-label="Loyalty" className="flex flex-wrap gap-1 border-b border-slate-200">
         {TABS.map((t) => (
           <button key={t.id} role="tab" type="button" aria-selected={tab === t.id} onClick={() => setTab(t.id)} data-testid={`tab-${t.id}`} className={`rounded-t-lg px-3 py-2 text-sm ${tab === t.id ? 'border-b-2 border-brand-600 font-semibold text-brand-800' : 'text-slate-700 hover:bg-slate-100'}`}>
-            {t.label}
+            {titleCase(t.label)}
           </button>
         ))}
       </div>

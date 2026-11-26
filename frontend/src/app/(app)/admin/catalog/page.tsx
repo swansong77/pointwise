@@ -762,7 +762,7 @@ function Partners() {
           <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
-                <th className="py-1 font-semibold">Currency → program</th>
+                <th className="py-1 font-semibold">Currency → Program</th>
                 <th className="py-1 text-right font-semibold">Ratio</th>
                 <th className="py-1 text-right font-semibold">Days</th>
                 <th className="py-1 font-semibold">Bonus</th>
@@ -926,8 +926,8 @@ function Coverage() {
                 <th className="py-2 pr-3 text-right">Personal</th>
                 <th className="py-2 pr-3 text-right">Business</th>
                 <th className="py-2 pr-3 text-right">Verified</th>
-                <th className="py-2 pr-3">Last researched</th>
-                <th className="py-2 pr-3 text-right">To review</th>
+                <th className="py-2 pr-3">Last Researched</th>
+                <th className="py-2 pr-3 text-right">To Review</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

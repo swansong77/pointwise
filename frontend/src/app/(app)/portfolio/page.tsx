@@ -98,7 +98,7 @@ export default function PortfolioPage() {
                   <th scope="col" className="px-2 py-2 text-right font-medium">Benefits</th>
                   <th scope="col" className="px-2 py-2 text-right font-medium">Rewards</th>
                   <th scope="col" className="px-2 py-2 text-right font-medium">Effective</th>
-                  <th scope="col" className="px-5 py-2 text-right font-medium">Break-even spend</th>
+                  <th scope="col" className="px-5 py-2 text-right font-medium">Break-even Spend</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

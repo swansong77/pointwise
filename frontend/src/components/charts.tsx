@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { titleCase } from '@/lib/title-case';
 import { arcPath, gaugeFraction, stepPath, timelineSteps } from '@/lib/portfolio';
 import type { Five24TimelinePoint } from '@/lib/portfolio-types';
 import { shortDate } from '@/lib/format';
@@ -87,7 +88,7 @@ export function StatTiles({ items, testId }: { items: Array<[string, string, str
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" data-testid={testId}>
       {items.map(([label, value, hint]) => (
         <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+          <p className="text-xs uppercase tracking-wide text-slate-500">{titleCase(label)}</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">{value}</p>
           {hint && <p className="mt-0.5 text-xs text-slate-500">{hint}</p>}
         </div>
@@ -108,7 +109,7 @@ export function Tabs<T extends string>({ value, onChange, options, label }: { va
           onClick={() => onChange(v)}
           className={clsx('rounded-lg px-3 py-1.5 text-sm', value === v ? 'bg-white font-semibold text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900')}
         >
-          {text}
+          {titleCase(text)}
         </button>
       ))}
     </div>

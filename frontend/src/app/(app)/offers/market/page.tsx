@@ -132,7 +132,7 @@ export default function OfferMarketPage() {
                 </p>
               )}
               <details className="mt-1 text-xs text-slate-500">
-                <summary className="cursor-pointer">Why this difficulty</summary>
+                <summary className="cursor-pointer">Why This Difficulty</summary>
                 <ul className="mt-1 list-disc pl-5">
                   {o.difficulty.reasons.map((r) => (
                     <li key={r}>{r}</li>

@@ -1,5 +1,6 @@
 'use client';
 
+import { titleCase } from '@/lib/title-case';
 import { BrandLogo } from '@/components/brand-logo';
 import { useEffect, useState } from 'react';
 import { Badge, Button, EmptyState, ErrorText, PageHeader, Panel, Select, Spinner } from '@/components/ui';
@@ -181,7 +182,7 @@ function ScoreCard({ c, rank }: { c: CardScore; rank: number | null }) {
 function Stat({ label, value, testid }: { label: string; value: string; testid?: string }) {
   return (
     <div>
-      <dt className="text-xs text-slate-500">{label}</dt>
+      <dt className="text-xs text-slate-500">{titleCase(label)}</dt>
       <dd className="font-semibold text-slate-900" data-testid={testid}>
         {value}
       </dd>
@@ -353,7 +354,7 @@ function SmartCardView({ c, headline }: { c: SmartCard; headline?: boolean }) {
         </ul>
       )}
       <details className="mt-2 text-xs text-slate-600">
-        <summary className="cursor-pointer">Why this recommendation</summary>
+        <summary className="cursor-pointer">Why This Recommendation</summary>
         <ul className="mt-1 list-disc pl-5">
           {c.factors.map((f) => (
             <li key={f.key}>

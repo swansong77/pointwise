@@ -240,7 +240,7 @@ function PartnerTable() {
               <th className="py-1 font-semibold">From</th>
               <th className="py-1 font-semibold">To</th>
               <th className="py-1 text-right font-semibold">Ratio</th>
-              <th className="py-1 text-right font-semibold">Value / point</th>
+              <th className="py-1 text-right font-semibold">Value / Point</th>
               <th className="py-1 font-semibold">Timing</th>
             </tr>
           </thead>

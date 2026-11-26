@@ -163,7 +163,7 @@ function WalletCardRow({ wc }: { wc: WalletCard }) {
           </div>
           {rotating.length > 0 && (
             <fieldset className="sm:col-span-3">
-              <legend className="text-sm font-medium text-slate-700">Activated rotating categories</legend>
+              <legend className="text-sm font-medium text-slate-700">Activated Rotating Categories</legend>
               <div className="mt-2 flex flex-wrap gap-3">
                 {rotating.map((r) => {
                   const cat = categories.data?.find((c) => c.id === r.categoryId);

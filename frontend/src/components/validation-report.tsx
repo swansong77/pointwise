@@ -15,7 +15,7 @@ export function ValidationReport({ v }: { v: Validation }) {
       </div>
       <dl className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600 sm:grid-cols-4">
         <div>
-          <dt>Statement transactions</dt>
+          <dt>Statement Transactions</dt>
           <dd className="font-medium text-slate-800">{v.statementCount}</dd>
         </div>
         <div>
@@ -27,7 +27,7 @@ export function ValidationReport({ v }: { v: Validation }) {
           <dd className="font-medium text-slate-800">{v.differenceCount}</dd>
         </div>
         <div>
-          <dt>Missing amount</dt>
+          <dt>Missing Amount</dt>
           <dd className="font-medium text-slate-800">{money(v.missingCents)}</dd>
         </div>
       </dl>

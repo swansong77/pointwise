@@ -21,7 +21,7 @@ describe('Card management', () => {
     cy.get('[data-testid=wallet-card]').contains('button', 'Save').click();
     cy.get('[data-testid=wallet-card]').should('contain', 'closed');
     cy.visit('/categories/dining');
-    cy.contains('No approved cards').should('be.visible');
+    cy.contains(/no approved cards/i).should('be.visible');
   });
 
   it('CY-CARD-03 validates last four digits', () => {
@@ -48,7 +48,7 @@ describe('Search', () => {
     cy.visit('/wallet');
     cy.contains('button', '+ Add card').click();
     cy.get('#card-search').type('zzzz-no-card');
-    cy.contains('No cards match').should('be.visible');
+    cy.contains(/no cards match/i).should('be.visible');
   });
 
   it('CY-SRCH-03 merchant search by name and by domain', () => {

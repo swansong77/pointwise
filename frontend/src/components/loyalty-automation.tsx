@@ -1,5 +1,6 @@
 'use client';
 
+import { titleCase } from '@/lib/title-case';
 import { useState } from 'react';
 import { BrandLogo } from '@/components/brand-logo';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, Panel, Select, Spinner } from '@/components/ui';
@@ -111,7 +112,7 @@ export function RefreshHealth() {
                 ['Due now', s.summary.due],
               ].map(([k, v]) => (
                 <div key={k as string} className="rounded-lg border border-slate-200 p-2">
-                  <dt className="text-xs text-slate-600">{k}</dt>
+                  <dt className="text-xs text-slate-600">{titleCase(k)}</dt>
                   <dd className="text-lg font-semibold">{v}</dd>
                 </div>
               ))}

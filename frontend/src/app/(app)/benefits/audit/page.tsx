@@ -1,5 +1,6 @@
 'use client';
 
+import { titleCase } from '@/lib/title-case';
 import { WalletCardArt } from '@/components/card-bits';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -45,7 +46,7 @@ export default function BenefitAuditPage() {
             ['Unmatched credits', s.missedTransactions],
           ].map(([k, v]) => (
             <div key={k as string} className="rounded-xl border border-slate-200 bg-white p-3">
-              <dt className="text-xs text-slate-500">{k}</dt>
+              <dt className="text-xs text-slate-500">{titleCase(k)}</dt>
               <dd className="text-xl font-semibold">{v}</dd>
             </div>
           ))}

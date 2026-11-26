@@ -207,7 +207,7 @@ function Models() {
               <tr>
                 <th scope="col" className="px-5 py-2">Model</th>
                 <th scope="col" className="px-2 py-2">Provider</th>
-                <th scope="col" className="px-2 py-2">$/1M in · out</th>
+                <th scope="col" className="px-2 py-2">$/1M in · Out</th>
                 <th scope="col" className="px-2 py-2">Capabilities</th>
                 <th scope="col" className="px-5 py-2 text-right">Actions</th>
               </tr>

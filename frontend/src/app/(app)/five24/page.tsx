@@ -59,7 +59,7 @@ function MemberPanel({ m }: { m: Five24Response['members'][number] }) {
           <Five24Gauge count={s.count} label={s.label} limit={s.limit} />
           <dl className="space-y-1 text-sm">
             <div className="flex justify-between gap-2">
-              <dt className="text-slate-500">Next drop</dt>
+              <dt className="text-slate-500">Next Drop</dt>
               <dd>{s.nextDropAt ? shortDate(s.nextDropAt) : '—'}</dd>
             </div>
             <div className="flex justify-between gap-2">
@@ -83,7 +83,7 @@ function MemberPanel({ m }: { m: Five24Response['members'][number] }) {
                   <th scope="col">Card</th>
                   <th scope="col">Why</th>
                   <th scope="col">Opened</th>
-                  <th scope="col">Counts until</th>
+                  <th scope="col">Counts Until</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

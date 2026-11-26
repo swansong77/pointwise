@@ -38,7 +38,7 @@ test.describe('Automatic import', () => {
     await page.goto('/spending');
     const panel = page.getByTestId('auto-capture');
     await expect(panel.getByTestId('inbox-address')).toHaveText(address);
-    await expect(panel).toContainText('1 of 1 cards automated');
+    await expect(panel).toContainText('1 of 1 Cards Automated');
     await expect(panel.getByTestId('capture-card')).toContainText('Alert emails');
     await expect(page.getByTestId('transaction').filter({ hasText: 'UBER *TRIP' })).toContainText('Rideshare credit: $10 credit expected');
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();

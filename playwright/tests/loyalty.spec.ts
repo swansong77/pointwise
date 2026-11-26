@@ -55,7 +55,7 @@ test.describe('Loyalty assets', () => {
     await cert.getByRole('button', { name: 'Mark used' }).click();
     await expect(cert).toContainText('Used');
     await page.getByTestId('tab-valuation').click();
-    await expect(page.getByTestId('valuation')).toContainText('Recovered value');
+    await expect(page.getByTestId('valuation')).toContainText('Recovered Value');
     await expect(page.getByTestId('valuation')).toContainText('$480');
   });
 
@@ -108,9 +108,9 @@ test.describe('Loyalty assets', () => {
     await page.getByTestId('plan-trip').click();
     await expect(page.getByTestId('award-travel')).toBeVisible();
     // a custom program has no transfer routes; the plan says so instead of inventing one
-    await expect(page.getByText(/No program in reach|Best/).first()).toBeVisible();
+    await expect(page.getByText(/No program in reach|Best/i).first()).toBeVisible();
     await page.getByTestId('tab-household').click();
-    await expect(page.getByTestId('household')).toContainText('Combined points');
+    await expect(page.getByTestId('household')).toContainText('Combined Points');
     await expect(page.getByTestId('household-members')).toContainText('90,000');
   });
 });
