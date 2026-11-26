@@ -50,7 +50,7 @@ export function configureApp(
   app.useGlobalFilters(new AllExceptionsFilter());
   if (opts.swagger) {
     const config = new DocumentBuilder()
-      .setTitle("Pointwise API")
+      .setTitle("PointWise API")
       .setDescription(
         "Credit-card rewards optimization API. All money values are integer cents.",
       )

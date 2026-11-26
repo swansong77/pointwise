@@ -5,7 +5,7 @@ Effort is in engineer-weeks (ew), for a team of 2 full-stack engineers, 1 design
 ```mermaid
 gantt
   dateFormat YYYY-MM-DD
-  title Pointwise roadmap
+  title PointWise roadmap
   section Phase 1 MVP
   Foundation (done in this project)      :done, p1a, 2026-11-20, 2d
   Catalog curation v1 (500 cards)        :p1b, 2026-11-23, 4w
@@ -64,7 +64,7 @@ Delivered as working code: households, benefit tracker + alerts, full 5/24 engin
 
 ## AI platform (2026-11-23)
 
-Delivered (Phase A + B of the AI plan, ≈ 6–8 ew): provider layer + router, assistant and agents, tools, consent/budgets/usage, admin AI page, Pointwise MCP server, admin MCP registry. Privacy boundary (2026-11-24): no AI provider or MCP client receives user card data. **Phase C delivered (2026-11-24):** card knowledge base, admin-reviewed extraction refresh engine, offer history, welcome-bonus/annual-fee/retention APIs, `/admin/catalog`. Next:
+Delivered (Phase A + B of the AI plan, ≈ 6–8 ew): provider layer + router, assistant and agents, tools, consent/budgets/usage, admin AI page, PointWise MCP server, admin MCP registry. Privacy boundary (2026-11-24): no AI provider or MCP client receives user card data. **Phase C delivered (2026-11-24):** card knowledge base, admin-reviewed extraction refresh engine, offer history, welcome-bonus/annual-fee/retention APIs, `/admin/catalog`. Next:
 
 | Phase | Scope | Effort |
 |---|---|---|
@@ -82,7 +82,7 @@ All five phases of the AI plan are delivered. **Phase F (2026-11-26):** credit-b
 
 **Phase H (2026-11-29):** spend tracking (statement CSV, Plaid transactions, manual) with automatic benefit tracking — purchases record expected credit use, issuer statement credits confirm it, rules suggested per benefit and editable — see spend-tracking.md.
 
-**Phase G (2026-11-27):** card-research agent (Claude web search/fetch limited to issuer domains, evidence checked by Pointwise, admin approval) and a curated real-card catalog (112 cards — 83 personal, 29 business — from 15 issuers incl. credit unions; unverified until confirmed) selectable with `SEED_CATALOG` — see card-research-agent.md. Lead sites (Doctor of Credit, The Points Guy, MileMoa) and a NEWS scan task added 2026-11-28 (validated: unit 448, int 125, PW 62, CY 37) (discovery only; issuer pages remain the source of facts).
+**Phase G (2026-11-27):** card-research agent (Claude web search/fetch limited to issuer domains, evidence checked by PointWise, admin approval) and a curated real-card catalog (112 cards — 83 personal, 29 business — from 15 issuers incl. credit unions; unverified until confirmed) selectable with `SEED_CATALOG` — see card-research-agent.md. Lead sites (Doctor of Credit, The Points Guy, MileMoa) and a NEWS scan task added 2026-11-28 (validated: unit 448, int 125, PW 62, CY 37) (discovery only; issuer pages remain the source of facts).
 
 ## Effort summary
 

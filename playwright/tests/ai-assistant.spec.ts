@@ -17,7 +17,7 @@ test.describe('AI assistant', () => {
     const u = await apiRegister(request);
     await uiLogin(page, u.email);
     await page.goto('/assistant');
-    await expect(page.getByTestId('ai-consent')).toContainText('never leave Pointwise');
+    await expect(page.getByTestId('ai-consent')).toContainText('never leave PointWise');
     await expect(page.getByLabel('Your question')).toHaveCount(0);
     await page.getByTestId('ai-consent-accept').click();
     await expect(page.getByLabel('Your question')).toBeVisible();
@@ -85,7 +85,7 @@ test.describe('AI assistant', () => {
     await uiLogin(page, ADMIN.email, ADMIN.password);
     await page.goto('/admin/ai');
     await expect(page.getByTestId('ai-providers')).toContainText('Anthropic');
-    await expect(page.getByTestId('ai-providers')).toContainText('Pointwise demo (offline)');
+    await expect(page.getByTestId('ai-providers')).toContainText('PointWise demo (offline)');
     await page.getByRole('button', { name: 'Usage & cost' }).click();
     await expect(page.getByTestId('ai-usage')).toContainText('Requests');
     await page.getByRole('button', { name: 'MCP servers' }).click();

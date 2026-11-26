@@ -1,4 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
+
+// RankedCardRow looks the card's issuer and network up in the wallet, so the wallet query is stubbed here
+vi.mock('@/lib/queries', () => ({ useWallet: () => ({ data: [{ id: 'w', card: { id: 'c', name: 'Gold', color: '#b45309', issuer: { name: 'Chase' }, network: 'VISA' } }] }) }));
 import { Badge, Button, EmptyState, ErrorText, Field, Input, PageHeader, Panel, ProgressBar, Spinner } from '@/components/ui';
 import { CardSwatch, RankedCardRow, categoryEmoji } from '@/components/card-bits';
 
@@ -91,6 +95,10 @@ describe('card bits', () => {
     expect(screen.getByText('5¢/$')).toBeInTheDocument();
     expect(screen.getByText(/pinned/)).toBeInTheDocument();
     expect(screen.getByText('4x × 1.25¢')).toBeInTheDocument();
+    // the issuer's and network's logos are on the card face
+    const art = screen.getByTestId('card-art');
+    expect(art).toHaveAttribute('aria-label', 'Gold card, Chase, VISA');
+    expect([...art.querySelectorAll('[data-testid=brand-logo]')].map((n) => n.getAttribute('data-brand'))).toEqual(['chase', 'visa']);
   });
   it('CardSwatch sizes', () => {
     const { container } = render(<CardSwatch color="#000" size="sm" />);

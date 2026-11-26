@@ -1,5 +1,6 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand-logo';
 import Link from 'next/link';
 import { use } from 'react';
 import { Badge, EmptyState, ErrorText, Panel, PageHeader, Spinner } from '@/components/ui';
@@ -30,6 +31,7 @@ export default function MerchantDetailPage({ params }: { params: Promise<{ slug:
 
   return (
     <div className="space-y-6">
+      <BrandLogo brand={{ slug: merchant.slug, name: merchant.name }} name={merchant.name} size="lg" />
       <PageHeader
         title={merchant.name}
         subtitle={`${merchant.category.name}${merchant.hosts.length ? ` · ${merchant.hosts.join(', ')}` : ''}`}

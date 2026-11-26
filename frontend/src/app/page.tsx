@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Logo } from '@/components/logo';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
@@ -10,10 +11,10 @@ export default async function Home() {
   if (session) redirect('/dashboard');
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-6 text-center">
-      <span className="mb-6 grid h-14 w-14 place-items-center rounded-2xl bg-brand-600 text-2xl font-bold text-white">P</span>
+      <Logo size="xl" className="mb-6" />
       <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">Use the right card. Every time.</h1>
       <p className="mt-4 text-lg text-slate-600">
-        Pointwise shows your best card for every store and category, tracks card-linked offers before they expire, and keeps
+        PointWise shows your best card for every store and category, tracks card-linked offers before they expire, and keeps
         welcome bonuses and annual fees on schedule.
       </p>
       <div className="mt-8 flex gap-3">

@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { titleCase } from '@/lib/title-case';
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react';
 
 export function Button({
@@ -73,7 +74,7 @@ export function Panel({ title, action, children, className, ...rest }: { title?:
     <section {...rest} className={clsx('rounded-2xl border border-slate-200 bg-white p-5 shadow-sm', className)}>
       {(title || action) && (
         <header className="mb-4 flex items-center justify-between gap-3">
-          {title && <h2 className="text-base font-semibold text-slate-900">{title}</h2>}
+          {title && <h2 className="text-base font-semibold text-slate-900">{typeof title === 'string' ? titleCase(title) : title}</h2>}
           {action}
         </header>
       )}
@@ -102,7 +103,7 @@ export function Badge({ children, tone = 'slate' }: { children: ReactNode; tone?
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center">
-      <p className="font-medium text-slate-800">{title}</p>
+      <p className="font-medium text-slate-800">{titleCase(title)}</p>
       {children && <div className="mt-2 text-sm text-slate-500">{children}</div>}
     </div>
   );
@@ -139,7 +140,7 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{titleCase(title)}</h1>
         {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
       </div>
       {action}

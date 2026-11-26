@@ -1,8 +1,9 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand-logo';
 import Link from 'next/link';
 import { Badge, EmptyState, ErrorText, Panel, PageHeader, ProgressBar, Spinner } from '@/components/ui';
-import { CardSwatch, categoryEmoji } from '@/components/card-bits';
+import { CardSwatch, categoryEmoji, WalletCardArt } from '@/components/card-bits';
 import { useDashboard } from '@/lib/queries';
 import { centsPerDollar, daysLeftLabel, money, shortDate } from '@/lib/format';
 
@@ -54,7 +55,7 @@ export default function DashboardPage() {
                 </div>
                 {best && (
                   <span className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                    <CardSwatch color={best.color} size="sm" />
+                    <WalletCardArt walletCardId={best.walletCardId} cardId={best.cardId} name={best.name} color={best.color} size="sm" />
                     {centsPerDollar(best.centsPerDollar)}
                   </span>
                 )}
@@ -72,9 +73,12 @@ export default function DashboardPage() {
             <ul className="divide-y divide-slate-100">
               {data.expiringOffers.map((uo) => (
                 <li key={uo.id} className="flex items-center justify-between gap-3 py-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{uo.offer.title}</p>
-                    <p className="text-xs text-slate-500">{uo.walletCard.nickname || uo.walletCard.card.name}</p>
+                  <div className="flex min-w-0 items-center gap-2">
+                    {uo.offer.merchant ? <BrandLogo brand={{ name: uo.offer.merchant.name }} size="md" decorative /> : <CardSwatch color={uo.walletCard.card.color} size="sm" />}
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{uo.offer.title}</p>
+                      <p className="text-xs text-slate-500">{uo.walletCard.nickname || uo.walletCard.card.name}</p>
+                    </div>
                   </div>
                   <Badge tone="amber">{uo.offer.endsAt ? daysLeftLabel(daysUntil(uo.offer.endsAt)) : 'No expiry'}</Badge>
                 </li>
@@ -113,7 +117,7 @@ export default function DashboardPage() {
             <ul className="divide-y divide-slate-100">
               {data.renewals.map((r) => (
                 <li key={r.walletCardId} className="flex justify-between py-2 text-sm">
-                  <span>{r.name}</span>
+                  <span className="flex items-center gap-2"><WalletCardArt walletCardId={r.walletCardId} name={r.name} size="sm" />{r.name}</span>
                   <span className="text-slate-600">
                     {money(r.annualFeeCents)} on {shortDate(r.renewsAt)} ({r.daysUntil}d)
                   </span>

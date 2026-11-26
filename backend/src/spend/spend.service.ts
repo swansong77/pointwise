@@ -124,7 +124,7 @@ type TrackedBenefit = Prisma.UserBenefitGetPayload<{
 /**
  * Spend tracking: stores transactions from statements, bank sync and manual entry, and keeps each
  * card's benefit tracker up to date from them (deterministic rules — no transaction data leaves
- * Pointwise). See docs/spend-tracking.md.
+ * PointWise). See docs/spend-tracking.md.
  */
 @Injectable()
 export class SpendService {

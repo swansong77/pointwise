@@ -142,7 +142,7 @@ export class AiService {
     messages.push(...modelHistory([userMsg]));
     const newMessages: ChatMessage[] = [userMsg];
 
-    // tools: Pointwise tools in the profile + approved external MCP tools
+    // tools: PointWise tools in the profile + approved external MCP tools
     const localTools = this.registry.specs(profile.tools);
     const external = await this.mcp.usableTools(profile.mcpToolIds);
     const tools: ToolSpec[] = [

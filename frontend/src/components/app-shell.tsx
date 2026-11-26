@@ -1,5 +1,6 @@
 'use client';
 
+import { Logo } from '@/components/logo';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -14,20 +15,22 @@ const NAV = [
   { href: '/wallet', label: 'Wallet', icon: '💳' },
   { href: '/portfolio', label: 'Portfolio', icon: '📊' },
   { href: '/benefits', label: 'Benefits', icon: '🎁' },
-  { href: '/benefits/audit', label: 'Benefit audit', icon: '🔎' },
+  { href: '/benefits/audit', label: 'Benefit Audit', icon: '🔎' },
   { href: '/benefits/reconciliation', label: 'Reconcile', icon: '⚖️' },
   { href: '/spending', label: 'Spending', icon: '🧾' },
   { href: '/five24', label: '5/24', icon: '⏳' },
-  { href: '/next-card', label: 'Next card', icon: '🧭' },
+  { href: '/next-card', label: 'Next Card', icon: '🧭' },
   { href: '/travel', label: 'Travel', icon: '✈️' },
   { href: '/household', label: 'Household', icon: '👪' },
   { href: '/import', label: 'Import', icon: '📥' },
   { href: '/offers', label: 'Offers', icon: '🏷️' },
-  { href: '/offers/market', label: 'Offer market', icon: '📈' },
-  { href: '/offers/intel', label: 'Offer intelligence', icon: '🎯' },
-  { href: '/offers/plan', label: 'Plan a purchase', icon: '🧭' },
+  { href: '/offers/market', label: 'Offer Market', icon: '📈' },
+  { href: '/offers/intel', label: 'Offer Intelligence', icon: '🎯' },
+  { href: '/offers/plan', label: 'Plan a Purchase', icon: '🧭' },
+  { href: '/loyalty', label: 'Loyalty Assets', icon: '✈️' },
   { href: '/nearby', label: 'Nearby', icon: '📍' },
   { href: '/merchants', label: 'Merchants', icon: '🏪' },
+  { href: '/brands', label: 'Brand Logos', icon: '🖼️' },
   { href: '/calculator', label: 'Calculator', icon: '🧮' },
   { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
@@ -49,7 +52,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         ...NAV,
         { href: '/admin', label: 'Admin', icon: '🛠️' },
         { href: '/admin/ai', label: 'AI & MCP', icon: '🤖' },
-        { href: '/admin/catalog', label: 'Card data', icon: '🗂️' },
+        { href: '/admin/catalog', label: 'Card Data', icon: '🗂️' },
         { href: '/admin/ops', label: 'Operations', icon: '🩺' },
       ]
     : NAV;
@@ -64,8 +67,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button className="md:hidden" aria-label="Toggle navigation" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
             ☰
           </button>
-          <Link href="/dashboard" className="flex items-center gap-2 font-bold text-brand-700">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-600 text-white">P</span> Pointwise
+          <Link href="/dashboard" className="flex items-center" aria-label="PointWise home">
+            <Logo size="sm" />
           </Link>
           <div className="ml-auto flex items-center gap-3">
             <Link

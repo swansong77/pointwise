@@ -33,12 +33,12 @@ export default function AssistantPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Assistant" subtitle="Ask about your cards, benefits, 5/24 status and household. Answers use your Pointwise data." />
+      <PageHeader title="Assistant" subtitle="Ask about your cards, benefits, 5/24 status and household. Answers use your PointWise data." />
       {!settings.data?.consented ? (
         <Panel title="Turn on the assistant" data-testid="ai-consent">
           <p className="text-sm text-slate-700">
-            Your cards, benefits, balances and household data never leave Pointwise. The AI model only receives your question (with card numbers and emails removed) and public
-            card-catalog information. Answers about your own data are computed by Pointwise and shown only to you.
+            Your cards, benefits, balances and household data never leave PointWise. The AI model only receives your question (with card numbers and emails removed) and public
+            card-catalog information. Answers about your own data are computed by PointWise and shown only to you.
           </p>
           {!!models.data?.length && <p className="mt-2 text-sm text-slate-600">Available models: {models.data.map((m) => `${m.displayName} (${m.provider})`).join(', ')}.</p>}
           <div className="mt-4">
@@ -308,7 +308,7 @@ function Answer({ r }: { r: ChatResult }) {
         <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">Confirm the proposed change in “Waiting for you” — nothing was changed yet.</p>
       )}
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2 text-xs text-slate-500">
-        {r.private && <Badge tone="green">Answered by Pointwise — your data was not shared with the AI</Badge>}
+        {r.private && <Badge tone="green">Answered by PointWise — your data was not shared with the AI</Badge>}
         {r.model && <Badge tone={r.model.demo ? 'amber' : 'slate'}>{r.model.demo ? 'Demo model (no AI)' : `${r.model.displayName} · ${r.model.provider}`}</Badge>}
         {r.refused && <Badge tone="red">Declined</Badge>}
         {!!r.trace.length && (

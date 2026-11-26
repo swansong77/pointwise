@@ -141,7 +141,7 @@ export class AuthService {
       data: { userId: user.id, tokenHash: sha256(token), expiresAt: new Date(Date.now() + 60 * 60 * 1000) },
     });
     const url = `${this.config.get('APP_URL') ?? 'http://localhost:3000'}/reset-password?token=${token}`;
-    await this.mail.send(user.email, 'Reset your Pointwise password', `Reset your password: ${url}\nThis link expires in 1 hour.`);
+    await this.mail.send(user.email, 'Reset your PointWise password', `Reset your password: ${url}\nThis link expires in 1 hour.`);
   }
 
   async resetPassword(token: string, password: string): Promise<void> {

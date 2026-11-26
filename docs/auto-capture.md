@@ -25,7 +25,7 @@ Both automatic channels can be on at once; duplicates are merged (§4).
 
 ## 3. Forwarded alert emails
 1. Each user gets a private address `u-<24 hex>@INBOUND_EMAIL_DOMAIN` (*Copy address*; *New address* rotates it; *Pause*).
-2. User turns on alerts for every transaction (and statement credits) at each issuer, and adds a forwarding rule. Gmail sends a confirmation email to the address — Pointwise shows the **confirmation code / link** on the panel. The panel gives a ready Gmail filter: `from:(chase.com OR americanexpress.com OR …)`.
+2. User turns on alerts for every transaction (and statement credits) at each issuer, and adds a forwarding rule. Gmail sends a confirmation email to the address — PointWise shows the **confirmation code / link** on the panel. The panel gives a ready Gmail filter: `from:(chase.com OR americanexpress.com OR …)`.
 3. The inbound provider POSTs each message (raw MIME) to `POST /api/v1/inbound/email` with `X-Inbound-Secret: INBOUND_EMAIL_SECRET` (constant-time check) and the envelope recipient in `X-Envelope-To` (or `?to=`; otherwise `Delivered-To` / `X-Original-To` / `To`). Unknown or paused addresses are dropped silently (`{accepted: false}`).
 
 Processing (`CaptureService.receive`, deterministic — no AI):

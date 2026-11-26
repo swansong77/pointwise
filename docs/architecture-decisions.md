@@ -41,7 +41,7 @@ Format: Context · Options · Decision · Consequences · Status. Evidence and i
 ## ADR-006 — OpenClaw via the OpenAI-compatible adapter and MCP
 - **Context:** `openclaw-integration.md` (verified from official docs, defaults partly unverified).
 - **Options:** custom adapter · OpenAI-compatible preset + MCP · skip.
-- **Decision:** preset on the OpenAI-compatible adapter (`http://127.0.0.1:18789/v1`, model `openclaw/default`); Pointwise public tools exposed to OpenClaw via MCP; OpenClaw treated as non-local by default, so it gets PUBLIC data only.
+- **Decision:** preset on the OpenAI-compatible adapter (`http://127.0.0.1:18789/v1`, model `openclaw/default`); PointWise public tools exposed to OpenClaw via MCP; OpenClaw treated as non-local by default, so it gets PUBLIC data only.
 - **Consequences:** no adapter code; security follows OpenClaw's single-operator model (loopback/Tailscale only).
 - **Status:** accepted; endpoint default-enablement to be confirmed against a running gateway.
 
@@ -74,4 +74,41 @@ Format: Context · Options · Decision · Consequences · Status. Evidence and i
 
 ## ADR-012 — Evidence-required recommendations and stacking
 - **Decision:** a recommendation (plan, missed-offer alert, opportunity) is generated only with at least one supporting evidence item (offer ref, transaction ids, rate) and is stored as an `OfferEvent` with evidence and confidence. Stacking rules are data (`STACK_RULES`), marked verified/unverified, and conflicts are shown as warnings.
+- **Status:** accepted.
+
+---
+## ADR-013 — Loyalty accounts are member-entered; no program logins
+- **Context:** the brief asks for AwardWallet-like tracking. Programs offer consumers no API, and the standing rule forbids logging in with credentials or scraping.
+- **Decision:** balances and dates are entered by the member (later: parsed from emails/imports they provide). Each account records `source` and `refreshedAt`; every prediction states its confidence.
+- **Consequences:** works for any program, including ones not in the registry (custom accounts); freshness depends on the member. **Status:** accepted.
+
+## ADR-014 — Expiration predictions carry a policy, a source and a confidence
+- **Decision:** policy type + months + reset conditions per program and bank currency; the member's own date wins; unverified policies cap confidence at 50–60 and unknown ones at 15–20; FIXED policies are computed from earning lots (FIFO) rather than assumed. Alerts fire once per asset, expiry date and threshold.
+- **Consequences:** honest about what is known; wrong policies are correctable by admins and overridable per account. **Status:** accepted.
+
+## ADR-015 — Asset valuation definitions
+- **Decision:** current / potential / at-risk / expired / recovered / net annual are defined once in `loyalty-valuation.ts` (points at the program's ¢ per point, certificates at stored potential value, status at member-entered annual value, memberships pro-rated, unused card credits from the benefit tracker). Valuations are planning estimates, shown with that label.
+- **Status:** accepted.
+
+## ADR-016 — Award planning reuses the transfer planner and states its estimates
+- **Decision:** award trips call the existing `planAward` per candidate program (balances first, then lowest-cost transfers, with active bonuses) and rank the results with the trip's preferences, expiring points and certificates. Without the exact points the price is a coarse table flagged as an estimate; transfer time beyond the departure date is penalised.
+- **Status:** accepted.
+
+---
+## ADR-017 — Loyalty automation: hybrid sources behind one ingestion funnel
+- **Context:** `loyalty-aggregation-research.md`, `loyalty-architecture-review.md`. No free permitted consumer API or aggregator returns loyalty balances; AwardWallet's API is business-only and its parsing uses the user's program passwords; Chase and Rakuten terms prohibit scripts and bots (verified).
+- **Options:** official APIs · aggregators · email · server-side browser automation · hybrid.
+- **Decision:** hybrid of email, statement PDFs, a user-side browser extension and manual entry. All observations enter through `LoyaltyIngestService.apply`; API and aggregator adapters share an interface but stay disabled. Server-side automation is rejected.
+- **Consequences:** no credentials held, free, auditable; freshness depends on the user's own data, which the UI states. **Status:** accepted.
+
+## ADR-018 — Source reliability and conflict policy
+- **Decision:** Official API 100, Aggregator 90, Email 80, Statement 75, Extension 70, AI-detected 50, Manual 25. A lower-reliability observation never overwrites a higher one; the same value confirms; different values from sources within 10 points are a conflict for the user; stale high-confidence data is flagged and newer lower observations wait as pending. Manual edits go through the same funnel.
+- **Status:** accepted.
+
+## ADR-019 — Browser extension security model
+- **Decision:** Manifest V3, read-only, user-initiated capture, no credentials read or sent, no remote code, personal access token scoped `loyalty:ingest` (revocable, expiring, rate- and size-limited). Terms risk per program is shown before enabling.
+- **Status:** accepted.
+
+## ADR-020 — Refresh tiers
+- **Decision:** CRITICAL / HIGH / NORMAL / LOW by expiry, pending changes and stale data; event-driven, daily, weekly, scheduled and manual refresh; refresh confidence decays with age; stale accounts produce a "needs refresh" action rather than a silent gap.
 - **Status:** accepted.

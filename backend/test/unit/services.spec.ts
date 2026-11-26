@@ -312,8 +312,8 @@ describe('JobsService', () => {
     mail.send.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
     prisma.notification.updateMany.mockResolvedValue({});
     expect((await jobs.run('email-digest', now)).created).toBe(1);
-    expect(mail.send).toHaveBeenCalledWith('u1@x', 'Pointwise: 2 updates', expect.stringContaining('• A'));
-    expect(mail.send).toHaveBeenCalledWith('u2@x', 'Pointwise: 1 update', expect.any(String));
+    expect(mail.send).toHaveBeenCalledWith('u1@x', 'PointWise: 2 updates', expect.stringContaining('• A'));
+    expect(mail.send).toHaveBeenCalledWith('u2@x', 'PointWise: 1 update', expect.any(String));
     expect(prisma.notification.updateMany).toHaveBeenCalledTimes(1);
   });
 });

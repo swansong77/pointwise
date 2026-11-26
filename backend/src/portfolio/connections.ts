@@ -157,7 +157,7 @@ export class PlaidConnector implements BankConnector {
 
   async createLinkToken(userId: string, opts: { accessToken?: string } = {}) {
     const r = await this.call<{ link_token: string }>("/link/token/create", {
-      client_name: "Pointwise",
+      client_name: "PointWise",
       user: { client_user_id: userId },
       ...(opts.accessToken
         ? { access_token: opts.accessToken }
@@ -817,7 +817,7 @@ export class ConnectionsController {
   @Post("plaid/sandbox") sandbox(@CurrentUser() u: AuthUser) {
     return this.svc.connectSandbox(u.sub);
   }
-  /** Plaid → Pointwise webhook (new transactions, sign-in needed). Signature-verified; no user token. */
+  /** Plaid → PointWise webhook (new transactions, sign-in needed). Signature-verified; no user token. */
   @Public()
   @SkipThrottle()
   @Post("plaid/webhook")

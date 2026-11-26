@@ -29,7 +29,7 @@ test.describe('Portfolio & benefits', () => {
   test('PW-PORT-01 portfolio groups and value analytics', async ({ page }) => {
     await uiLogin(page, FAMILY.email, FAMILY.password);
     await page.goto('/portfolio');
-    await expect(page.getByTestId('portfolio-totals')).toContainText('Annual fees');
+    await expect(page.getByTestId('portfolio-totals')).toContainText('Annual Fees');
     await expect(page.getByRole('button', { name: 'Active (7)' })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByTestId('portfolio-row')).toHaveCount(7);
     await page.getByRole('button', { name: 'Authorized user (2)' }).click();
@@ -38,7 +38,7 @@ test.describe('Portfolio & benefits', () => {
     await expect(page.getByTestId('portfolio-row')).toContainText('Fabrikam Flex');
     // filter to one cardholder
     await page.getByLabel('Cardholder').selectOption({ label: 'Sam (Child)' });
-    await page.getByRole('button', { name: /Authorized user/ }).click();
+    await page.getByRole('button', { name: /Authorized user/i }).click();
     await expect(page.getByTestId('portfolio-row')).toHaveCount(1);
   });
 
@@ -102,8 +102,8 @@ test.describe('Portfolio & benefits', () => {
       await page.getByRole('button', { name: 'Preview import' }).click();
       await expect(summary).toBeVisible({ timeout: 4000 });
     }).toPass({ timeout: 20_000 });
-    await expect(summary).toContainText('New cards3');
-    await expect(summary).toContainText('Duplicates / errors1');
+    await expect(summary).toContainText('New Cards3');
+    await expect(summary).toContainText('Duplicates / Errors1');
     await expect(page.getByTestId('import-row')).toHaveCount(4);
     await page.getByTestId('import-commit').click();
     await expect(page.getByTestId('import-done')).toContainText('Imported 3 cards');

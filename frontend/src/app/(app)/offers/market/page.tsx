@@ -1,5 +1,6 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand-logo';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Badge, EmptyState, ErrorText, PageHeader, Panel, Select, Spinner } from '@/components/ui';
@@ -52,6 +53,7 @@ export default function OfferMarketPage() {
               const o = bySlug.get(slug)!;
               return (
                 <li key={slug} className="flex flex-wrap items-center gap-2 py-2">
+                  <BrandLogo brand={{ name: o.issuer }} kinds={['ISSUER']} size="sm" decorative />
                   <span className="font-medium">{o.card}</span>
                   <Badge tone="amber">{expiryLabel(o.daysToExpiry)}</Badge>
                   <span className="text-slate-600">{bonusLabel(o)}</span>
@@ -96,6 +98,7 @@ export default function OfferMarketPage() {
           {m && sortOffers(m.offers, sort).map((o) => (
             <li key={o.slug} className="py-4" data-testid="market-offer">
               <div className="flex flex-wrap items-center gap-2">
+                <BrandLogo brand={{ name: o.issuer }} kinds={['ISSUER']} size="md" decorative />
                 <span className="font-medium">{o.card}</span>
                 <span className="text-sm text-slate-600">{o.issuer}</span>
                 <Badge tone={VERDICT[o.verdict].tone}>{VERDICT[o.verdict].label}</Badge>
@@ -129,7 +132,7 @@ export default function OfferMarketPage() {
                 </p>
               )}
               <details className="mt-1 text-xs text-slate-500">
-                <summary className="cursor-pointer">Why this difficulty</summary>
+                <summary className="cursor-pointer">Why This Difficulty</summary>
                 <ul className="mt-1 list-disc pl-5">
                   {o.difficulty.reasons.map((r) => (
                     <li key={r}>{r}</li>

@@ -1,4 +1,4 @@
-# Phase 11 — Web Application Architecture (Pointwise)
+# Phase 11 — Web Application Architecture (PointWise)
 
 ## 1. Stack (as built)
 

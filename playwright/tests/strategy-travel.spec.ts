@@ -64,7 +64,7 @@ test.describe('Travel', () => {
     const u = await apiRegister(request);
     await uiLogin(page, u.email);
     await page.goto('/travel');
-    await expect(page.getByTestId('travel-balances')).toContainText('No balances yet');
+    await expect(page.getByTestId('travel-balances')).toContainText('No Balances Yet');
     const form = page.getByTestId('travel-balance-form');
     await form.getByLabel('Member').selectOption({ index: 1 });
     await form.getByLabel('Points or miles').selectOption({ label: 'Contoso Points' });

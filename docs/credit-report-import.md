@@ -11,12 +11,12 @@ Up to **three reports at once** — one per bureau — from **annualcreditreport
 | Equifax | *Owner* (Individual / Authorized User), *Loan Type*, *Account Status* (PAYS_AS_AGREED, CLOSED), month-only *Date Opened*, *Account Number* `xxxx…4321` |
 | Experian | *Account name* blocks, *Account number* `426684XXXXXX` (first digits — ignored), *Status* (Open/Never late, Closed), *Responsibility* |
 
-Fields every bureau prints but Pointwise does not need (balance, payment history, date reported, terms, past due …) are recognised and ignored, so they never split an account or swallow the next creditor heading. The bureau is the one named most often in the file; the provider (Credit Karma vs bureau) is recorded as the source.
+Fields every bureau prints but PointWise does not need (balance, payment history, date reported, terms, past due …) are recognised and ignored, so they never split an account or swallow the next creditor heading. The bureau is the one named most often in the file; the provider (Credit Karma vs bureau) is recorded as the source.
 
 **Merging:** the same account on several reports (same issuer — or creditor name if the issuer is unknown —, open dates within 45 days, last digits compatible, never two accounts from one bureau) becomes one row: the most precise and then earliest open date, last digits from any bureau, the highest limit, closed if any bureau says closed. Bureaus that disagree on the open **month** are shown (`TransUnion 2025-04-02 · Experian 2025-05-02`, earliest used). The imported account keeps `reportedBy` (the bureaus) and is updated — not duplicated — when imported again from another bureau.
 
 ## Why a file import
-None of the bureaus nor Credit Karma offer consumers an API, and automated access is not allowed, so Pointwise never logs in to them. The user opens the credit report page that lists accounts with *Date opened*, **prints it to PDF** (browser → Print → Save as PDF) or **copies the text**, and imports it. Repeat per bureau for completeness.
+None of the bureaus nor Credit Karma offer consumers an API, and automated access is not allowed, so PointWise never logs in to them. The user opens the credit report page that lists accounts with *Date opened*, **prints it to PDF** (browser → Print → Save as PDF) or **copies the text**, and imports it. Repeat per bureau for completeness.
 
 ## Flow
 1. **Read** (`POST /credit-reports/import/preview`, multipart `files` — up to 3 PDF/TXT — and/or `text`, `profileId` = whose report): PDFs go through the sandboxed extractor (same as statements). Nothing is saved; the file and text are discarded.

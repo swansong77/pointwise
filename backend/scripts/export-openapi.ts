@@ -13,7 +13,7 @@ async function main() {
   const app = mod.createNestApplication({ logger: false });
   app.setGlobalPrefix('api/v1', { exclude: ['health'] });
   const config = new DocumentBuilder()
-    .setTitle('Pointwise API')
+    .setTitle('PointWise API')
     .setDescription('Credit-card rewards optimization API. All money values are integer cents.')
     .setVersion('0.1.0')
     .addBearerAuth()

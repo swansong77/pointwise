@@ -1,5 +1,7 @@
 'use client';
 
+import { WalletCardArt } from '@/components/card-bits';
+import { BrandLogo } from '@/components/brand-logo';
 import { useState } from 'react';
 import { Five24Gauge, Five24TimelineChart } from '@/components/charts';
 import { Badge, Button, ErrorText, Field, Input, PageHeader, Panel, Select, Spinner } from '@/components/ui';
@@ -57,7 +59,7 @@ function MemberPanel({ m }: { m: Five24Response['members'][number] }) {
           <Five24Gauge count={s.count} label={s.label} limit={s.limit} />
           <dl className="space-y-1 text-sm">
             <div className="flex justify-between gap-2">
-              <dt className="text-slate-500">Next drop</dt>
+              <dt className="text-slate-500">Next Drop</dt>
               <dd>{s.nextDropAt ? shortDate(s.nextDropAt) : '—'}</dd>
             </div>
             <div className="flex justify-between gap-2">
@@ -81,13 +83,13 @@ function MemberPanel({ m }: { m: Five24Response['members'][number] }) {
                   <th scope="col">Card</th>
                   <th scope="col">Why</th>
                   <th scope="col">Opened</th>
-                  <th scope="col">Counts until</th>
+                  <th scope="col">Counts Until</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {s.contributing.map((c) => (
                   <tr key={c.cardId}>
-                    <td className="py-2 pr-2 font-medium">{c.name}</td>
+                    <td className="py-2 pr-2 font-medium"><span className="inline-flex items-center gap-2"><WalletCardArt cardId={c.cardId} name={c.name} size="sm" />{c.name}</span></td>
                     <td className="py-2 pr-2 text-xs text-slate-500">{FIVE24_REASON[c.reason] ?? c.reason}</td>
                     <td className="py-2 pr-2 text-slate-600">{monthYear(c.openedAt)}</td>
                     <td className="py-2 text-right text-slate-600">{shortDate(c.dropsOffAt)}</td>
@@ -102,7 +104,7 @@ function MemberPanel({ m }: { m: Five24Response['members'][number] }) {
               <ul className="mt-2 space-y-1">
                 {[...s.unknown, ...s.excluded].map((c) => (
                   <li key={c.cardId} className="flex justify-between gap-3">
-                    <span>{c.name}</span>
+                    <span className="inline-flex items-center gap-2"><WalletCardArt cardId={c.cardId} name={c.name} size="sm" />{c.name}</span>
                     <span className="text-xs text-slate-500">
                       {FIVE24_REASON[c.reason] ?? c.reason}
                       {c.note ? ` — ${c.note}` : ''}
@@ -140,7 +142,7 @@ function CreditReportPanel() {
   return (
     <Panel title="Open dates from your credit report" data-testid="credit-report">
       <p className="mb-4 text-sm text-slate-600">
-        Banks don&apos;t share account open dates. Copy them from your free credit report (annualcreditreport.com) — Pointwise matches each account to your cards by last digits.
+        Banks don&apos;t share account open dates. Copy them from your free credit report (annualcreditreport.com) — PointWise matches each account to your cards by last digits.
       </p>
       <form
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6 lg:items-end"
@@ -181,7 +183,7 @@ function CreditReportPanel() {
           {accounts.data.map((a) => (
             <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
               <span>
-                <span className="font-medium">{a.creditorName}</span> {a.lastDigits && <span className="text-slate-500">•••• {a.lastDigits}</span>} · opened {monthYear(a.openedOn)}
+                <BrandLogo brand={{ name: a.creditorName }} kinds={['ISSUER']} size="sm" decorative hideUnknown /> <span className="font-medium">{a.creditorName}</span> {a.lastDigits && <span className="text-slate-500">•••• {a.lastDigits}</span>} · opened {monthYear(a.openedOn)}
                 {a.isAuthorizedUser && ' · AU'}
               </span>
               <span className="flex items-center gap-2">

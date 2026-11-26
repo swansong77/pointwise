@@ -1,9 +1,10 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand-logo';
 import clsx from 'clsx';
 import { useState, type FormEvent } from 'react';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, Panel, PageHeader, Select, Spinner } from '@/components/ui';
-import { CardSwatch } from '@/components/card-bits';
+import { WalletCardArt } from '@/components/card-bits';
 import { qk, useApiMutation, useEligibleOffers, useMyOffers, useWallet } from '@/lib/queries';
 import { daysLeftLabel, dollarsToCents, money } from '@/lib/format';
 import type { UserOffer } from '@/lib/types';
@@ -21,7 +22,8 @@ function OfferRow({ uo }: { uo: UserOffer }) {
   return (
     <li className="rounded-2xl border border-slate-200 bg-white p-4" data-testid="offer-row">
       <div className="flex flex-wrap items-start gap-3">
-        <CardSwatch color={uo.walletCard.card.color} />
+        <WalletCardArt walletCardId={uo.walletCard.id} cardId={uo.walletCard.card.id} name={uo.walletCard.card.name} color={uo.walletCard.card.color} />
+        {uo.offer.merchant && <BrandLogo brand={{ name: uo.offer.merchant.name }} size="md" decorative />}
         <div className="min-w-0 flex-1">
           <p className="font-medium text-slate-900">
             {uo.isFavorite && <span aria-label="favorite">★ </span>}

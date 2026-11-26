@@ -24,14 +24,14 @@ Retrieved **2026-11-25** from the official site, docs and repository. **VERIFIED
 ## 4. Capabilities, benefits, limits, use cases
 | | |
 |---|---|
-| Benefits | Free; speaks the OpenAI chat protocol Pointwise already supports; consumes Pointwise as an MCP server; can run local models (Ollama) with no per-token cost |
+| Benefits | Free; speaks the OpenAI chat protocol PointWise already supports; consumes PointWise as an MCP server; can run local models (Ollama) with no per-token cost |
 | Limits | Single-operator; full-access token; fast-moving project; transcripts may contain secrets; no HTTP MCP-server mode for general agent runs |
-| Use cases | (1) a user's own OpenClaw assistant calls Pointwise's **public** tools over MCP ("which card has the best 90K offer right now?"); (2) Pointwise routes a **public-data** workflow step (offer research, narration of public offers) to a local OpenClaw agent; (3) chat-app access (WhatsApp/Telegram) to public tools |
+| Use cases | (1) a user's own OpenClaw assistant calls PointWise's **public** tools over MCP ("which card has the best 90K offer right now?"); (2) PointWise routes a **public-data** workflow step (offer research, narration of public offers) to a local OpenClaw agent; (3) chat-app access (WhatsApp/Telegram) to public tools |
 
 ## 5. Decision (see ADR-006)
 - **Do not build a custom adapter.** Add an `OPENCLAW` *preset* on the existing OpenAI-compatible provider: base URL `http://127.0.0.1:18789/v1`, `Authorization: Bearer <gateway token>` (stored encrypted via the existing admin key endpoint), model `openclaw/default`. No code changes beyond the seed row, matching the "new providers need no code" requirement.
 - **Privacy boundary:** OpenClaw is a *non-local-by-default, full-access agent that may forward to cloud models*, so it is classified like an external provider: it receives **public data only**. User-data steps never go to it. (A user who runs OpenClaw wholly against Ollama on their own machine may opt to mark it `local`; default is not local.)
-- **Pointwise → OpenClaw tools:** the existing MCP server (`/mcp`, personal-access-token, public tools only) is added to OpenClaw with `openclaw mcp add pointwise --url … --transport streamable-http --include <public tools>`.
+- **PointWise → OpenClaw tools:** the existing MCP server (`/mcp`, personal-access-token, public tools only) is added to OpenClaw with `openclaw mcp add pointwise --url … --transport streamable-http --include <public tools>`.
 - Network: loopback or Tailscale/SSH tunnel only; never exposed to the internet.
 
 ## 6. Contract test

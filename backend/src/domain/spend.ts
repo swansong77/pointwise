@@ -51,7 +51,7 @@ export function classify(description: string, signedCents: number): TxKind {
 
 // ───────────── categories ─────────────
 
-/** Bank category labels (statement CSVs, Plaid personal_finance_category) → Pointwise category slug. */
+/** Bank category labels (statement CSVs, Plaid personal_finance_category) → PointWise category slug. */
 const CATEGORY_MAP: Array<[RegExp, string]> = [
   [
     /ride ?share|taxi|uber|lyft|transit|parking|tolls|public transport|transportation_taxis/i,
@@ -264,7 +264,7 @@ export class StatementError extends Error {}
 export interface BenefitRules {
   /** merchant / brand words matched in purchase descriptors */
   keywords: string[];
-  /** purchases in these Pointwise categories match (used when no keyword is set) */
+  /** purchases in these PointWise categories match (used when no keyword is set) */
   categories: string[];
   /** words that identify the issuer's statement credit for this benefit */
   creditKeywords: string[];

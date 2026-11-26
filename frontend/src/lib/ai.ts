@@ -40,7 +40,7 @@ export interface ChatResult {
   agent: string;
   answer: string;
   refused: boolean;
-  /** true when the answer used the user's own data — computed by Pointwise, never sent to the AI provider */
+  /** true when the answer used the user's own data — computed by PointWise, never sent to the AI provider */
   private: boolean;
   model: {
     id: string;

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PointWise loyalty capture</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <h1><img src="icons/icon-32.png" alt="" width="20" height="20" style="vertical-align:-4px" /> PointWise loyalty capture</h1>
+  <p class="note">Reads the text of the page you are looking at, only when you click, and sends it to your own PointWise server. It never reads passwords or form fields.</p>
+  <label for="server">Your PointWise address</label>
+  <input id="server" type="url" placeholder="https://pointwise.example.com" autocomplete="off" />
+  <label for="token">Extension token</label>
+  <input id="token" type="password" placeholder="pw_pat_…" autocomplete="off" />
+  <label for="program">Program</label>
+  <select id="program"></select>
+  <label class="check"><input id="ack" type="checkbox" /> I understand some programs' terms restrict automated tools. This reads only the page I am viewing, on my click.</label>
+  <button id="capture" type="button">Capture this page</button>
+  <p id="status" role="status" aria-live="polite"></p>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

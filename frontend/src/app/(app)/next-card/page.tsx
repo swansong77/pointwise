@@ -1,5 +1,7 @@
 'use client';
 
+import { titleCase } from '@/lib/title-case';
+import { BrandLogo } from '@/components/brand-logo';
 import { useEffect, useState } from 'react';
 import { Badge, Button, EmptyState, ErrorText, PageHeader, Panel, Select, Spinner } from '@/components/ui';
 import { dollarsToCents, money } from '@/lib/format';
@@ -28,7 +30,7 @@ export default function NextCardPage() {
     <div className="space-y-6">
       <PageHeader
         title="Next card"
-        subtitle="Which card each person should open next — first-year and ongoing value from your spending, current cards and 5/24 status. Calculated by Pointwise; nothing is sent to an AI provider."
+        subtitle="Which card each person should open next — first-year and ongoing value from your spending, current cards and 5/24 status. Calculated by PointWise; nothing is sent to an AI provider."
       />
       <HouseholdPick plan={plan.data} loading={plan.isLoading} error={plan.error} />
       <WorkflowPanel />
@@ -129,12 +131,15 @@ function ScoreCard({ c, rank }: { c: CardScore; rank: number | null }) {
   return (
     <li className={`rounded-xl border p-4 ${c.eligible ? 'border-slate-200' : 'border-dashed border-slate-300 bg-slate-50'}`} data-testid="nc-card">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <p className="font-semibold text-slate-900">
-            {rank != null && <span className="mr-1 text-slate-500">{rank}.</span>}
-            {c.name}
-          </p>
-          <p className="text-xs text-slate-500">{c.issuer}</p>
+        <div className="flex items-center gap-3">
+          <BrandLogo brand={{ name: c.issuer }} kinds={['ISSUER']} size="lg" />
+          <div>
+            <p className="font-semibold text-slate-900">
+              {rank != null && <span className="mr-1 text-slate-500">{rank}.</span>}
+              {c.name}
+            </p>
+            <p className="text-xs text-slate-500">{c.issuer}</p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {c.eligible ? <Badge tone={conf.tone}>{conf.label}</Badge> : <Badge tone="red">Not eligible</Badge>}
@@ -177,7 +182,7 @@ function ScoreCard({ c, rank }: { c: CardScore; rank: number | null }) {
 function Stat({ label, value, testid }: { label: string; value: string; testid?: string }) {
   return (
     <div>
-      <dt className="text-xs text-slate-500">{label}</dt>
+      <dt className="text-xs text-slate-500">{titleCase(label)}</dt>
       <dd className="font-semibold text-slate-900" data-testid={testid}>
         {value}
       </dd>
@@ -323,6 +328,7 @@ function SmartCardView({ c, headline }: { c: SmartCard; headline?: boolean }) {
   return (
     <div className={headline ? 'rounded-xl border border-brand-200 bg-brand-50/40 p-4' : 'rounded-lg border border-slate-200 p-3'} data-testid={headline ? 'smart-recommended' : 'smart-alt'}>
       <div className="flex flex-wrap items-center gap-2">
+        <BrandLogo brand={{ name: c.issuer }} kinds={['ISSUER']} size="md" decorative />
         <span className="font-semibold">{c.name}</span>
         <span className="text-sm text-slate-600">{c.issuer}</span>
         <Badge tone={c.probability >= 0.6 ? 'green' : c.probability > 0 ? 'amber' : 'red'}>{probabilityLabel(c.probability)}</Badge>
@@ -348,7 +354,7 @@ function SmartCardView({ c, headline }: { c: SmartCard; headline?: boolean }) {
         </ul>
       )}
       <details className="mt-2 text-xs text-slate-600">
-        <summary className="cursor-pointer">Why this recommendation</summary>
+        <summary className="cursor-pointer">Why This Recommendation</summary>
         <ul className="mt-1 list-disc pl-5">
           {c.factors.map((f) => (
             <li key={f.key}>

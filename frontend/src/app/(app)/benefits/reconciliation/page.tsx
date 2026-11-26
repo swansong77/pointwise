@@ -1,5 +1,7 @@
 'use client';
 
+import { titleCase } from '@/lib/title-case';
+import { WalletCardArt } from '@/components/card-bits';
 import Link from 'next/link';
 import { Badge, EmptyState, ErrorText, PageHeader, Panel, Spinner } from '@/components/ui';
 import { money } from '@/lib/format';
@@ -12,6 +14,7 @@ function Table({ rows, testid, empty }: { rows: ReconcileRow[]; testid: string; 
     <ul className="divide-y divide-slate-100 text-sm" data-testid={testid}>
       {rows.map((r) => (
         <li key={r.benefitId} className="flex flex-wrap items-center gap-2 py-2" data-testid={`${testid}-row`}>
+          <WalletCardArt walletCardId={r.cardAccountId} name={r.card} size="sm" />
           <span className="font-medium">{r.benefitName}</span>
           <span className="text-slate-600">{accountLabel(r)}</span>
           <Badge tone="slate">{r.frequency}</Badge>
@@ -52,7 +55,7 @@ export default function ReconciliationPage() {
             ['Unused now', t.unusedCents],
           ].map(([k, v]) => (
             <div key={k as string} className="rounded-xl border border-slate-200 bg-white p-3">
-              <dt className="text-xs text-slate-500">{k}</dt>
+              <dt className="text-xs text-slate-500">{titleCase(k)}</dt>
               <dd className="text-lg font-semibold">{money(v as number)}</dd>
             </div>
           ))}

@@ -24,6 +24,9 @@ import { classifyMail, MAIL_KIND_LABEL } from "../domain/mail-classify";
 import { StatementError } from "../domain/spend";
 import { extractPdfLines } from "../spend/pdf-extract";
 import { SpendService } from "../spend/spend.service";
+import { evidenceHashOf, LoyaltyIngestService } from "../loyalty/loyalty-ingest.service";
+import { parseLoyaltyEmail, programForDomain, ProgramRule } from "../domain/loyalty-email";
+import { parseLoyaltyStatement } from "../domain/loyalty-statement";
 
 const DAY = 86_400_000;
 const KEEP_DAYS = 90;
@@ -47,6 +50,7 @@ export class CaptureService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly spend: SpendService,
+    private readonly loyalty: LoyaltyIngestService,
   ) {}
 
   domain(env = process.env) {
@@ -222,6 +226,13 @@ export class CaptureService {
     }
     const verified = auth === "pass";
 
+    // loyalty program mail: balances, status, certificates, expiry notices (and loyalty statements)
+    const program = programForDomain(fromDomain);
+    if (program) {
+      const handled = await this.loyaltyMail(userId, program, mail, subject, text, fromDomain, verified, record, now);
+      if (handled) return handled;
+    }
+
     // statement PDFs attached to the email
     const pdfs = (mail.attachments ?? []).filter(
       (a) =>
@@ -296,6 +307,51 @@ export class CaptureService {
       kind: "ALERT",
       status: r.imported ? "PROCESSED" : "DUPLICATE",
     };
+  }
+
+  /**
+   * A message from a loyalty program's domain. Parsed observations go through the provenance funnel (source EMAIL or
+   * STATEMENT). A genuine card transaction alert from the same domain (e.g. a bank that is also a points program)
+   * still continues to the card flow. Message bodies are never stored: only a hash identifies the evidence.
+   */
+  private async loyaltyMail(
+    userId: string,
+    program: ProgramRule,
+    mail: Awaited<ReturnType<typeof simpleParser>>,
+    subject: string,
+    text: string,
+    fromDomain: string,
+    verified: boolean,
+    record: RecordFn,
+    now: Date,
+  ): Promise<{ accepted: boolean; kind?: string; status?: string } | null> {
+    const when = mail.date ?? now;
+    const evidence = evidenceHashOf("email", mail.messageId ?? `${fromDomain}|${subject}|${when.toISOString()}`);
+    // loyalty statements (PDF)
+    for (const a of (mail.attachments ?? []).filter((x) => x.contentType === "application/pdf" || /\.pdf$/i.test(x.filename ?? "")).slice(0, 3)) {
+      try {
+        const lines = (await extractPdfLines(a.content)).flat();
+        const st = parseLoyaltyStatement(lines, when);
+        if (!st.program || st.validation.status === "FAILED" || st.closing == null) continue;
+        const observations = [
+          ...(st.closing != null ? [{ entity: "ACCOUNT" as const, field: "balance", value: st.closing, rule: "statement.closing", ruleConfidence: st.validation.status === "PASS" ? 95 : 70, observedAt: st.periodEnd ?? when }] : []),
+          ...st.activity.map((x) => ({ entity: "ACCOUNT" as const, field: "activity", value: { kind: x.kind, points: x.points, occurredAt: x.occurredAt, balanceAfter: x.balanceAfter, note: x.description }, rule: "statement.line", ruleConfidence: 90, observedAt: x.occurredAt })),
+          ...st.extras,
+        ];
+        const r = await this.loyalty.apply({ userId, programCode: st.program.programCode, sourceType: "STATEMENT", method: "statement-pdf", evidenceHash: evidenceHashOf("pdf", createHash("sha256").update(a.content).digest("hex")), now }, observations);
+        await record({ kind: "LOYALTY", status: "PROCESSED", verified, note: r.unmatched ?? `${st.program.name} statement: ${r.applied} applied, ${r.confirmed} confirmed${st.validation.status === "WARNING" ? " (needs review: " + st.validation.reasons[0] + ")" : ""}` });
+        return { accepted: true, kind: "LOYALTY", status: "PROCESSED" };
+      } catch {
+        // not a readable loyalty statement: fall through to the card statement flow
+      }
+    }
+    const parsed = parseLoyaltyEmail(fromDomain, subject, text, when);
+    if (!parsed.observations.length) return null;
+    const r = await this.loyalty.apply({ userId, programCode: program.programCode, sourceType: "EMAIL", method: parsed.rules.join("+").slice(0, 60) || "email", evidenceHash: evidence, memberDigits: parsed.memberDigits, now }, parsed.observations);
+    const isCardAlert = parseAlert(subject, text, when).kind !== "IGNORED";
+    if (isCardAlert) return null; // also a card transaction alert: continue to the card flow
+    await record({ kind: "LOYALTY", status: "PROCESSED", verified, note: r.unmatched ?? `${program.name}: ${r.applied} applied, ${r.confirmed} confirmed${r.conflicts + r.pending ? `, ${r.conflicts + r.pending} need your decision` : ""}` });
+    return { accepted: true, kind: "LOYALTY", status: "PROCESSED" };
   }
 
   private kindOf(a: { credit: boolean; merchant: string }): TransactionKind {

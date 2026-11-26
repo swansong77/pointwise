@@ -1,0 +1,10 @@
+body { font: 13px system-ui, sans-serif; width: 340px; margin: 12px; color: #0f172a; }
+h1 { font-size: 15px; margin: 0 0 6px; }
+.note { color: #334155; margin: 0 0 10px; }
+label { display: block; margin: 8px 0 2px; font-weight: 600; }
+.check { font-weight: 400; display: flex; gap: 6px; align-items: flex-start; }
+input[type=url], input[type=password], select { width: 100%; box-sizing: border-box; padding: 6px; border: 1px solid #94a3b8; border-radius: 6px; }
+button { margin-top: 10px; width: 100%; padding: 8px; border: 0; border-radius: 6px; background: #1d4ed8; color: #fff; font-weight: 600; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
+#status { min-height: 1.4em; margin: 8px 0 0; }
+#status.ok { color: #047857; } #status.error { color: #b91c1c; } #status.info { color: #334155; }

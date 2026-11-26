@@ -100,7 +100,7 @@ describe('Import', () => {
       const csv = 'Card,Last 4,Issuer,Annual fee\nGood Card,4321,Example Bank,0\nBad Card,4111111111111111,Example Bank,0\n';
       cy.get('#import-file').selectFile({ contents: Cypress.Buffer.from(csv), fileName: 'cards.csv', mimeType: 'text/csv' });
       cy.contains('button', 'Preview import').click();
-      cy.get('[data-testid=import-summary]').should('contain', 'New cards1').and('contain', 'Duplicates / errors1');
+      cy.get('[data-testid=import-summary]').should('contain', 'New Cards1').and('contain', 'Duplicates / Errors1');
       cy.contains('[data-testid=import-row]', 'Bad Card').should('contain', 'full card number');
       cy.get('body').should('not.contain', '4111111111111111');
       cy.get('[data-testid=import-commit]').click();

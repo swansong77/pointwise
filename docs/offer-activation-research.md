@@ -21,7 +21,7 @@ Retrieved **2026-11-25**. **VERIFIED** = read on the issuer's or portal's own pa
 | Statement-credit detection (PDF/CSV/alerts already imported) | **Allowed** | uses data the user provides |
 | Public merchant/issuer promo pages, `robots.txt` respected | **Allowed with care** | existing fetcher rules (allow-list, rate limit); no logged-in pages |
 | Admin-curated shared offers; hand-entered portal rates | **Allowed** | no scraping of portals (Rakuten §5.1 forbids bots/scraping) |
-| Assisted activation: open the issuer's offers page in the user's own browser, user clicks "add" | **Allowed** | the user acts; Pointwise only links and records |
+| Assisted activation: open the issuer's offers page in the user's own browser, user clicks "add" | **Allowed** | the user acts; PointWise only links and records |
 | Server-side login with the user's credentials; bots that click "add to card" | **Restricted — not built** | Chase and Rakuten prohibit scripts/bots/automated access (verified); sharing credentials conflicts with password-confidentiality terms; breaks the project rule |
 | Scraping portal rate pages | **Restricted — not built** | Rakuten §5.1 |
 | Browser extension reading the user's own logged-in offers page | **Design only** (appendix) | issuer terms on automated access are unverified for most issuers; Chase's terms make "scripts" and AI-agent traffic a risk; needs per-issuer review before any build |
@@ -39,7 +39,7 @@ Build intake from the allowed methods and **assisted activation**: a bulk checkl
 | Privacy | low | deterministic engines; no offer or spend data to AI providers |
 
 ## 5. Appendix — browser extension design (not built)
-A Chrome/Firefox extension would run **in the user's own browser session**, read the offers list the page already displays (DOM only, no credentials, no network calls to the issuer beyond the page itself), and send a normalised list (merchant, value, min spend, expiry, card ending) to the user's own Pointwise server with a personal access token. It never clicks "add". Open issues before any build: per-issuer terms on scripts and extensions (Chase prohibits "robots, spiders, scripts"), extension-store review, token scope, and whether capturing is user-initiated only. Treat this as a separate decision.
+A Chrome/Firefox extension would run **in the user's own browser session**, read the offers list the page already displays (DOM only, no credentials, no network calls to the issuer beyond the page itself), and send a normalised list (merchant, value, min spend, expiry, card ending) to the user's own PointWise server with a personal access token. It never clicks "add". Open issues before any build: per-issuer terms on scripts and extensions (Chase prohibits "robots, spiders, scripts"), extension-store review, token scope, and whether capturing is user-initiated only. Treat this as a separate decision.
 
 ## 6. To verify (free)
 Read each issuer's offers terms from its own help centre (Amex Offers, Chase Offers, Citi Merchant Offers, Capital One Offers, BankAmeriDeals) and replace the UNVERIFIED rows with URLs and dates.

@@ -46,9 +46,9 @@ Observed vocabulary: *Calendar year*, *Monthly*, *Quarterly*, *Semi-annual*, *An
 *Anniversary*, *Account anniversary year*, *Anniversary year*, *Card year*, plus a few dates ("Ends
 12/31/2026", "Activate by 12/31/2026"). About half the rows have no value (ongoing perks).
 
-Mapping used by Pointwise (`parsePeriodText`, `frequencyLabel`):
+Mapping used by PointWise (`parsePeriodText`, `frequencyLabel`):
 
-| Workbook text | Pointwise frequency |
+| Workbook text | PointWise frequency |
 |---|---|
 | Monthly | Monthly |
 | Quarterly | Quarterly |
@@ -78,7 +78,7 @@ by being reset (not modeled); fixed-date offers ("Ends 12/31/2026") are only rea
 3. No renewal or expiry dates; no "missed" concept.
 4. Usage is typed, one number per year.
 
-## 8. Pointwise model
+## 8. PointWise model
 
 `Benefit` (catalog template per product) → `UserBenefit` (one per wallet card account: frequency, per-period
 amount, basis, optional `expiresOn` / one-time window) → `BenefitUsage` (per period, with detection method,

@@ -1,5 +1,7 @@
 'use client';
 
+import { titleCase } from '@/lib/title-case';
+import { BrandLogo } from '@/components/brand-logo';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { Tabs } from '@/components/charts';
@@ -148,7 +150,7 @@ export default function ImportPage() {
                     {rows.map((r) => (
                       <tr key={r.id} data-testid="import-row">
                         <td className="px-5 py-2 tabular-nums text-slate-500">{r.rowNumber}</td>
-                        <td className="px-2 py-2 font-medium">{r.data.card?.cardName ?? r.data.benefit?.name}</td>
+                        <td className="px-2 py-2 font-medium"><span className="inline-flex items-center gap-2">{r.data.card?.issuer && <BrandLogo brand={{ name: r.data.card.issuer }} kinds={['ISSUER']} size="sm" decorative hideUnknown />}{r.data.card?.cardName ?? r.data.benefit?.name}</span></td>
                         <td className="px-2 py-2 text-xs text-slate-600">
                           {r.data.card &&
                             [
@@ -227,7 +229,7 @@ export default function ImportPage() {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl bg-slate-50 p-3">
-      <dt className="text-xs text-slate-500">{label}</dt>
+      <dt className="text-xs text-slate-500">{titleCase(label)}</dt>
       <dd className="text-xl font-semibold tabular-nums">{value}</dd>
     </div>
   );
@@ -291,13 +293,13 @@ function BankConnections() {
               </Button>
             )}
           </div>
-          <p className="text-xs text-slate-500">After connecting, new card transactions arrive automatically (the bank notifies Pointwise; a daily sync is the fallback).</p>
+          <p className="text-xs text-slate-500">After connecting, new card transactions arrive automatically (the bank notifies PointWise; a daily sync is the fallback).</p>
           {sandbox.data && <p role="status">{sandbox.data.note}</p>}
           <ul className="divide-y divide-slate-100">
             {list.data?.map((c) => (
               <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
                 <span>
-                  {c.institutionName ?? 'Bank'} <span className="text-xs text-slate-500">· synced {c.lastSyncedAt ? shortDate(c.lastSyncedAt) : 'never'}</span>
+                  <BrandLogo brand={{ name: c.institutionName }} kinds={['ISSUER']} size="sm" decorative hideUnknown /> {c.institutionName ?? 'Bank'} <span className="text-xs text-slate-500">· synced {c.lastSyncedAt ? shortDate(c.lastSyncedAt) : 'never'}</span>
                   {c.needsReauth && (
                     <span className="ml-2">
                       <Badge tone="red">Sign-in needed</Badge>
@@ -402,7 +404,7 @@ function CreditReportImport() {
         </li>
       </ul>
       <p className="mb-3 text-xs text-slate-500">
-        None of these offer automated access, so Pointwise never logs in to them. Reports are read here and discarded; only the card accounts are kept, and nothing is sent to any
+        None of these offer automated access, so PointWise never logs in to them. Reports are read here and discarded; only the card accounts are kept, and nothing is sent to any
         AI service.
       </p>
       <form

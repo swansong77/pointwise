@@ -57,7 +57,7 @@ export function verificationTone(v: string): 'green' | 'amber' | 'red' {
 }
 
 export const EVIDENCE_FROM: Record<string, string> = {
-  POINTWISE: 'checked on the page Pointwise fetched',
-  AGENT: 'checked on the page the agent fetched (issuer blocks Pointwise)',
+  POINTWISE: 'checked on the page PointWise fetched',
+  AGENT: 'checked on the page the agent fetched (issuer blocks PointWise)',
   NONE: 'page could not be loaded — nothing checked',
 };

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, Panel, PageHeader, Select, Spinner } from '@/components/ui';
-import { CardSwatch } from '@/components/card-bits';
+import { CardArt } from '@/components/card-bits';
 import { Tabs } from '@/components/charts';
 import { qk, useApiMutation, useCardSearch, useCategories, useWallet } from '@/lib/queries';
 import { money, multiplier, shortDate } from '@/lib/format';
@@ -66,7 +66,7 @@ function AddCard({ onDone }: { onDone: () => void }) {
             const badge = verificationBadge(c);
             return (
               <li key={c.id} className="flex items-center gap-3 py-2">
-                <CardSwatch color={c.color} />
+                <CardArt name={c.name} color={c.color} issuer={c.issuer.name} network={c.network} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{c.name}</p>
                   {badge && (
@@ -110,7 +110,7 @@ function WalletCardRow({ wc }: { wc: WalletCard }) {
   return (
     <li className="rounded-2xl border border-slate-200 bg-white p-4" data-testid="wallet-card">
       <div className="flex flex-wrap items-center gap-3">
-        <CardSwatch color={wc.card.color} />
+        <CardArt name={wc.card.name} color={wc.card.color} issuer={wc.card.issuer.name} network={wc.card.network} />
         <div className="min-w-0 flex-1">
           <p className="font-medium text-slate-900">
             {wc.nickname || wc.card.name} {wc.lastFour && <span className="text-xs text-slate-400">•••• {wc.lastFour}</span>}
@@ -163,7 +163,7 @@ function WalletCardRow({ wc }: { wc: WalletCard }) {
           </div>
           {rotating.length > 0 && (
             <fieldset className="sm:col-span-3">
-              <legend className="text-sm font-medium text-slate-700">Activated rotating categories</legend>
+              <legend className="text-sm font-medium text-slate-700">Activated Rotating Categories</legend>
               <div className="mt-2 flex flex-wrap gap-3">
                 {rotating.map((r) => {
                   const cat = categories.data?.find((c) => c.id === r.categoryId);

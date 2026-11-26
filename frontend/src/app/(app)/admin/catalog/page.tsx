@@ -1,5 +1,6 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand-logo';
 import { useState } from 'react';
 import { BarList, StatTiles, Tabs } from '@/components/charts';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, PageHeader, Panel, Select, Spinner } from '@/components/ui';
@@ -265,7 +266,7 @@ function Research() {
     <div className="space-y-6">
       <Panel title="Research cards on issuer websites" data-testid="research-start">
         <p className="mb-4 text-sm text-slate-600">
-          A Claude agent searches and reads the issuer&apos;s own site (allow-listed issuer domains only), then Pointwise checks every quoted fact against the product page. Nothing
+          A Claude agent searches and reads the issuer&apos;s own site (allow-listed issuer domains only), then PointWise checks every quoted fact against the product page. Nothing
           is published until you approve it below. Only public product information is sent to the model — never user data.
         </p>
         {status.data && !status.data.available && (
@@ -404,6 +405,7 @@ function Candidates() {
           return (
             <li key={c.id} className="space-y-2 py-4 text-sm" data-testid="candidate">
               <div className="flex flex-wrap items-center gap-2">
+                <BrandLogo brand={{ name: c.issuerName }} kinds={['ISSUER']} size="md" decorative />
                 <span className="font-medium">{c.name}</span>
                 <span className="text-slate-600">
                   · {c.issuerName}
@@ -760,7 +762,7 @@ function Partners() {
           <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
-                <th className="py-1 font-semibold">Currency → program</th>
+                <th className="py-1 font-semibold">Currency → Program</th>
                 <th className="py-1 text-right font-semibold">Ratio</th>
                 <th className="py-1 text-right font-semibold">Days</th>
                 <th className="py-1 font-semibold">Bonus</th>
@@ -924,14 +926,14 @@ function Coverage() {
                 <th className="py-2 pr-3 text-right">Personal</th>
                 <th className="py-2 pr-3 text-right">Business</th>
                 <th className="py-2 pr-3 text-right">Verified</th>
-                <th className="py-2 pr-3">Last researched</th>
-                <th className="py-2 pr-3 text-right">To review</th>
+                <th className="py-2 pr-3">Last Researched</th>
+                <th className="py-2 pr-3 text-right">To Review</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {rows.map((r) => (
                 <tr key={r.issuer} data-testid="coverage-row">
-                  <td className="py-2 pr-3 font-medium">{r.issuer}</td>
+                  <td className="py-2 pr-3 font-medium"><span className="inline-flex items-center gap-2"><BrandLogo brand={{ name: r.issuer }} kinds={['ISSUER']} size="sm" decorative />{r.issuer}</span></td>
                   <td className="py-2 pr-3">{KIND_LABEL[r.kind]}</td>
                   <td className="py-2 pr-3 text-right">{r.personal}</td>
                   <td className="py-2 pr-3 text-right">{r.business}</td>

@@ -7,7 +7,7 @@ Status: **built (2026-11-25, Phase D)**. Source: `backend/src/domain/card-scorer
 - "Who in the household should apply for card X?" — eligibility and 5/24 cost per member.
 - "What should we do next as a household?" — the best (card, member) pair overall.
 
-Everything is deterministic and computed by Pointwise. Because of the privacy rule (no user card data to AI providers), the explanation is also written by the scorer (`reasons`, `warnings`, `why`) — the AI model never sees or rewrites it.
+Everything is deterministic and computed by PointWise. Because of the privacy rule (no user card data to AI providers), the explanation is also written by the scorer (`reasons`, `warnings`, `why`) — the AI model never sees or rewrites it.
 
 ## 2. Formula (integer cents)
 

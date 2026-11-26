@@ -9,7 +9,7 @@ import { TokensService } from './ai.controller';
 import { ToolRegistry } from './tools';
 
 /**
- * Pointwise as an MCP server for users' own AI clients (Claude, ChatGPT, …). By policy, AI providers
+ * PointWise as an MCP server for users' own AI clients (Claude, ChatGPT, …). By policy, AI providers
  * never receive user card data, so only the public card-catalog tools are exposed.
  * Streamable HTTP, stateless (a fresh server per request), authenticated with a personal access
  * token (`Authorization: Bearer pw_pat_…`, scope mcp:read). Only read-only tools are exposed and
@@ -50,7 +50,7 @@ export class McpServerController {
     const token = auth?.startsWith('Bearer ') ? auth.slice(7).trim() : undefined;
     const userId = await this.tokens.verify(token);
     if (!userId) {
-      res.status(401).setHeader('WWW-Authenticate', 'Bearer realm="pointwise-mcp"').json({ error: 'A valid Pointwise personal access token is required' });
+      res.status(401).setHeader('WWW-Authenticate', 'Bearer realm="pointwise-mcp"').json({ error: 'A valid PointWise personal access token is required' });
       return;
     }
     const server = buildMcpServer(this.registry, userId);

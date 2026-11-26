@@ -1,5 +1,7 @@
 'use client';
 
+import { WalletCardArt } from '@/components/card-bits';
+import { BrandLogo } from '@/components/brand-logo';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, PageHeader, Panel } from '@/components/ui';
@@ -13,6 +15,11 @@ function PlanCard({ plan, rank }: { plan: PlanView; rank: number }) {
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={rank === 0 ? 'green' : 'slate'}>{rank === 0 ? 'Best' : `#${rank + 1}`}</Badge>
         {plan.kind === 'SPLIT' && <Badge tone="brand">Split spend</Badge>}
+        <span className="inline-flex gap-1">
+          {plan.legs.map((l) => (
+            <WalletCardArt key={l.walletCardId} walletCardId={l.walletCardId} name={l.cardName} size="sm" />
+          ))}
+        </span>
         <span className="font-medium">
           {plan.legs.map((l) => `${l.cardName}${l.member ? ` (${l.member})` : ''}${plan.legs.length > 1 ? ` ${money(l.amountCents)}` : ''}`).join(' + ')}
         </span>
@@ -107,7 +114,7 @@ export default function PlanPurchasePage() {
       </Panel>
 
       {res && (
-        <Panel title={`${res.merchant.name} · ${money(res.amountCents)}`} action={res.plans.length > 0 && <Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => plan.mutate({ save: true }, { onSuccess: (r) => setRes(r) })} data-testid="plan-save">Save as planned purchase</Button>}>
+        <Panel title={<span className="flex items-center gap-2"><BrandLogo brand={{ name: res.merchant.name }} name={res.merchant.name} size="md" decorative />{`${res.merchant.name} · ${money(res.amountCents)}`}</span>} action={res.plans.length > 0 && <Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => plan.mutate({ save: true }, { onSuccess: (r) => setRes(r) })} data-testid="plan-save">Save as planned purchase</Button>}>
           {res.merchantConfidence < 0.8 && <p className="mb-2 rounded bg-amber-50 p-2 text-sm text-amber-900">We matched “{merchant}” to {res.merchant.name} with low confidence — check it is the right merchant.</p>}
           {res.plans.length === 0 ? (
             <EmptyState title="No plan available">Add a card to your wallet, then try again.</EmptyState>
@@ -129,6 +136,7 @@ export default function PlanPurchasePage() {
           <ul className="divide-y divide-slate-100 text-sm" data-testid="planned-list">
             {planned.data!.map((p) => (
               <li key={p.id} className="flex items-center gap-2 py-2">
+                <BrandLogo brand={{ name: p.merchantText }} size="sm" decorative hideUnknown />
                 <span className="font-medium">{p.merchantText}</span>
                 <span>{money(p.amountCents)}</span>
                 {p.plannedFor && <span className="text-slate-600">on {shortDate(p.plannedFor)}</span>}

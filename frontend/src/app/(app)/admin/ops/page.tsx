@@ -127,8 +127,8 @@ export default function OpsPage() {
                     <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
                       <th className="py-1 font-semibold">Job</th>
                       <th className="py-1 font-semibold">Schedule (UTC)</th>
-                      <th className="py-1 font-semibold">Next run</th>
-                      <th className="py-1 font-semibold">Last run</th>
+                      <th className="py-1 font-semibold">Next Run</th>
+                      <th className="py-1 font-semibold">Last Run</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -174,7 +174,7 @@ export default function OpsPage() {
               <p className="mt-2 text-xs text-slate-500">{h.ai.note}</p>
             </Panel>
             <Panel title="Integrations" data-testid="ops-integrations">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">MCP servers</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">MCP Servers</h3>
               {h.mcp.length === 0 ? (
                 <p className="text-sm text-slate-500">None registered.</p>
               ) : (
@@ -190,7 +190,7 @@ export default function OpsPage() {
                   ))}
                 </ul>
               )}
-              <h3 className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Card sources</h3>
+              <h3 className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Card Sources</h3>
               <p className="text-sm text-slate-700">
                 {h.cardSources.active} active, {h.cardSources.failing.length} failing
               </p>

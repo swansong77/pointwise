@@ -1,6 +1,6 @@
 # Travel Optimization — Transfer Partners & Award Planner
 
-Status: **built (2026-11-25, Phase D)**. Source: `backend/src/domain/travel.ts` (pure), `backend/src/strategy/`, UI `/travel` and `/admin/catalog` → Transfer partners, assistant tools `get_transfer_options`, `plan_award` (user data, answered by Pointwise) and `get_transfer_partners` (public catalog). Tests: `backend/test/unit/strategy/travel.spec.ts`, `backend/test/integration/strategy.int-spec.ts`, E2E `strategy-travel`.
+Status: **built (2026-11-25, Phase D)**. Source: `backend/src/domain/travel.ts` (pure), `backend/src/strategy/`, UI `/travel` and `/admin/catalog` → Transfer partners, assistant tools `get_transfer_options`, `plan_award` (user data, answered by PointWise) and `get_transfer_partners` (public catalog). Tests: `backend/test/unit/strategy/travel.spec.ts`, `backend/test/integration/strategy.int-spec.ts`, E2E `strategy-travel`.
 
 ## 1. Data
 | Entity | Fields |

@@ -1,22 +1,22 @@
 # MCP Architecture
 
-Pointwise speaks the Model Context Protocol in two directions. Source: `backend/src/ai/mcp-server.ts`, `backend/src/ai/mcp-client.ts`, `backend/src/ai/ai.controller.ts` (tokens).
+PointWise speaks the Model Context Protocol in two directions. Source: `backend/src/ai/mcp-server.ts`, `backend/src/ai/mcp-client.ts`, `backend/src/ai/ai.controller.ts` (tokens).
 
 ```mermaid
 flowchart LR
   subgraph Users' AI apps
     C1[Claude / ChatGPT / IDE agent]
   end
-  C1 -- "Streamable HTTP<br/>Bearer pw_pat_… (mcp:read)" --> S["/mcp — Pointwise MCP server<br/>public catalog tools only"]
+  C1 -- "Streamable HTTP<br/>Bearer pw_pat_… (mcp:read)" --> S["/mcp — PointWise MCP server<br/>public catalog tools only"]
   S --> T[ToolRegistry]
-  subgraph Pointwise API
+  subgraph PointWise API
     R[Agent runtime] --> T
     R --> MC[McpClientService]
   end
   MC -- "Streamable HTTP (https or allow-listed host)<br/>approved, read-only tools only" --> X[(Admin-registered remote MCP servers<br/>docs, web search, …)]
 ```
 
-## 1. Pointwise as an MCP server (`/mcp`)
+## 1. PointWise as an MCP server (`/mcp`)
 
 | Aspect | Design |
 |---|---|
@@ -31,7 +31,7 @@ Client configuration example (any MCP client that supports remote HTTP servers):
 { "mcpServers": { "pointwise": { "type": "http", "url": "https://pointwise.example.com/mcp", "headers": { "Authorization": "Bearer pw_pat_…" } } } }
 ```
 
-## 2. Pointwise as an MCP client (admin registry)
+## 2. PointWise as an MCP client (admin registry)
 
 | Aspect | Design |
 |---|---|
@@ -49,4 +49,4 @@ Client configuration example (any MCP client that supports remote HTTP servers):
 Those servers act with the server's privileges. Attached to a multi-user assistant, a user (or text injected into an offer or web page) could make the model read every household's data or the host filesystem. They remain useful for **operators** (e.g. in an admin's own Claude Code session against a staging database), which is outside the application. See [mcp-registry.md](mcp-registry.md) for the catalogue and recommended use.
 
 ## 4. Tests
-Unit: in-memory MCP client ↔ server round trip (read-only listing, user scoping, no error leakage), URL policy, hash/approval, refresh with a fake client. Integration: real HTTP `/mcp` with PATs (list, call, 401 for missing/JWT/revoked tokens); admin registers the Pointwise server itself as an external server, checks health, approves and attaches a tool, and detects a changed definition.
+Unit: in-memory MCP client ↔ server round trip (read-only listing, user scoping, no error leakage), URL policy, hash/approval, refresh with a fake client. Integration: real HTTP `/mcp` with PATs (list, call, 401 for missing/JWT/revoked tokens); admin registers the PointWise server itself as an external server, checks health, approves and attaches a tool, and detects a changed definition.

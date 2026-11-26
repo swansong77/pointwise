@@ -14,7 +14,7 @@ Status: **built (2026-11-25)**.
 | `done` | the full `/ai/chat` result (answer, trace, private flag, pending actions…) |
 | `error` | status, message (consent, budget, model outage) |
 
-Provider support: Claude via `client.beta.messages.stream()` + `finalMessage()` with `eager_input_streaming` on each tool (handlers validate inputs; a response stopped at `max_tokens` never runs its tool calls); OpenAI-compatible providers via `stream: true` with tool-call fragments accumulated by index; Gemini falls back to one chunk; the demo model streams word by word. Private (user-data) answers are composed by Pointwise and sent as one `delta` after a `reset` — the model never sees them. The UI (`/assistant`) shows live text and tool progress and falls back to `/ai/chat` when streaming is unavailable.
+Provider support: Claude via `client.beta.messages.stream()` + `finalMessage()` with `eager_input_streaming` on each tool (handlers validate inputs; a response stopped at `max_tokens` never runs its tool calls); OpenAI-compatible providers via `stream: true` with tool-call fragments accumulated by index; Gemini falls back to one chunk; the demo model streams word by word. Private (user-data) answers are composed by PointWise and sent as one `delta` after a `reset` — the model never sees them. The UI (`/assistant`) shows live text and tool progress and falls back to `/ai/chat` when streaming is unavailable.
 
 ## 2. Grounding eval set
 `backend/test/evals/grounding.json` — 16 questions on the demo family account (5/24, benefits, best card, renewals, value, next card, who should apply, transfers, award plan, household, card comparison, transfer partners, offer history, an unknown card, card fine print). Graded deterministically by `src/ai/evals.ts` (no LLM judge):

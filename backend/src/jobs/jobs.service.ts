@@ -16,6 +16,9 @@ import { CardRefreshService } from "../catalog-refresh/card-refresh.service";
 import { MailboxService } from "../mailbox/mailbox.service";
 import { CardResearchService } from "../catalog-research/card-research.service";
 import { OfferJobsService } from "../offers/offer-jobs.service";
+import { LoyaltyJobsService } from "../loyalty/loyalty.module";
+import { LoyaltyRefreshJobs } from "../loyalty/loyalty-automation.module";
+import { OrchestratorService } from "../ai/orchestrator.service";
 
 export const JOB_QUEUE = "pointwise-jobs";
 export type JobName =
@@ -34,8 +37,16 @@ export type JobName =
   | "scan-transfer-bonuses"
   | "research-cards"
   | "scan-offer-opportunities"
-  | "verify-offer-activation";
+  | "verify-offer-activation"
+  | "scan-loyalty-expirations"
+  | "snapshot-loyalty-balances"
+  | "refresh-loyalty"
+  | "loyalty-audit";
 export const JOB_NAMES: JobName[] = [
+  "refresh-loyalty",
+  "loyalty-audit",
+  "scan-loyalty-expirations",
+  "snapshot-loyalty-balances",
   "scan-offer-opportunities",
   "verify-offer-activation",
   "research-cards",
@@ -77,6 +88,9 @@ export class JobsService {
     @Optional() private readonly mailboxes?: MailboxService,
     @Optional() private readonly cardResearch?: CardResearchService,
     @Optional() private readonly offerJobs?: OfferJobsService,
+    @Optional() private readonly loyaltyJobs?: LoyaltyJobsService,
+    @Optional() private readonly loyaltyRefresh?: LoyaltyRefreshJobs,
+    @Optional() private readonly orchestrator?: OrchestratorService,
   ) {}
 
   async run(
@@ -130,12 +144,41 @@ export class JobsService {
       case "scan-offer-opportunities":
         created = (await this.offerJobs?.scanOpportunities(now)) ?? 0;
         break;
+      case "scan-loyalty-expirations":
+        created = (await this.loyaltyJobs?.scanExpirations(now)) ?? 0;
+        break;
+      case "refresh-loyalty":
+        created = (await this.loyaltyRefresh?.refreshDue(now, (id) => this.mailboxes?.sync(id, now) ?? Promise.resolve())) ?? 0;
+        break;
+      case "loyalty-audit":
+        created = await this.loyaltyAudit(now);
+        break;
+      case "snapshot-loyalty-balances":
+        created = (await this.loyaltyJobs?.snapshotBalances(now)) ?? 0;
+        break;
       case "verify-offer-activation":
         created = (await this.offerJobs?.verifyActivations(now)) ?? 0;
         break;
     }
     this.logger.log(`job ${name} done: ${created}`);
     return { job: name, created };
+  }
+
+  /** Weekly: run the loyalty-audit workflow (recorded in the run log) and tell the member the result. */
+  async loyaltyAudit(now: Date): Promise<number> {
+    if (!this.orchestrator) return 0;
+    const users = await this.prisma.user.findMany({ where: { loyaltyAccounts: { some: {} } }, select: { id: true, notificationPrefs: { select: { loyaltyExpiring: true } } }, take: 500 });
+    const key = `loy:audit:${day(new Date(now.getTime() - ((now.getUTCDay() + 6) % 7) * 86_400_000))}`;
+    let n = 0;
+    for (const u of users) {
+      if (u.notificationPrefs?.loyaltyExpiring === false) continue;
+      const run = await this.orchestrator.run(u.id, "loyalty-audit", { question: "Weekly loyalty audit" }, now);
+      if (run.status !== "COMPLETED") continue;
+      const before = await this.prisma.notification.count({ where: { userId: u.id, dedupeKey: key } });
+      await this.notifications.notify(u.id, "SYSTEM", "Your weekly loyalty audit", run.answer.split("\n").slice(0, 4).join(" "), "/loyalty", key);
+      if (!before) n++;
+    }
+    return n;
   }
 
   /**
@@ -336,7 +379,7 @@ export class JobsService {
     let sent = 0;
     for (const [userId, items] of byUser) {
       const body = items.map((i) => `• ${i.title}\n  ${i.body}`).join("\n\n");
-      const subject = `Pointwise: ${items.length} update${items.length > 1 ? "s" : ""}`;
+      const subject = `PointWise: ${items.length} update${items.length > 1 ? "s" : ""}`;
       const ok = await this.mail.send(items[0].user.email, subject, body);
       if (ok) {
         await this.prisma.notification.updateMany({

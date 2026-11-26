@@ -17,9 +17,9 @@ stateDiagram-v2
 
 ## Catalogue of the requested servers
 
-| Server | Typical transport | Place in Pointwise | Notes |
+| Server | Typical transport | Place in PointWise | Notes |
 |---|---|---|---|
-| **Pointwise** (this app) | Streamable HTTP | ✅ Built in at `/mcp` for users' own AI apps | PAT auth, public catalog tools only (no user card data) |
+| **PointWise** (this app) | Streamable HTTP | ✅ Built in at `/mcp` for users' own AI apps | PAT auth, public catalog tools only (no user card data) |
 | Documentation MCP (e.g. a docs search server) | remote HTTP | ✅ Admin registry → attach read-only search tools to assistants | good fit |
 | Web Search MCP | remote HTTP | ⚠️ Admin registry, read-only, review carefully | results are untrusted content (labelled); consider allow-listed domains server-side |
 | GitHub MCP | remote HTTP | ⚠️ Admin/operator use only | not relevant to card data; never with write scopes on user assistants |

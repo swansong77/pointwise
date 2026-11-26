@@ -56,7 +56,7 @@ interface Token {
   createdAt: string;
 }
 
-/** Personal access tokens for using Pointwise from an MCP client (Claude, ChatGPT…). */
+/** Personal access tokens for using PointWise from an MCP client (Claude, ChatGPT…). */
 export function TokensSection() {
   const list = useAuthedQuery<Token[]>(['tokens'], '/me/tokens');
   const [name, setName] = useState('');
@@ -66,7 +66,7 @@ export function TokensSection() {
   return (
     <Panel title="Connect an AI app (MCP)" data-testid="mcp-tokens">
       <p className="text-sm text-slate-600">
-        Let your own AI app search the Pointwise card catalog over the Model Context Protocol. Your own cards and household data are never shared with it. Server URL: <code className="rounded bg-slate-100 px-1">{'<API URL>/mcp'}</code> (for this
+        Let your own AI app search the PointWise card catalog over the Model Context Protocol. Your own cards and household data are never shared with it. Server URL: <code className="rounded bg-slate-100 px-1">{'<API URL>/mcp'}</code> (for this
         install <code className="rounded bg-slate-100 px-1">http://localhost:4000/mcp</code>). Tokens are read-only and can be revoked at any time.
       </p>
       <form

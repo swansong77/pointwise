@@ -87,7 +87,7 @@ describe('DeliveryService / dispatcher / processor', () => {
     prisma.user.findUnique.mockResolvedValue({ email: 'a@b.c', deletedAt: null });
     mail.send.mockResolvedValue(true);
     expect(await svc.deliver({ benefitNotificationId: 'bn', userId: 'u', channel: 'EMAIL', title: 'T', body: 'B', link: '/benefits' })).toBe(true);
-    expect(mail.send).toHaveBeenCalledWith('a@b.c', 'Pointwise: T', expect.stringContaining('/benefits'));
+    expect(mail.send).toHaveBeenCalledWith('a@b.c', 'PointWise: T', expect.stringContaining('/benefits'));
     expect(prisma.benefitNotification.update).toHaveBeenCalledWith({ where: { id: 'bn' }, data: { success: true } });
   });
 

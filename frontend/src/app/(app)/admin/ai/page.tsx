@@ -1,5 +1,6 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand-logo';
 import { useState } from 'react';
 import { BarList, StatTiles, Tabs } from '@/components/charts';
 import { Badge, Button, ErrorText, Field, Input, PageHeader, Panel, Select, Spinner } from '@/components/ui';
@@ -107,7 +108,8 @@ function Providers() {
           {q.data.map((p) => (
             <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
               <div className="min-w-0">
-                <p className="font-medium">
+                <p className="flex flex-wrap items-center gap-2 font-medium">
+                  <BrandLogo brand={{ code: p.kind, name: p.name }} size="md" decorative />
                   {p.name} <Badge>{p.kind}</Badge> {p.usable ? <Badge tone="green">usable</Badge> : <Badge tone="amber">not usable</Badge>}
                 </p>
                 <p className="text-xs text-slate-500">
@@ -205,7 +207,7 @@ function Models() {
               <tr>
                 <th scope="col" className="px-5 py-2">Model</th>
                 <th scope="col" className="px-2 py-2">Provider</th>
-                <th scope="col" className="px-2 py-2">$/1M in · out</th>
+                <th scope="col" className="px-2 py-2">$/1M in · Out</th>
                 <th scope="col" className="px-2 py-2">Capabilities</th>
                 <th scope="col" className="px-5 py-2 text-right">Actions</th>
               </tr>

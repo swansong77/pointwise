@@ -3,7 +3,7 @@
  * never sent to an AI provider).
  *
  * Users turn on "every transaction" alerts at their card issuers and forward them (a Gmail / Outlook
- * filter) to their private Pointwise address. Issuers word alerts differently; the parser looks for
+ * filter) to their private PointWise address. Issuers word alerts differently; the parser looks for
  * the pieces every alert has: an amount, a merchant, the card's last digits and usually a date.
  *   "You made a $23.45 transaction with UBER *TRIP on November 2, 2026 … ending in 1234"   (Chase-style)
  *   "Merchant: UBER TRIP  Amount: $23.45  Card ending: 31007"                             (key/value)
@@ -11,6 +11,7 @@
  *   "… at UBER, a pending authorization or purchase in the amount of $23.45 … ending in 1234" (Capital One-style)
  */
 import { DEFAULT_ISSUER_DOMAINS } from "../catalog-refresh/fetcher";
+import { loyaltySenderDomains } from "./loyalty-email";
 
 export const ALERT_SENDER_DOMAINS = [
   ...DEFAULT_ISSUER_DOMAINS,
@@ -29,7 +30,7 @@ export function senderDomains(env: NodeJS.ProcessEnv = process.env): string[] {
     .split(",")
     .map((d) => d.trim().toLowerCase())
     .filter(Boolean);
-  return [...ALERT_SENDER_DOMAINS, ...extra];
+  return [...new Set([...ALERT_SENDER_DOMAINS, ...loyaltySenderDomains(), ...extra])];
 }
 
 export function domainOf(address: string): string {

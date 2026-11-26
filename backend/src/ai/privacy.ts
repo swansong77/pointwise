@@ -1,7 +1,7 @@
 import { ChatMessage } from './types';
 
 /**
- * Privacy boundary between Pointwise and AI providers (policy set by the product owner):
+ * Privacy boundary between PointWise and AI providers (policy set by the product owner):
  * an AI provider never receives the user's card data.
  *
  * - Tools are classified. PUBLIC tools (card catalog) may return results to the model.
@@ -35,7 +35,7 @@ export type StepPrivacy = 'PUBLIC' | 'USER';
 /**
  * A provider is local when the model runs on the user's own machine: Ollama (and the offline mock).
  * Gateways that may forward to cloud models — OpenClaw, OpenRouter, any OpenAI-compatible endpoint —
- * are NOT local, even on a loopback address, because Pointwise cannot see where they send the text.
+ * are NOT local, even on a loopback address, because PointWise cannot see where they send the text.
  */
 export function isLocalProvider(kind: string): boolean {
   return kind === 'OLLAMA' || kind === 'MOCK';

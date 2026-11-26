@@ -116,7 +116,7 @@ export default function CalculatorPage() {
               <tr className="border-b text-left text-xs uppercase text-slate-500">
                 <th className="py-2">Category</th>
                 <th>Spend</th>
-                <th>Best card</th>
+                <th>Best Card</th>
                 <th>Rate</th>
                 <th className="text-right">Rewards</th>
               </tr>

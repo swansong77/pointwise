@@ -221,7 +221,7 @@ export function researchToolSpec(categorySlugs: string[]) {
   };
 }
 
-export const RESEARCH_SYSTEM = `You research U.S. credit-card products for the Pointwise card catalog. An administrator reviews everything you submit before it is published.
+export const RESEARCH_SYSTEM = `You research U.S. credit-card products for the PointWise card catalog. An administrator reviews everything you submit before it is published.
 Rules:
 - Issuer websites are the only source of facts. When lead sites are allowed (card news / community sites such as Doctor of Credit, The Points Guy, MileMoa), use them only to discover cards, new or elevated offers and recent changes, then confirm each one on the issuer's own product page. Never quote a lead site as evidence and never copy its text; list the pages that helped you under "leads" (link and title only).
 - The tools enforce the allowed domains. Do not use other comparison sites or aggregators.

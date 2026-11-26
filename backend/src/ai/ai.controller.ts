@@ -118,7 +118,7 @@ export class AiController {
   }
 }
 
-// ───────── personal access tokens (Pointwise MCP server) ─────────
+// ───────── personal access tokens (PointWise MCP server) ─────────
 
 export const PAT_PREFIX = 'pw_pat_';
 export const hashToken = (t: string) => createHash('sha256').update(t).digest('hex');

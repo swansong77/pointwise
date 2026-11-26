@@ -1,6 +1,6 @@
-# Phase 10 — Product Requirements Document: **Pointwise** (web)
+# Phase 10 — Product Requirements Document: **PointWise** (web)
 
-> Working name **Pointwise**. This is an original web product inspired by the *functional category* the analyzed app belongs to (credit-card rewards optimization). It must not reuse CardPointers' name, branding, assets, card catalog data, scripts, or backend APIs. Its catalog is curated independently.
+> Working name **PointWise**. This is an original web product inspired by the *functional category* the analyzed app belongs to (credit-card rewards optimization). It must not reuse CardPointers' name, branding, assets, card catalog data, scripts, or backend APIs. Its catalog is curated independently.
 
 ## 1. Vision
 
@@ -61,11 +61,11 @@ Help everyone use the right card every time: one place to track the cards you ho
 | W-BANK | Bank discovery via aggregator (Plaid sandbox adapter; production needs contract + Link UI) | P2 | partial |
 | **AI platform (2026-11-23)** | | | |
 | W-AI-CORE | Provider-agnostic AI layer (Claude, OpenAI, Gemini, Azure, Grok, Mistral, DeepSeek, OpenRouter, Ollama) with failover, budgets, usage & cost | P0 | delivered |
-| W-AI-ASSIST | Assistant + 10 agent profiles answering from Pointwise data via tools; confirm-before-write | P0 | delivered |
-| W-MCP | Pointwise MCP server (PAT) + admin MCP client registry with approval pinning | P1 | delivered |
+| W-AI-ASSIST | Assistant + 10 agent profiles answering from PointWise data via tools; confirm-before-write | P0 | delivered |
+| W-MCP | PointWise MCP server (PAT) + admin MCP client registry with approval pinning | P1 | delivered |
 | W-CARDDB | Card master database, admin-reviewed AI extraction refresh, offer history | P1 | delivered |
 | W-AI-PRIV | No AI provider (LLM or MCP client) receives user card data; user-data answers composed server-side | P0 | delivered |
-| W-RECO | Deterministic next-card scorer (first-year / long-term value, 5/24 impact, confidence, who should apply) with Pointwise-written explanations; travel transfer partners, balances and award planner | P1 | delivered |
+| W-RECO | Deterministic next-card scorer (first-year / long-term value, 5/24 impact, confidence, who should apply) with PointWise-written explanations; travel transfer partners, balances and award planner | P1 | delivered |
 | W-CREDIT-REPORT | Import card open dates from Experian, Equifax and TransUnion reports (bureau / annualcreditreport.com / Credit Karma PDFs or text), merged across bureaus, for 5/24 | P1 | delivered |
 | W-AUTO | Transactions arrive automatically: bank connection (webhook) or forwarded card alert emails; no statement downloads; never bank passwords | P1 | delivered |
 | W-SPEND | Track card spending (statements, bank sync, manual) and update each card's benefit tracker automatically from matching purchases and statement credits | P1 | delivered |

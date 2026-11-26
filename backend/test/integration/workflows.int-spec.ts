@@ -74,7 +74,7 @@ describe("workflows", () => {
 });
 
 describe("prompt versions (admin)", () => {
-  const BODY = "Rewrite the Pointwise result clearly, keeping every number exactly as written.";
+  const BODY = "Rewrite the PointWise result clearly, keeping every number exactly as written.";
   it("only admins can publish; versions increment; rollback restores", async () => {
     await api(app).put(`${V}/admin/ai/prompts/narration.default`).set(bearer(token)).send({ body: BODY }).expect(403);
     const v1 = (await api(app).put(`${V}/admin/ai/prompts/narration.default`).set(bearer(admin)).send({ body: BODY, note: "first" }).expect(200)).body;

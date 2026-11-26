@@ -151,7 +151,7 @@ describe('MCP client helpers', () => {
   });
 });
 
-describe('Pointwise MCP server (in-memory transport)', () => {
+describe('PointWise MCP server (in-memory transport)', () => {
   it('lists only public read-only tools (no user card data to AI providers)', async () => {
     const handler = jest.fn(async (ctx: { userId: string }) => ({ summary: `hello ${ctx.userId}`, data: { ok: true } }));
     const registry = {

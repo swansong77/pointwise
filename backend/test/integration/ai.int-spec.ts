@@ -8,7 +8,7 @@ import { ModelRouter } from '../../src/ai/router';
 import { defaultProviderFactory } from '../../src/ai/providers';
 import { ChatRequest } from '../../src/ai/types';
 
-/** AI platform: consent, agent runtime with Pointwise tools (offline demo model), actions, admin, MCP. */
+/** AI platform: consent, agent runtime with PointWise tools (offline demo model), actions, admin, MCP. */
 const V = '/api/v1';
 let app: INestApplication;
 let baseUrl: string;
@@ -63,6 +63,16 @@ describe('consent, models and agents', () => {
         'shopping-offer',
         'family-optimization',
         'offer-audit',
+        'point-expiration',
+        'certificate',
+        'elite-status',
+        'transfer-bonus',
+        'award-travel',
+        'membership',
+        'redemption',
+        'valuation',
+        'loyalty-audit',
+        'refresh-health',
       ].sort(),
     );
     await api(app).put(`${V}/ai/settings`).set(t).send({ preferredModelId: '00000000-0000-4000-8000-000000000000' }).expect(404);
@@ -72,7 +82,7 @@ describe('consent, models and agents', () => {
   });
 });
 
-describe('assistant answers the spec questions from Pointwise data (family account)', () => {
+describe('assistant answers the spec questions from PointWise data (family account)', () => {
   let token: string;
   beforeAll(async () => {
     token = await login(app, 'family@pointwise.local', 'Family12345!');
@@ -277,7 +287,7 @@ describe('admin: providers, models, agents, usage', () => {
 
   it('agent updates are validated', async () => {
     const agents = await api(app).get(`${V}/admin/ai/agents`).set(bearer(admin)).expect(200);
-    expect(agents.body).toHaveLength(19);
+    expect(agents.body).toHaveLength(29);
     await api(app).patch(`${V}/admin/ai/agents/offer-monitoring`).set(bearer(admin)).send({ tools: ['rm_rf'] }).expect(400);
     await api(app).patch(`${V}/admin/ai/agents/offer-monitoring`).set(bearer(admin)).send({ modelChain: ['00000000-0000-4000-8000-000000000000'] }).expect(400);
     await api(app).patch(`${V}/admin/ai/agents/offer-monitoring`).set(bearer(admin)).send({ maxSteps: 99 }).expect(400);
@@ -296,7 +306,7 @@ describe('admin: providers, models, agents, usage', () => {
   });
 });
 
-describe('Pointwise MCP server + admin MCP registry', () => {
+describe('PointWise MCP server + admin MCP registry', () => {
   let familyPat: string;
   let tokenId: string;
   let familyToken: string;

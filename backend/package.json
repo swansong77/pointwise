@@ -2,7 +2,7 @@
   "name": "pointwise-backend",
   "version": "0.1.0",
   "private": true,
-  "description": "Pointwise API (NestJS + Prisma + PostgreSQL)",
+  "description": "PointWise API (NestJS + Prisma + PostgreSQL)",
   "license": "UNLICENSED",
   "prisma": {
     "schema": "prisma/schema.prisma"

@@ -4,7 +4,7 @@ import './globals.css';
 import { Providers } from '@/components/providers';
 
 export const metadata: Metadata = {
-  title: { default: 'Pointwise', template: '%s · Pointwise' },
+  title: { default: 'PointWise', template: '%s · PointWise' },
   description: 'Use the right card every time. Track offers, bonuses and renewals.',
 };
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#4f46e5' };

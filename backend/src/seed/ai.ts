@@ -192,7 +192,7 @@ export const PROVIDERS: P[] = [
     ],
   },
   {
-    name: "Pointwise demo (offline)",
+    name: "PointWise demo (offline)",
     kind: "MOCK",
     active: true,
     models: [
@@ -206,7 +206,25 @@ export const PROVIDERS: P[] = [
   },
 ];
 
+/**
+ * Providers are keyed by name, and the product name is now spelled "PointWise". A provider seeded under the old
+ * spelling is renamed (keeping its models, usage and settings) instead of being duplicated; a duplicate already
+ * created by an earlier start with the new spelling is removed so only one demo provider is usable.
+ */
+async function renameLegacyProviders(prisma: PrismaClient) {
+  for (const p of PROVIDERS) {
+    const legacyName = p.name.replace(/PointWise/g, "Pointwise");
+    if (legacyName === p.name) continue;
+    const legacy = await prisma.aiProvider.findUnique({ where: { name: legacyName } });
+    if (!legacy) continue;
+    const current = await prisma.aiProvider.findUnique({ where: { name: p.name } });
+    if (current) await prisma.aiProvider.delete({ where: { id: current.id } });
+    await prisma.aiProvider.update({ where: { id: legacy.id }, data: { name: p.name } });
+  }
+}
+
 export async function seedAi(prisma: PrismaClient) {
+  await renameLegacyProviders(prisma);
   const ids: Record<string, string> = {};
   let order = 0;
   for (const p of PROVIDERS) {

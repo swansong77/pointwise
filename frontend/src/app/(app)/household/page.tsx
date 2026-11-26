@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { StatTiles } from '@/components/charts';
-import { CardSwatch } from '@/components/card-bits';
+import { WalletCardArt } from '@/components/card-bits';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, PageHeader, Panel, Select, Spinner } from '@/components/ui';
 import { money } from '@/lib/format';
 import { RELATIONSHIP_LABEL } from '@/lib/portfolio';
@@ -47,7 +47,7 @@ export default function HouseholdPage() {
               <ul className="divide-y divide-slate-100 text-sm">
                 {m.cards.map((c) => (
                   <li key={c.walletCardId} className="flex items-center gap-3 py-2">
-                    <CardSwatch color={c.card.color} size="sm" />
+                    <WalletCardArt walletCardId={c.walletCardId} name={c.name} color={c.card.color} size="md" />
                     <span className="min-w-0 flex-1 truncate">
                       {c.name}
                       {c.cardholder === 'AUTHORIZED_USER' && (

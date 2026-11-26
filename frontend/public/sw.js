@@ -1,12 +1,12 @@
-/* Pointwise service worker: shows web-push notifications (benefit expiry alerts). */
+/* PointWise service worker: shows web-push notifications (benefit expiry alerts). */
 self.addEventListener('push', (event) => {
-  let data = { title: 'Pointwise', body: '', link: '/notifications' };
+  let data = { title: 'PointWise', body: '', link: '/notifications' };
   try {
     data = Object.assign(data, event.data ? event.data.json() : {});
   } catch (e) {
     /* non-JSON payload: keep defaults */
   }
-  event.waitUntil(self.registration.showNotification(data.title, { body: data.body, data: { link: data.link }, icon: '/favicon.ico' }));
+  event.waitUntil(self.registration.showNotification(data.title, { body: data.body, data: { link: data.link }, icon: '/icons/icon-192.png', badge: '/icons/icon-192.png' }));
 });
 
 self.addEventListener('notificationclick', (event) => {
