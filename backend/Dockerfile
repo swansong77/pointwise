@@ -34,7 +34,7 @@ COPY prisma ./prisma
 RUN npx prisma generate
 COPY --from=build /app/dist ./dist
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chown -R node:node /app
+RUN mkdir -p /var/backups/pointwise && chown node:node /var/backups/pointwise && chown -R node:node /app
 USER node
 EXPOSE 4000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=5 \

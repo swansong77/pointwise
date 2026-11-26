@@ -55,6 +55,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         { href: '/admin/ai', label: 'AI & MCP', icon: '🤖' },
         { href: '/admin/catalog', label: 'Card Data', icon: '🗂️' },
         { href: '/admin/ops', label: 'Operations', icon: '🩺' },
+        { href: '/admin/backup', label: 'Backup & Migration', icon: '💾' },
       ]
     : NAV;
 

@@ -133,3 +133,22 @@ Format: Context · Options · Decision · Consequences · Status. Evidence and i
 ## ADR-024 — Offer sources and the extension
 - **Decision:** the extension (extension-offers/) is user-initiated, issuer-domain-only, reads visible text and sends it to the member's own server with an `offers:ingest` token; "Enroll selected" presses the issuer's own Add button on the open page for offers the member approved, only on click. Offer emails from a known issuer add offers for the member's "Offer Emails" account. Page selectors are text heuristics, unverified.
 - **Status:** accepted.
+
+
+---
+## ADR-025 — One registry drives backup, restore, export and import
+- **Context:** the schema has 90 models and grows; a hand-written exporter per model would silently miss new ones.
+- **Decision:** `domain/data-registry.ts` classifies every model (member data, catalog and configuration, short-lived), says how a member's rows are found (a relation path to the user id), which columns are never exported, which columns hold ids of other models, how rows match on a merge, and which columns are secrets. Insert order comes from the schema's foreign keys (cycles broken at an optional key). A unit test compares the registry with the Prisma schema and fails if a model is unclassified, a column named *Enc is not a listed secret, or a path is not a real chain of relations.
+- **Consequences:** a new model cannot be forgotten; the same engine serves backups (all models, ids kept) and member import (member models, ids remapped).
+- **Status:** accepted.
+
+## ADR-026 — Passphrase-encrypted backups; secrets re-encrypted
+- **Context:** secrets are encrypted with TOKEN_ENC_KEY, there is no key rotation, and a database copy to a server with another key would break every secret.
+- **Options:** copy ciphertext (needs the same key on the new server); leave secrets out (everything must be reconnected); decrypt into the backup and protect the file with a passphrase.
+- **Decision:** the third (the member's choice). The backup stream is gzip then AES-256-GCM frames under a scrypt key; secrets are stored decrypted inside it and re-encrypted with the target key on restore. A member's own export never contains secrets.
+- **Consequences:** moves work across keys; the passphrase is the only protection and is never stored; a backup is as sensitive as the database.
+- **Status:** accepted.
+
+## ADR-027 — Restore safety
+- **Decision:** verify the whole file before touching anything; require the same database version; make a pre-restore backup; one transaction (truncate, insert in foreign-key order, check every model's count and checksum against the manifest); roll back on any difference; maintenance mode off afterwards. Maintenance mode (a SystemSetting) answers 503 to everyone but administrators, health checks and sign-in.
+- **Status:** accepted.

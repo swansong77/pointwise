@@ -9479,10 +9479,348 @@
           "offer-automation"
         ]
       }
+    },
+    "/api/v1/admin/backups": {
+      "get": {
+        "operationId": "AdminDataController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-data"
+        ]
+      },
+      "post": {
+        "operationId": "AdminDataController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBackupDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-data"
+        ]
+      }
+    },
+    "/api/v1/admin/backups/upload": {
+      "post": {
+        "operationId": "AdminDataController_upload",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-data"
+        ]
+      }
+    },
+    "/api/v1/admin/backups/{name}/download": {
+      "get": {
+        "operationId": "AdminDataController_download",
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-data"
+        ]
+      }
+    },
+    "/api/v1/admin/backups/{name}/verify": {
+      "post": {
+        "operationId": "AdminDataController_verify",
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PassphraseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-data"
+        ]
+      }
+    },
+    "/api/v1/admin/backups/{name}/restore": {
+      "post": {
+        "operationId": "AdminDataController_restore",
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-data"
+        ]
+      }
+    },
+    "/api/v1/admin/backups/{name}": {
+      "delete": {
+        "operationId": "AdminDataController_remove",
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-data"
+        ]
+      }
+    },
+    "/api/v1/admin/maintenance": {
+      "get": {
+        "operationId": "AdminDataController_state",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-data"
+        ]
+      },
+      "post": {
+        "operationId": "AdminDataController_setMaintenance",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaintenanceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-data"
+        ]
+      }
+    },
+    "/api/v1/admin/migration/preflight": {
+      "get": {
+        "operationId": "AdminDataController_preflight",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-data"
+        ]
+      }
+    },
+    "/api/v1/admin/migration/env": {
+      "get": {
+        "operationId": "AdminDataController_env",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-data"
+        ]
+      }
+    },
+    "/api/v1/admin/migration/verify": {
+      "get": {
+        "operationId": "AdminDataController_verifyRestored",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-data"
+        ]
+      }
+    },
+    "/api/v1/me/data-export": {
+      "get": {
+        "operationId": "MeDataController_export",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/api/v1/me/data-import": {
+      "post": {
+        "operationId": "MeDataController_import",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "me"
+        ]
+      }
     }
   },
   "info": {
-    "title": "Pointwise API",
+    "title": "PointWise API",
     "description": "Credit-card rewards optimization API. All money values are integer cents.",
     "version": "0.1.0",
     "contact": {}
@@ -12843,6 +13181,70 @@
         },
         "required": [
           "mode"
+        ]
+      },
+      "CreateBackupDto": {
+        "type": "object",
+        "properties": {
+          "passphrase": {
+            "type": "string",
+            "description": "at least 12 characters; never stored. Without it the backup cannot be read."
+          },
+          "includeEphemeral": {
+            "type": "boolean",
+            "description": "also include sessions, notifications, analytics and agent runs"
+          },
+          "includeEnv": {
+            "type": "boolean",
+            "description": "carry the environment secrets that keep sessions and push alive (inside the encrypted file)"
+          }
+        },
+        "required": [
+          "passphrase"
+        ]
+      },
+      "PassphraseDto": {
+        "type": "object",
+        "properties": {
+          "passphrase": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "passphrase"
+        ]
+      },
+      "RestoreDto": {
+        "type": "object",
+        "properties": {
+          "passphrase": {
+            "type": "string"
+          },
+          "confirm": {
+            "type": "string",
+            "description": "type RESTORE to confirm that all current data will be replaced"
+          },
+          "keepMaintenance": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "passphrase",
+          "confirm"
+        ]
+      },
+      "MaintenanceDto": {
+        "type": "object",
+        "properties": {
+          "on": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "on"
         ]
       }
     }

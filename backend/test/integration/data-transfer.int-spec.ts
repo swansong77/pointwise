@@ -33,6 +33,8 @@ let b: { token: string; userId: string; email: string };
 let admin: { token: string; userId: string; email: string };
 let cardA: string;
 let bundleText = '';
+let providerKeys: Array<{ id: string; apiKeyEnc: string | null }> = [];
+const extraUsers: string[] = [];
 
 const get = (path: string, t: string) => api(app).get(`${V}${path}`).set(bearer(t));
 const post = (path: string, body: object, t: string) => api(app).post(`${V}${path}`).set(bearer(t)).send(body);
@@ -90,11 +92,16 @@ beforeAll(async () => {
   await post('/offer-automation/sync', { accountId: acct.body.id, wait: true }, a.token).expect(201);
   await post('/offer-automation/rules', { label: 'No gambling', kind: 'NEVER', matcher: 'CATEGORY', matcherValue: 'gambling' }, a.token).expect(201);
   await api(app).put(`${V}/offer-automation/policy`).set(bearer(a.token)).send({ mode: 'AUTO', autoFilter: { categories: ['travel'] } }).expect(200);
-  // a provider key the admin stored
+  // a provider key the admin stored (put back afterwards: other suites expect providers without keys)
+  providerKeys = await prisma.aiProvider.findMany({ select: { id: true, apiKeyEnc: true } });
   await prisma.aiProvider.updateMany({ data: { apiKeyEnc: encryptSecret('provider-key-1') }, where: { name: { not: '' } } });
 });
 afterAll(async () => {
   process.env.TOKEN_ENC_KEY = ORIGINAL_KEY;
+  // leave the database as other suites expect it: no provider keys, none of this suite's members or their data
+  for (const p of providerKeys) await prisma.aiProvider.update({ where: { id: p.id }, data: { apiKeyEnc: p.apiKeyEnc } });
+  await prisma.systemSetting.deleteMany({ where: { key: 'maintenance' } });
+  await prisma.user.deleteMany({ where: { id: { in: [a.userId, b.userId, admin.userId, ...extraUsers] } } });
   await app.close();
   await prisma.$disconnect();
 });
@@ -200,6 +207,7 @@ describe('member data import', () => {
 
   it('a hostile file cannot write into another account, change the role or plant a credential', async () => {
     const c = await register(app);
+    extraUsers.push(c.userId);
     const bundle = JSON.parse(bundleText);
     for (const m of Object.keys(bundle.models)) for (const row of bundle.models[m]) {
       if ('userId' in row) row.userId = a.userId;
@@ -240,6 +248,7 @@ describe('member data import', () => {
 
   it('skips rows that point at a catalog item this server does not have, and says so', async () => {
     const c = await register(app);
+    extraUsers.push(c.userId);
     const bundle = JSON.parse(bundleText);
     const id = bundle.models.WalletCard[0].cardId;
     bundle.catalog.CreditCard[id] = { slug: 'no-such-card-here' };
