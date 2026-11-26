@@ -111,6 +111,11 @@ export function diffInventory(stored: StoredItem[], incoming: InvItem[], now: Da
       else res.added.push(next);
       continue;
     }
+    if (ACTIVE.includes(old.status) && next.endsAt && next.endsAt.getTime() <= now.getTime()) {
+      // still listed but past its end date
+      res.expired.push(old);
+      continue;
+    }
     const changes = changesBetween(old, next);
     if (old.status === 'REMOVED' || old.status === 'EXPIRED') {
       // an offer we had written off is shown again (a renewed or extended offer)

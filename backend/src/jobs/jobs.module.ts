@@ -1,4 +1,5 @@
 import { BullModule, InjectQueue, Processor, WorkerHost } from "@nestjs/bullmq";
+import { OfferAutomationCoreModule } from '../offer-automation/offer-automation.module';
 import {
   Controller,
   HttpCode,
@@ -59,6 +60,14 @@ export const SCHEDULE: Record<JobName, string> = {
   "refresh-loyalty": "10 * * * *",
   /** weekly loyalty audit (Mondays) */
   "loyalty-audit": "30 14 * * 1",
+  /** hourly: runs every offer account whose local scheduled time (2 AM by default) has passed */
+  "offer-sync-due": "5 * * * *",
+  /** retries transient sync failures and closes stuck runs */
+  "offer-sync-recover": "*/10 * * * *",
+  /** first of the month: how offer automation did */
+  "offer-audit-monthly": "30 6 1 * *",
+  /** expiring offers */
+  "offer-digest": "45 13 * * *",
 };
 
 const JobNameEnum = Object.fromEntries(JOB_NAMES.map((n) => [n, n])) as Record<
@@ -168,6 +177,7 @@ const jobDeps = () => [
   OfferCoreModule,
   LoyaltyCoreModule,
   LoyaltyAutomationCoreModule,
+  OfferAutomationCoreModule,
 ];
 
 @Module({

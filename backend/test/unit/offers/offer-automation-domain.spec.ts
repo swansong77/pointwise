@@ -90,6 +90,12 @@ describe('offer snapshot diff', () => {
     expect(r.warnings[0]).toMatch(/already ended/);
   });
 
+  it('expires an offer that is still listed after its end date', () => {
+    const r = diffInventory([stored({ externalId: 'a' })], [inv({ externalId: 'a', endsAt: day(-1) })], NOW);
+    expect(r.expired.map((x) => x.externalId)).toEqual(['a']);
+    expect(r.updated).toHaveLength(0);
+  });
+
   it('does not bring back an offer that is shown again after it ended', () => {
     const r = diffInventory([stored({ status: 'EXPIRED' })], [inv({ endsAt: day(-3) })], NOW);
     expect(r.reappeared).toHaveLength(0);
