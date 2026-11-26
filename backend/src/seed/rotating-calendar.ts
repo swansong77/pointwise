@@ -7,7 +7,7 @@ import type { RotatingEntry } from '../domain/rotating-calendar';
  */
 export const ROTATING_CALENDAR: RotatingEntry[] = [
   {
-    cards: ['chase-freedom-flex'],
+    cards: ['chase-freedom-flex', 'chase-freedom'],
     quarter: '2026-Q4',
     capDollars: 1500,
     sourceUrl: 'https://creditcards.chase.com/cash-back-credit-cards/freedom/flex',

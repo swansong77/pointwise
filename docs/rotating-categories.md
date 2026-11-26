@@ -1,6 +1,6 @@
 # Quarterly rotating categories
 
-Cards such as Chase Freedom Flex and Discover it Cash Back earn a higher rate in categories that change every quarter and must be activated. PointWise keeps these current from three inputs: the committed calendar, an admin import, and (by the user's explicit override of the no-issuer-automation rule, for this feature only) a daily read of the issuer's public announcement page.
+Cards such as Chase Freedom Flex, the original Chase Freedom and Discover it Cash Back earn a higher rate in categories that change every quarter and must be activated. PointWise keeps these current from three inputs: the committed calendar, an admin import, and (by the user's explicit override of the no-issuer-automation rule, for this feature only) a daily read of the issuer's public announcement page.
 
 ## How it works
 1. **The calendar** (`backend/src/seed/rotating-calendar.ts`) lists each card family, quarter, categories, rate, quarterly cap, the issuer page that announced it and the date a person read it. Only quarters read on the issuer's own page are listed; nothing is guessed.
@@ -14,6 +14,7 @@ Cards such as Chase Freedom Flex and Discover it Cash Back earn a higher rate in
 - It uses the same polite fetcher as the catalog refresh: https, allow-listed issuer domains, robots.txt honoured, one request per host per interval, no cookies, no credentials, no login. It never activates a category or clicks anything.
 - `domain/rotating-parse.ts` is conservative: it applies a quarter only when the page states exactly one quarter and one rate in sentences naming recognised categories. Otherwise (blocked, script-rendered, ambiguous) admins get one notice per day saying why, and the quarter is added by import.
 - Turn it off with `ROTATING_AUTO_FETCH=false`.
+- The original Chase Freedom (no longer open to new applicants) shares the Flex calendar. The Flex page is the source; Chase's page for the retired card was not read, so that card's quarter rests on the two cards sharing categories.
 - **Checked 2026-11-26:** Chase Freedom Flex's product page states its quarter in the page text (source used). Discover's calendar page loads its categories by script and its text states only "5% on up to $1,500 each quarter", so Discover is marked unreadable and needs an import each quarter. Chase's older `/personal/credit-cards/freedom/5percent` address returns 404.
 
 ## What it does not do

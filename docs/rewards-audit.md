@@ -6,8 +6,8 @@ Generated 2026-11-26 by `backend/scripts/export-rewards-audit.ts` over the curat
 
 | | |
 |---|---|
-| Cards | 250 |
-| Every rate confirmed by an issuer page | 110 |
+| Cards | 251 |
+| Every rate confirmed by an issuer page | 111 |
 | Some rates confirmed | 3 |
 | Nothing confirmed | 137 |
 | Errors | 1 |
@@ -105,8 +105,9 @@ Generated 2026-11-26 by `backend/scripts/export-rewards-audit.ts` over the curat
 
 ## Confirmed against an issuer page
 
-113 card(s) have at least one rate confirmed:
+114 card(s) have at least one rate confirmed:
 
+- `amex-gold` (6 of 6 rates)
 - `bank-of-america-air-france-klm-visa-signature-credit-card` (2 of 2 rates)
 - `bank-of-america-allways-rewards-visa-card` (2 of 2 rates)
 - `bank-of-america-atmos-rewards-ascent-visa-signature-credit-card` (5 of 5 rates)
@@ -166,7 +167,7 @@ Generated 2026-11-26 by `backend/scripts/export-rewards-audit.ts` over the curat
 - `chase-aer-lingus-visa-signature-card` (2 of 2 rates)
 - `chase-air-canada-aeroplan-credit-card` (2 of 2 rates)
 - `chase-disney-inspire-visa-card` (4 of 4 rates)
-- `chase-freedom-flex` (6 of 6 rates)
+- `chase-freedom-flex` (4 of 4 rates)
 - `chase-freedom-unlimited` (4 of 4 rates)
 - `chase-iberia-visa-signature-card` (2 of 2 rates)
 - `chase-ihg-one-rewards-premier` (8 of 8 rates)

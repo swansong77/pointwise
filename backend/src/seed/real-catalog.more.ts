@@ -328,6 +328,26 @@ export const MORE_CARDS: RealCard[] = [
     popularity: 35,
   },
   {
+    // the original Freedom (rotating 5% categories); Chase no longer offers it to new applicants, existing cardholders keep it
+    slug: "chase-freedom",
+    name: "Chase Freedom",
+    issuer: "Chase",
+    network: "VISA",
+    feeDollars: 0,
+    currency: "CHASE_UR",
+    foreignTxFee: true,
+    color: "#0284c7",
+    productFamily: "Freedom",
+    recommendedCredit: "GOOD",
+    rewards: [["everything-else", 1, "1% cash back on all other purchases"]],
+    features: [
+      "5% cash back in quarterly bonus categories on up to $1,500 combined (activation required)",
+      "No longer open to new applicants; replaced by Chase Freedom Flex",
+      "No annual fee",
+    ],
+    popularity: 40,
+  },
+  {
     slug: "chase-amazon-visa",
     name: "Amazon Visa",
     issuer: "Chase",

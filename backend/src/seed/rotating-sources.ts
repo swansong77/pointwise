@@ -12,7 +12,7 @@ export interface RotatingSource {
 }
 
 export const ROTATING_SOURCES: RotatingSource[] = [
-  { cards: ['chase-freedom-flex'], url: 'https://creditcards.chase.com/cash-back-credit-cards/freedom/flex' },
+  { cards: ['chase-freedom-flex', 'chase-freedom'], url: 'https://creditcards.chase.com/cash-back-credit-cards/freedom/flex' },
   {
     cards: ['discover-it-cash-back'],
     url: 'https://www.discover.com/credit-cards/cash-back/cashback-calendar.html',

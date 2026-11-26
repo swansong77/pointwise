@@ -85,3 +85,15 @@ describe('category hierarchy', () => {
     expect(forTravel[0].cardId).toBe('travel');
   });
 });
+
+describe('ties', () => {
+  it('on the same value the rate with the higher (or no) cap ranks first, even with a lower headline rate', () => {
+    // 4x points at 1.5 cents = 6 cents, capped at $25,000 a year, against 6% cash back capped at $6,000 a year
+    const gold = card({ id: 'gold', name: 'Gold', currency: { ...CUR.points, centsPerPoint: 1.5 }, rewards: [rule({ categoryId: CAT.dining, multiplier: 4, capCents: 2_500_000, capPeriod: 'YEAR' }), base(1)] });
+    const cash = card({ id: 'cash', name: 'Cash', currency: CUR.cash, rewards: [rule({ categoryId: CAT.dining, multiplier: 6, capCents: 600_000, capPeriod: 'YEAR' }), base(1)] });
+    const r = rankCards([wc({ id: 'w-cash', card: cash }), wc({ id: 'w-gold', card: gold })], target(CAT.dining), { now: NOW });
+    expect(r.map((x) => x.name)).toEqual(['Gold', 'Cash']);
+    const uncapped = card({ id: 'u', name: 'Flat', currency: CUR.cash, rewards: [rule({ categoryId: CAT.dining, multiplier: 6 }), base(1)] });
+    expect(rankCards([wc({ id: 'a', card: gold }), wc({ id: 'b', card: uncapped })], target(CAT.dining), { now: NOW })[0].name).toBe('Flat');
+  });
+});

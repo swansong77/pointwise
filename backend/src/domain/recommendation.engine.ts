@@ -178,6 +178,9 @@ export function rankCards(
   ranked.sort((a, b) => {
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
     if (b.centsPerDollar !== a.centsPerDollar) return b.centsPerDollar - a.centsPerDollar;
+    // the same value: the rate that lasts longer (a higher or no cap) is the better card, then the higher headline rate
+    const room = (r: RankedCard) => (r.cap ? annualCapCents({ capCents: r.cap.capCents, capPeriod: r.cap.capPeriod }) ?? Infinity : Infinity) * (r.multiplier > 0 ? 1 : 0);
+    if (room(b) !== room(a)) return room(b) < room(a) ? -1 : 1;
     if (b.multiplier !== a.multiplier) return b.multiplier - a.multiplier;
     return a.name.localeCompare(b.name);
   });

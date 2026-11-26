@@ -44,6 +44,19 @@ const USB = 'https://www.usbank.com/credit-cards';
 
 export const RATE_VERIFICATIONS: VerifiedCard[] = [
   {
+    slug: 'amex-gold',
+    url: 'https://www.americanexpress.com/us/credit-cards/card/gold-card/',
+    rates: [
+      { cat: 'dining', mult: 4, desc: '4X points at restaurants worldwide, on up to $50,000 a calendar year, then 1X', cap: 50000, capPeriod: 'YEAR' },
+      { cat: 'groceries', mult: 4, desc: '4X points at U.S. supermarkets, on up to $25,000 a calendar year, then 1X', cap: 25000, capPeriod: 'YEAR' },
+      { cat: 'airlines', mult: 3, desc: '3X points on flights booked directly with airlines or through AmexTravel.com' },
+      { cat: 'hotels', mult: 5, desc: '5X points on prepaid hotels booked through AmexTravel.com or the Amex Travel app', conditional: true },
+      { cat: 'car-rental', mult: 2, desc: '2X points on prepaid car rentals booked through AmexTravel.com or the Amex Travel app', conditional: true },
+      { cat: 'everything-else', mult: 1, desc: '1X points on all other eligible purchases' },
+    ],
+    note: 'The annual fee was cut off in the page text and is not updated here.',
+  },
+  {
     slug: 'chase-sapphire-preferred',
     url: `${CH}/rewards-credit-cards/sapphire/preferred`,
     feeDollars: 95,
