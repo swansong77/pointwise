@@ -34,5 +34,6 @@ export const config = {
     '/next-card/:path*',
     '/travel/:path*',
     '/loyalty/:path*',
+    '/brands',
   ],
 };

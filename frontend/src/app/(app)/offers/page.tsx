@@ -1,5 +1,6 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand-logo';
 import clsx from 'clsx';
 import { useState, type FormEvent } from 'react';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, Panel, PageHeader, Select, Spinner } from '@/components/ui';
@@ -22,6 +23,7 @@ function OfferRow({ uo }: { uo: UserOffer }) {
     <li className="rounded-2xl border border-slate-200 bg-white p-4" data-testid="offer-row">
       <div className="flex flex-wrap items-start gap-3">
         <CardSwatch color={uo.walletCard.card.color} />
+        {uo.offer.merchant && <BrandLogo brand={{ name: uo.offer.merchant.name }} size="md" decorative />}
         <div className="min-w-0 flex-1">
           <p className="font-medium text-slate-900">
             {uo.isFavorite && <span aria-label="favorite">★ </span>}

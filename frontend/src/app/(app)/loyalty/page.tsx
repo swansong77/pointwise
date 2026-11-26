@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, PageHeader, Panel, Select, Spinner } from '@/components/ui';
 import { money, shortDate } from '@/lib/format';
+import { BrandLogo } from '@/components/brand-logo';
 import { HealthPanel, ImportsAndConflicts, RefreshHealth, SourceBadge } from '@/components/loyalty-automation';
 import { useApiMutation, useAuthedQuery } from '@/lib/queries';
 import {
@@ -247,6 +248,7 @@ function AccountRow({ a }: { a: AccountView }) {
   return (
     <li className="py-3" data-testid="account">
       <div className="flex flex-wrap items-center gap-2 text-sm">
+        <BrandLogo brand={{ code: a.programCode, name: a.programName }} name={a.programName} size="md" decorative />
         <span className="font-medium">{a.programName}</span>
         {a.nickname && <span className="text-slate-600">({a.nickname})</span>}
         <span className="text-slate-600">{a.member}{a.accountLast4 ? ` · ··${a.accountLast4}` : ''}</span>
@@ -406,6 +408,7 @@ function Certificates() {
         <ul className="divide-y divide-slate-100 text-sm" data-testid="cert-list">
           {q.data.map((c) => (
             <li key={c.id} className="flex flex-wrap items-center gap-2 py-2" data-testid="cert">
+              {c.program && <BrandLogo brand={{ name: c.program }} name={c.program} size="sm" decorative />}
               <Badge tone="brand">{CERT_LABEL[c.category]}</Badge>
               <span className="font-medium">{c.name}</span>
               <span className="text-slate-600">{c.member}{c.quantity > 1 ? ` · ×${c.quantity}` : ''}</span>
@@ -464,6 +467,7 @@ function StatusAndMemberships() {
             {current.map((x) => (
               <li key={x.id} data-testid="status-row">
                 <div className="flex flex-wrap items-center gap-2">
+                  <BrandLogo brand={{ name: x.program }} name={x.program} size="sm" decorative />
                   <span className="font-medium">{x.member}</span>
                   <span>{x.program} {x.level}</span>
                   <Badge tone={RISK_TONE[x.view.risk]}>{x.view.risk === 'NONE' ? 'Maintained' : `${RISK_LABEL[x.view.risk]} · renewal ${x.view.renewalLikelihood}%`}</Badge>
@@ -513,6 +517,7 @@ function StatusAndMemberships() {
           <ul className="divide-y divide-slate-100 text-sm" data-testid="membership-list">
             {ms.data!.map((x) => (
               <li key={x.id} className="flex flex-wrap items-center gap-2 py-2" data-testid="membership">
+                <BrandLogo brand={{ name: x.name }} name={MEMBERSHIP_LABEL[x.kind] ?? x.name} size="sm" decorative />
                 <span className="font-medium">{x.member}</span>
                 <Badge tone="brand">{MEMBERSHIP_LABEL[x.kind] ?? x.kind}</Badge>
                 <span>{x.view.headline}</span>
@@ -563,6 +568,7 @@ function Expirations() {
           {(q.data?.items ?? []).map((i) => (
             <li key={i.accountId} className="py-3" data-testid="expiration-item">
               <div className="flex flex-wrap items-center gap-2">
+                <BrandLogo brand={{ name: i.program }} name={i.program} size="sm" decorative />
                 <span className="font-medium">{i.program}</span>
                 <span className="text-slate-600">{i.member}</span>
                 <Badge tone={RISK_TONE[i.prediction.level]}>{RISK_LABEL[i.prediction.level]}</Badge>
@@ -694,7 +700,7 @@ function TransferBonuses() {
           <tbody>
             {list.map((r) => (
               <tr key={`${r.currency}-${r.program}`} className="border-t border-slate-100 align-top">
-                <td className="py-1">{r.currencyName} → {r.programName}</td>
+                <td className="py-1"><span className="inline-flex items-center gap-1"><BrandLogo brand={{ code: r.currency, name: r.currencyName }} size="xs" decorative />{r.currencyName} → <BrandLogo brand={{ code: r.program, name: r.programName }} size="xs" decorative />{r.programName}</span></td>
                 <td>{r.ratio}</td>
                 <td>{r.activeBonusPercent ? `${r.activeBonusPercent}%` : '—'}</td>
                 <td><Badge tone={VERDICT_LABEL[r.advice.verdict].tone}>{VERDICT_LABEL[r.advice.verdict].label}</Badge> <span className="text-xs text-slate-700">{r.advice.text}</span></td>
@@ -756,6 +762,7 @@ function AwardTravel() {
                 <li key={o.programCode} className="rounded-lg border border-slate-200 p-3 text-sm" data-testid="trip-option">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={i === 0 ? 'green' : 'slate'}>{i === 0 ? 'Best' : `#${i + 1}`}</Badge>
+                    <BrandLogo brand={{ code: o.programCode, name: o.programName }} size="sm" decorative />
                     <span className="font-medium">{o.programName}</span>
                     <span>{o.shortfall === 0 ? 'fully covered' : `${o.shortfall.toLocaleString('en-US')} short`}</span>
                     {o.activeBonusPercent && <Badge tone="brand">{o.activeBonusPercent}% bonus</Badge>}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { BrandLogo } from '@/components/brand-logo';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, Panel, Select, Spinner } from '@/components/ui';
 import { shortDate } from '@/lib/format';
 import { useApi } from '@/lib/api';
@@ -125,6 +126,7 @@ export function RefreshHealth() {
                 {s.accounts.map((a) => (
                   <li key={a.accountId} className="py-3" data-testid="refresh-account">
                     <div className="flex flex-wrap items-center gap-2">
+                      <BrandLogo brand={{ name: a.program }} name={a.program} size="sm" decorative />
                       <span className="font-medium">{a.program}</span>
                       <span className="text-slate-600">{a.member}</span>
                       <Badge tone={FRESH_LABEL[a.freshness].tone}>{FRESH_LABEL[a.freshness].label}</Badge>

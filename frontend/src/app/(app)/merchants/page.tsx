@@ -1,5 +1,6 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand-logo';
 import Link from 'next/link';
 import { useState } from 'react';
 import { EmptyState, ErrorText, Field, Input, Panel, PageHeader, Spinner } from '@/components/ui';
@@ -35,9 +36,7 @@ export default function MerchantsPage() {
           {merchants.data?.items.map((m) => (
             <li key={m.id}>
               <Link href={`/merchants/${m.slug}`} className="flex items-center gap-3 rounded-xl border border-slate-100 p-3 hover:border-brand-200 hover:bg-brand-50/40">
-                <span className="text-xl" aria-hidden>
-                  {categoryEmoji(m.category.icon)}
-                </span>
+                <BrandLogo brand={{ slug: m.slug, name: m.name }} size="md" decorative />
                 <div>
                   <p className="text-sm font-medium">{m.name}</p>
                   <p className="text-xs text-slate-500">{m.category.name}</p>

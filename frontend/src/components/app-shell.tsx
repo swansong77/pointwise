@@ -29,6 +29,7 @@ const NAV = [
   { href: '/loyalty', label: 'Loyalty assets', icon: '✈️' },
   { href: '/nearby', label: 'Nearby', icon: '📍' },
   { href: '/merchants', label: 'Merchants', icon: '🏪' },
+  { href: '/brands', label: 'Brand logos', icon: '🖼️' },
   { href: '/calculator', label: 'Calculator', icon: '🧮' },
   { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];

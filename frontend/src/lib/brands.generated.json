@@ -1,0 +1,378 @@
+{
+  "american-express": {
+    "file": "american-express.svg",
+    "hex": "#2E77BC",
+    "title": "American Express",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "chase": {
+    "file": "chase.svg",
+    "hex": "#117ACA",
+    "title": "Chase",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "bank-of-america": {
+    "file": "bank-of-america.svg",
+    "hex": "#012169",
+    "title": "Bank of America",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "wells-fargo": {
+    "file": "wells-fargo.svg",
+    "hex": "#D71E28",
+    "title": "Wells Fargo",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "discover": {
+    "file": "discover.svg",
+    "hex": "#FF6000",
+    "title": "Discover",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "visa": {
+    "file": "visa.svg",
+    "hex": "#1A1F71",
+    "title": "Visa",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "mastercard": {
+    "file": "mastercard.svg",
+    "hex": "#EB001B",
+    "title": "MasterCard",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "american-airlines": {
+    "file": "american-airlines.svg",
+    "hex": "#0078D2",
+    "title": "American Airlines",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "united": {
+    "file": "united.svg",
+    "hex": "#002244",
+    "title": "United Airlines",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "delta": {
+    "file": "delta.svg",
+    "hex": "#003366",
+    "title": "Delta",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "southwest": {
+    "file": "southwest.svg",
+    "hex": "#304CB2",
+    "title": "Southwest Airlines",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "jetblue": {
+    "file": "jetblue.svg",
+    "hex": "#001E59",
+    "title": "JetBlue",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "air-canada": {
+    "file": "air-canada.svg",
+    "hex": "#F01428",
+    "title": "Air Canada",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "british-airways": {
+    "file": "british-airways.svg",
+    "hex": "#2E5C99",
+    "title": "British Airways",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "virgin-atlantic": {
+    "file": "virgin-atlantic.svg",
+    "hex": "#DA0530",
+    "title": "Virgin Atlantic",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "flying-blue": {
+    "file": "flying-blue.svg",
+    "hex": "#002157",
+    "title": "Air France",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "singapore-airlines": {
+    "file": "singapore-airlines.svg",
+    "hex": "#F99F1C",
+    "title": "Singapore Airlines",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "qatar-airways": {
+    "file": "qatar-airways.svg",
+    "hex": "#5C0D34",
+    "title": "Qatar Airways",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "emirates": {
+    "file": "emirates.svg",
+    "hex": "#D71921",
+    "title": "Emirates",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "etihad": {
+    "file": "etihad.svg",
+    "hex": "#BD8B13",
+    "title": "Etihad Airways",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "lufthansa": {
+    "file": "lufthansa.svg",
+    "hex": "#05164D",
+    "title": "Lufthansa",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "turkish-airlines": {
+    "file": "turkish-airlines.svg",
+    "hex": "#C70A0C",
+    "title": "Turkish Airlines",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "qantas": {
+    "file": "qantas.svg",
+    "hex": "#E40000",
+    "title": "Qantas",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "ana": {
+    "file": "ana.svg",
+    "hex": "#13448F",
+    "title": "ANA",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "japan-airlines": {
+    "file": "japan-airlines.svg",
+    "hex": "#C00000",
+    "title": "Japan Airlines",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "aeromexico": {
+    "file": "aeromexico.svg",
+    "hex": "#0B2343",
+    "title": "Aeroméxico",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "marriott": {
+    "file": "marriott.svg",
+    "hex": "#A70023",
+    "title": "Marriott",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "hilton": {
+    "file": "hilton.svg",
+    "hex": "#231F20",
+    "title": "Hilton",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "airbnb": {
+    "file": "airbnb.svg",
+    "hex": "#FF5A5F",
+    "title": "Airbnb",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "expedia": {
+    "file": "expedia.svg",
+    "hex": "#191E3B",
+    "title": "Expedia",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "rakuten": {
+    "file": "rakuten.svg",
+    "hex": "#BF0000",
+    "title": "Rakuten",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "paypal": {
+    "file": "paypal.svg",
+    "hex": "#002991",
+    "title": "PayPal",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "uber": {
+    "file": "uber.svg",
+    "hex": "#000000",
+    "title": "Uber",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "lyft": {
+    "file": "lyft.svg",
+    "hex": "#FF00BF",
+    "title": "Lyft",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "doordash": {
+    "file": "doordash.svg",
+    "hex": "#FF3008",
+    "title": "DoorDash",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "instacart": {
+    "file": "instacart.svg",
+    "hex": "#43B02A",
+    "title": "Instacart",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "target": {
+    "file": "target.svg",
+    "hex": "#CC0000",
+    "title": "Target",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "apple": {
+    "file": "apple.svg",
+    "hex": "#000000",
+    "title": "Apple",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "google": {
+    "file": "google.svg",
+    "hex": "#4285F4",
+    "title": "Google",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "netflix": {
+    "file": "netflix.svg",
+    "hex": "#E50914",
+    "title": "Netflix",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "spotify": {
+    "file": "spotify.svg",
+    "hex": "#1ED760",
+    "title": "Spotify",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "starbucks": {
+    "file": "starbucks.svg",
+    "hex": "#006241",
+    "title": "Starbucks",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "mcdonalds": {
+    "file": "mcdonalds.svg",
+    "hex": "#FBC817",
+    "title": "McDonald's",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "shell": {
+    "file": "shell.svg",
+    "hex": "#FFD500",
+    "title": "Shell",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "verizon": {
+    "file": "verizon.svg",
+    "hex": "#CD040B",
+    "title": "Verizon",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "peloton": {
+    "file": "peloton.svg",
+    "hex": "#181A1D",
+    "title": "Peloton",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  },
+  "macys": {
+    "file": "macys.svg",
+    "hex": "#E21A2C",
+    "title": "Macy's",
+    "source": "simple-icons",
+    "license": "CC0-1.0",
+    "version": "16.38.1"
+  }
+}
