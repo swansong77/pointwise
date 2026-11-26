@@ -22,9 +22,18 @@ describe('brand library', () => {
     for (const b of withFile) {
       const path = join(PUBLIC, b.file!);
       expect(existsSync(path)).toBe(true);
+      const m = manifest[b.key];
+      if (/\.(png|jpg)$/.test(b.file!)) {
+        // a plain raster logo from Commons: real image bytes, small, with a recorded licence
+        const bytes = readFileSync(path);
+        expect(bytes.length).toBeLessThanOrEqual(100_000);
+        expect(b.file!.endsWith('.png') ? bytes[0] === 0x89 && bytes[1] === 0x50 : bytes[0] === 0xff && bytes[1] === 0xd8).toBe(true);
+        expect(m.license.length).toBeGreaterThan(10);
+        expect(logoUrl(b)).toBe(`/brands/${b.file}`);
+        continue;
+      }
       const svg = readFileSync(path, 'utf8');
       expect(svg.startsWith('<svg')).toBe(true);
-      const m = manifest[b.key];
       if (m.source === 'simple-icons') {
         expect(b.hex).toMatch(/^#[0-9A-Fa-f]{6}$/);
         expect(svg).toContain(`fill="${b.hex}"`);
@@ -37,7 +46,7 @@ describe('brand library', () => {
       expect(svg).not.toMatch(/script|javascript:|data:|\son\w+=|xlink:href="(?!#)|href="(?!#)|<style|foreignObject|<image|<text|<use/i);
       expect(logoUrl(b)).toBe(`/brands/${b.file}`);
     }
-    const onDisk = readdirSync(PUBLIC).filter((f) => f.endsWith('.svg'));
+    const onDisk = readdirSync(PUBLIC).filter((f) => /\.(svg|png|jpg)$/.test(f));
     expect(onDisk.sort()).toEqual(withFile.map((b) => b.file!).sort());
     expect(existsSync(join(PUBLIC, 'LICENSE-simple-icons.md'))).toBe(true);
     expect(existsSync(join(PUBLIC, 'NOTICE-commons-logos.md'))).toBe(true);
@@ -51,7 +60,8 @@ describe('brand library', () => {
       const rec = sources.assets.find((a) => a.key === key);
       expect(rec, key).toBeTruthy();
       expect(rec!.page).toMatch(/^https:\/\/(commons\.wikimedia\.org|[a-z.]*)\//);
-      expect(rec!.licence).toMatch(/PD-|CC0|public domain/i);
+      expect(rec!.licence).toMatch(/PD-|CC0|public domain|CC BY-SA 4\.0 \(attribution required/i);
+      if (/CC BY-SA/.test(rec!.licence)) expect((rec as unknown as { author?: string }).author, key).toBeTruthy();
       expect(rec!.retrieved).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(m.url).toBe(rec!.page);
     }

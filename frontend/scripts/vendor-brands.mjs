@@ -63,9 +63,22 @@ for (const a of sources.assets) {
     continue;
   }
   try {
-    const { svg } = sanitizeSvg(readFileSync(path, 'utf8'));
-    writeFileSync(join(out, `${a.key}.svg`), svg + '\n');
-    manifest[a.key] = { file: `${a.key}.svg`, hex: null, title: b.name, source: a.source, license: a.licence, url: a.page, retrieved: a.retrieved };
+    // plain PNG/JPEG logos (some credit unions publish no vector mark) are shown through <img>, which never runs code;
+    // they are accepted only when the magic bytes match the extension and the file is small
+    const raster = /\.(png|jpe?g)$/i.exec(a.asset);
+    let file = `${a.key}.svg`;
+    if (raster) {
+      const bytes = readFileSync(path);
+      const png = bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+      const jpg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+      if (!(png || jpg) || bytes.length > 100_000) throw new Error('not a small PNG or JPEG image');
+      file = `${a.key}.${png ? 'png' : 'jpg'}`;
+      writeFileSync(join(out, file), bytes);
+    } else {
+      const { svg } = sanitizeSvg(readFileSync(path, 'utf8'));
+      writeFileSync(join(out, file), svg + '\n');
+    }
+    manifest[a.key] = { file, hex: null, title: b.name, source: a.source, license: a.licence, url: a.page, retrieved: a.retrieved, ...(a.author ? { credit: { author: a.author, licence: 'CC BY-SA 4.0', licenceUrl: a.licenceUrl } } : {}) };
     fromAssets++;
   } catch (e) {
     refused.push(`${a.key}: ${e.message}`);

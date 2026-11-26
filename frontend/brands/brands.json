@@ -1037,6 +1037,7 @@
   "key": "goldman-sachs",
   "name": "Goldman Sachs",
   "kind": "ISSUER",
+  "simple": "goldmansachs",
   "aliases": [
    "goldman sachs bank",
    "apple card",

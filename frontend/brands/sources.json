@@ -219,10 +219,10 @@
   },
   {
    "key": "priority-pass",
-   "asset": "assets/priority-pass.svg",
+   "asset": "assets/priority-pass.png",
    "source": "wikimedia-commons",
    "page": "https://commons.wikimedia.org/wiki/File:Priority_Pass_logo.svg",
-   "licence": "PD-textlogo: \"It does not meet the threshold of originality needed for copyright protection, and is therefore in the public domain.\" Also tagged Trademarked.",
+   "licence": "PD-textlogo: \"It does not meet the threshold of originality needed for copyright protection, and is therefore in the public domain.\" Also tagged Trademarked. The SVG uses masks or references the cleaner refuses, so it was drawn to a transparent PNG unchanged. Artwork only; the mark stays the owner's trademark.",
    "retrieved": "2026-11-26"
   },
   {
@@ -328,132 +328,350 @@
    "page": "https://commons.wikimedia.org/wiki/File:OpenAI_logo_2025_(symbol).svg",
    "licence": "Commons licence metadata: \"Public domain\"; restriction tag: trademarked. Artwork only; the mark stays the owner's trademark.",
    "retrieved": "2026-11-26"
+  },
+  {
+   "key": "citi",
+   "asset": "assets/citi.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Citi_logo_March_2023.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: trademarked. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "citizens",
+   "asset": "assets/citizens.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Citizens_Financial_Group_logo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: trademarked. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "fifth-third",
+   "asset": "assets/fifth-third.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Fifth_Third_Bank_logo_(2023,_horizontal,_color_with_blue_wordmark).svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: trademarked. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "huntington",
+   "asset": "assets/huntington.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Huntington_Bancshares_Inc._logo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: trademarked. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "regions",
+   "asset": "assets/regions.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Regions_Financial_Corp_logo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: trademarked. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "alliant",
+   "asset": "assets/alliant.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Logo_of_Alliant_Credit_Union.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "dcu",
+   "asset": "assets/dcu.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Logo_DCU_Green.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "keybank",
+   "asset": "assets/keybank.png",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:KeyBank.png",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "golden-1",
+   "asset": "assets/golden-1.png",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Golden1CU_logo.png",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "schoolsfirst",
+   "asset": "assets/schoolsfirst.png",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:SchoolsFirst-logo.png",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "san-diego-county",
+   "asset": "assets/san-diego-county.jpg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:San_Diego_County_Credit_Union_logo.jpg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "hyatt",
+   "asset": "assets/hyatt.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Hyatt_Logo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "home-depot",
+   "asset": "assets/home-depot.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:The_Home_Depot_logo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "cvs",
+   "asset": "assets/cvs.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:CVS_Health_logo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "nordstrom",
+   "asset": "assets/nordstrom.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Nordstrom_Logo_2019.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "saks",
+   "asset": "assets/saks.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Sakslogo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "disney",
+   "asset": "assets/disney.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Walt_Disney_wordmark.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "equinox",
+   "asset": "assets/equinox.png",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Equinox_Fitness_logo.png",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "ihg",
+   "asset": "assets/ihg.png",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:IHG_Hotels_%26_Resorts_logo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. The SVG uses masks or references the cleaner refuses, so it was drawn to a transparent PNG unchanged. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "plaid",
+   "asset": "assets/plaid.png",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Plaid_logo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. The SVG uses masks or references the cleaner refuses, so it was drawn to a transparent PNG unchanged. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "lululemon",
+   "asset": "assets/lululemon.png",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Lululemon_Athletica_logo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. The SVG uses masks or references the cleaner refuses, so it was drawn to a transparent PNG unchanged. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "exxonmobil",
+   "asset": "assets/exxonmobil.png",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:ExxonMobil_Logo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. The SVG uses masks or references the cleaner refuses, so it was drawn to a transparent PNG unchanged. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "truist",
+   "asset": "assets/truist.png",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Truist_Financial_logo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. The SVG uses text, an embedded image or a canvas the cleaner refuses, so it was drawn to a transparent PNG unchanged. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "td-bank",
+   "asset": "assets/td-bank.png",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:TD_Bank.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. The SVG uses text, an embedded image or a canvas the cleaner refuses, so it was drawn to a transparent PNG unchanged. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "t-mobile",
+   "asset": "assets/t-mobile.png",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:T-Mobile_US_Logo_2022_RGB_Magenta_on_Transparent.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. The SVG uses text, an embedded image or a canvas the cleaner refuses, so it was drawn to a transparent PNG unchanged. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "clear",
+   "asset": "assets/clear.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:CLEAR_Logo.svg",
+   "licence": "CC BY-SA 4.0 (attribution required; credit shown on the Brand logos page). Artwork only; the mark stays the owner's trademark.",
+   "author": "Gabrielacalogero",
+   "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "dragonpass",
+   "asset": "assets/dragonpass.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:DragonPass_Rebrand_LogoMark_2025_Black.svg",
+   "licence": "CC BY-SA 4.0 (attribution required; credit shown on the Brand logos page). Artwork only; the mark stays the owner's trademark.",
+   "author": "Dragonpass",
+   "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "security-service",
+   "asset": "assets/security-service.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Ssfcu-logo-stack.svg",
+   "licence": "CC BY-SA 4.0 (attribution required; credit shown on the Brand logos page). Artwork only; the mark stays the owner's trademark.",
+   "author": "Anachronymic",
+   "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "mountain-america",
+   "asset": "assets/mountain-america.jpg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Macu-logo-2023-720x720.jpg",
+   "licence": "CC BY-SA 4.0 (attribution required; credit shown on the Brand logos page). Artwork only; the mark stays the owner's trademark. Cropped to the logo's edges; otherwise unchanged.",
+   "author": "Mountainamericacu",
+   "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "america-first",
+   "asset": "assets/america-first.png",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:America's_First_Logo_PNG.png",
+   "licence": "CC BY-SA 4.0 (attribution required; credit shown on the Brand logos page). Artwork only; the mark stays the owner's trademark.",
+   "author": "AFFCU",
+   "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "randolph-brooks",
+   "asset": "assets/randolph-brooks.png",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Randolph-Brooks_Federal_Credit_Union_(RBFCU)_logo.png",
+   "licence": "CC BY-SA 4.0 (attribution required; credit shown on the Brand logos page). Artwork only; the mark stays the owner's trademark. Cropped to the logo's edges; otherwise unchanged.",
+   "author": "Goobinski",
+   "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "bread-financial",
+   "asset": "assets/bread-financial.jpg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Bread_Financial.jpg",
+   "licence": "CC BY-SA 4.0 (attribution required; credit shown on the Brand logos page). Artwork only; the mark stays the owner's trademark.",
+   "author": "Bread Financial",
+   "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "amazon",
+   "asset": "assets/amazon.png",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Amazon_logo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Amazon's logo from 2012 to 1 Nov 2024 (retired); the SVG uses an element the cleaner refuses, so it was drawn to a transparent PNG unchanged. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "kroger",
+   "asset": "assets/kroger.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Kroger_logo_(1961-2019).svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Kroger's logo from 1961 to 2019 (retired). Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "safeway",
+   "asset": "assets/safeway.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Safeway_Logo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Safeway's 2005 logo (retired). Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "bp",
+   "asset": "assets/bp.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Bp_logo89.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. BP's 1989 shield logo (retired). Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "lowes",
+   "asset": "assets/lowes.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Lowes_Companies_Logo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Lowe's logo as uploaded in 2017. Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "costco",
+   "asset": "assets/costco.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Costco_old_logo.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. Costco's first logo (retired). Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
+  },
+  {
+   "key": "global-entry",
+   "asset": "assets/global-entry.svg",
+   "source": "wikimedia-commons",
+   "page": "https://commons.wikimedia.org/wiki/File:Global_Entry_Logo_Negative.svg",
+   "licence": "Commons licence metadata: \"Public domain\"; restriction tag: none stated. The US government Global Entry logo (colour-reversed version, with its tagline). Artwork only; the mark stays the owner's trademark.",
+   "retrieved": "2026-11-26"
   }
  ],
  "skipped": [
-  [
-   "costco",
-   "The Commons file is tagged public domain but its original upload says \"may not be used without written permission from Costco Wholesale Corporation\"."
-  ],
-  [
-   "home-depot",
-   "The only file found is a non-free (fair use) upload."
-  ],
-  [
-   "clear",
-   "The only file found is CC BY-SA 4.0 (attribution and share-alike required)."
-  ],
-  [
-   "dragonpass",
-   "The only file found is CC BY-SA 4.0."
-  ],
-  [
-   "citi",
-   "Files found are marked fair use or their licence was not confirmed."
-  ],
-  [
-   "goldman-sachs",
-   "Files found are CC BY-SA 4.0 or non-free."
-  ],
-  [
-   "amazon",
-   "The free file is the logo retired in November 2024."
-  ],
-  [
-   "kroger",
-   "The free file is the logo retired in 2019."
-  ],
-  [
-   "cvs",
-   "The free file is an older wordmark, not the current logo."
-  ],
-  [
-   "t-mobile",
-   "The file page says its source site may not be free."
-  ],
-  [
-   "hyatt",
-   "The licence is tagged public domain but the stated source is not a Hyatt page."
-  ],
-  [
-   "td-bank",
-   "The upload history shows a non-free rationale that conflicts with the current licence."
-  ],
-  [
-   "truist",
-   "The upload history shows a non-free rationale that conflicts with the current licence."
-  ],
-  [
-   "alliant",
-   "The upload history says \"non-free logo\", conflicting with the current licence."
-  ],
-  [
-   "nordstrom",
-   "The stated source is a third-party logo site."
-  ],
-  [
-   "ihg",
-   "The file uses an SVG mask, which the safe cleaner does not allow."
-  ],
-  [
+                  [
    "discover",
    "The Commons file embeds a raster image; the Simple Icons mark is used instead."
   ],
-  [
-   "global-entry",
-   "Only the reversed-colour (negative) variant was found."
-  ],
-  [
-   "lowes",
-   "Not confirmed to be the current logo."
-  ],
-  [
-   "safeway",
-   "Not confirmed to be the current logo."
-  ],
-  [
-   "exxonmobil",
-   "Not confirmed to be the current logo."
-  ],
-  [
+      [
    "topcashback",
    "No file on Commons."
   ],
-  [
-   "regions",
-   "No file on Commons."
-  ],
-  [
-   "keybank",
-   "No file on Commons."
-  ],
-  [
-   "bread-financial",
-   "No file on Commons."
-  ],
-  [
+     [
    "elan",
    "No file on Commons."
   ],
   [
    "penfed",
    "No file on Commons."
-  ],
-  [
-   "fifth-third",
-   "Licence not confirmed."
-  ],
-  [
-   "huntington",
-   "Licence not confirmed."
-  ],
-  [
-   "citizens",
-   "Licence not confirmed."
-  ],
-  [
-   "lululemon",
-   "The Commons file uses an SVG use element, which the safe cleaner does not allow."
   ]
- ]
+     ]
 }
