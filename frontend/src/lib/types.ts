@@ -54,6 +54,9 @@ export interface WalletCard {
   notes: string | null;
   status: CardStatus;
   cardholder: 'PRIMARY' | 'AUTHORIZED_USER';
+  /** the household member who holds the card; null means the account owner (primary member) */
+  profileId?: string | null;
+  profile?: { id: string; nickname: string; relationship: string; isPrimary: boolean } | null;
   lastFour: string | null;
   approvedAt: string | null;
   closedAt: string | null;

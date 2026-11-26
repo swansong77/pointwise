@@ -42,8 +42,17 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                 r={r}
                 rank={i + 1}
                 action={
-                  !r.pinned && (
-                    <Button variant="ghost" className="text-xs" onClick={() => pin.mutate({ walletCardId: r.walletCardId, categoryId: category.id })} aria-label={`Always use ${r.name} for ${category.name}`}>
+                  r.pinned ? (
+                    <Button variant="ghost" className="text-xs" onClick={() => unpin.mutate(category.id)} aria-label={`Unpin ${r.name} from ${category.name}`}>
+                      Unpin
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      className="text-xs"
+                      onClick={() => pin.mutate({ walletCardId: r.walletCardId, categoryId: category.id })}
+                      aria-label={`Always use ${r.name} for ${category.name}`}
+                    >
                       Pin
                     </Button>
                   )

@@ -4,23 +4,33 @@ import { useState } from 'react';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, Panel, PageHeader, Select, Spinner } from '@/components/ui';
 import { CardArt } from '@/components/card-bits';
 import { Tabs } from '@/components/charts';
-import { qk, useApiMutation, useCardSearch, useCategories, useCustomMatches, useWallet } from '@/lib/queries';
+import { qk, useApiMutation, useAuthedQuery, useCardSearch, useCategories, useCustomMatches, useWallet } from '@/lib/queries';
+import type { Member } from '@/lib/portfolio-types';
+import { RELATIONSHIP_LABEL } from '@/lib/portfolio';
 import { money, shortDate } from '@/lib/format';
 import { rewardBadges } from '@/lib/rates';
 import { validateLastFour } from '@/lib/validation';
 import { verificationBadge } from '@/lib/catalog';
 import type { CardStatus, WalletCard } from '@/lib/types';
 
+const useMembers = () => useAuthedQuery<Member[]>(['household', 'members'], '/household/members');
+
 const STATUS_TONE: Record<CardStatus, 'green' | 'amber' | 'red' | 'slate'> = { APPROVED: 'green', APPLIED: 'amber', DENIED: 'red', CLOSED: 'slate' };
 
-function AddCard({ onDone }: { onDone: () => void }) {
+function AddCard({ onDone, defaultOwner }: { onDone: () => void; defaultOwner: string }) {
+  const members = useMembers();
+  const [owner, setOwner] = useState(defaultOwner);
   const [q, setQ] = useState('');
   const [approvedAt, setApprovedAt] = useState('');
   const [lastFour, setLastFour] = useState('');
   const [cardType, setCardType] = useState<'' | 'PERSONAL' | 'BUSINESS'>('');
   const search = useCardSearch(q, cardType || undefined);
   const add = useApiMutation<{ cardId: string }>(
-    ({ cardId }) => ({ path: '/wallet/cards', method: 'POST', body: { cardId, approvedAt: approvedAt || undefined, lastFour: lastFour || undefined } }),
+    ({ cardId }) => ({
+      path: '/wallet/cards',
+      method: 'POST',
+      body: { cardId, approvedAt: approvedAt || undefined, lastFour: lastFour || undefined, profileId: owner || undefined },
+    }),
     [qk.wallet, qk.dashboard],
   );
   const lastFourError = validateLastFour(lastFour);
@@ -35,7 +45,17 @@ function AddCard({ onDone }: { onDone: () => void }) {
       }
       data-testid="add-card-panel"
     >
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-4">
+        <Field label="Card owner" htmlFor="card-owner">
+          <Select id="card-owner" value={owner} onChange={(e) => setOwner(e.target.value)}>
+            {(members.data ?? []).map((m) => (
+              <option key={m.id} value={m.isPrimary ? '' : m.id}>
+                {m.nickname}
+                {m.isPrimary ? ' (you)' : ''}
+              </option>
+            ))}
+          </Select>
+        </Field>
         <Field label="Search cards" htmlFor="card-search">
           <Input id="card-search" placeholder="e.g. Sapphire, Chase, credit union" value={q} onChange={(e) => setQ(e.target.value)} />
         </Field>
@@ -99,12 +119,16 @@ function AddCard({ onDone }: { onDone: () => void }) {
   );
 }
 
-function WalletCardRow({ wc }: { wc: WalletCard }) {
+function WalletCardRow({ wc, members }: { wc: WalletCard; members: Member[] }) {
+  const primary = members.find((m) => m.isPrimary);
+  const owner = wc.profile ?? primary ?? null;
+  const ownerId = wc.profile && !wc.profile.isPrimary ? wc.profile.id : '';
   const [editing, setEditing] = useState(false);
   const [nickname, setNickname] = useState(wc.nickname ?? '');
   const [status, setStatus] = useState<CardStatus>(wc.status);
+  const [newOwner, setNewOwner] = useState(ownerId);
   const categories = useCategories();
-  const update = useApiMutation<Record<string, unknown>>((body) => ({ path: `/wallet/cards/${wc.id}`, method: 'PATCH', body }), [qk.wallet, qk.dashboard]);
+  const update = useApiMutation<Record<string, unknown>>((body) => ({ path: `/wallet/cards/${wc.id}`, method: 'PATCH', body }), [qk.wallet, qk.dashboard, ['household']]);
   const remove = useApiMutation<void>(() => ({ path: `/wallet/cards/${wc.id}`, method: 'DELETE' }), [qk.wallet, qk.dashboard]);
   const rotating = wc.card.rewards.filter((r) => r.isRotating);
 
@@ -119,6 +143,17 @@ function WalletCardRow({ wc }: { wc: WalletCard }) {
           <p className="text-xs text-slate-500">
             {wc.card.issuer.name} · {wc.card.currency.name} @ {wc.card.currency.centsPerPoint}¢ · approved {shortDate(wc.approvedAt)}
           </p>
+          {owner && (
+            <p className="mt-0.5 text-xs text-slate-600" data-testid="card-owner">
+              Owner: <strong>{owner.nickname}</strong>
+              {owner.isPrimary ? ' (you)' : ` · ${RELATIONSHIP_LABEL[owner.relationship as keyof typeof RELATIONSHIP_LABEL] ?? owner.relationship}`}
+              {wc.cardholder === 'AUTHORIZED_USER' && (
+                <span className="ml-1">
+                  <Badge>AU</Badge>
+                </span>
+              )}
+            </p>
+          )}
         </div>
         <Badge tone={STATUS_TONE[wc.status]}>{wc.status.toLowerCase()}</Badge>
         <Button variant="ghost" onClick={() => setEditing((v) => !v)} aria-expanded={editing}>
@@ -139,7 +174,17 @@ function WalletCardRow({ wc }: { wc: WalletCard }) {
         })}
       </ul>
       {editing && (
-        <div className="mt-4 grid gap-4 border-t border-slate-100 pt-4 sm:grid-cols-3">
+        <div className="mt-4 grid gap-4 border-t border-slate-100 pt-4 sm:grid-cols-4">
+          <Field label="Owner" htmlFor={`owner-${wc.id}`}>
+            <Select id={`owner-${wc.id}`} value={newOwner} onChange={(e) => setNewOwner(e.target.value)}>
+              {members.map((m) => (
+                <option key={m.id} value={m.isPrimary ? '' : m.id}>
+                  {m.nickname}
+                  {m.isPrimary ? ' (you)' : ''}
+                </option>
+              ))}
+            </Select>
+          </Field>
           <Field label="Nickname" htmlFor={`nick-${wc.id}`}>
             <Input id={`nick-${wc.id}`} value={nickname} maxLength={60} onChange={(e) => setNickname(e.target.value)} />
           </Field>
@@ -153,7 +198,12 @@ function WalletCardRow({ wc }: { wc: WalletCard }) {
             </Select>
           </Field>
           <div className="flex items-end gap-2">
-            <Button loading={update.isPending} onClick={() => update.mutate({ nickname: nickname || null, status }, { onSuccess: () => setEditing(false) })}>
+            <Button
+              loading={update.isPending}
+              onClick={() =>
+                update.mutate({ nickname: nickname || null, status, ...(newOwner !== ownerId ? { profileId: newOwner || null } : {}) }, { onSuccess: () => setEditing(false) })
+              }
+            >
               Save
             </Button>
             <Button
@@ -206,7 +256,8 @@ function MatchCustomCards() {
   return (
     <Panel title="Match imported cards to the catalog" data-testid="match-custom">
       <p className="text-sm text-slate-600">
-        {ids.length} card{ids.length === 1 ? ' was' : 's were'} imported without earning rates. Matching them to the catalog shows their categories and uses them in Best Card by Category. Your last digits, dates and notes stay.
+        {ids.length} card{ids.length === 1 ? ' was' : 's were'} imported without earning rates. Matching them to the catalog shows their categories and uses them in Best Card by
+        Category. Your last digits, dates and notes stay.
       </p>
       <ul className="mt-3 space-y-1 text-sm">
         {m.data.matches.map((x) => (
@@ -229,7 +280,16 @@ function MatchCustomCards() {
 
 export default function WalletPage() {
   const wallet = useWallet();
+  const members = useMembers();
   const [adding, setAdding] = useState(false);
+  const [who, setWho] = useState<string>('ALL');
+  const list = members.data ?? [];
+  const primaryId = list.find((m) => m.isPrimary)?.id ?? '';
+  // a card with no profile belongs to the account owner (the primary member)
+  const memberOf = (wc: WalletCard) => wc.profile?.id ?? primaryId;
+  const counts = new Map<string, number>();
+  for (const wc of wallet.data ?? []) counts.set(memberOf(wc), (counts.get(memberOf(wc)) ?? 0) + 1);
+  const shown = (wallet.data ?? []).filter((wc) => who === 'ALL' || memberOf(wc) === who);
   return (
     <div className="space-y-6">
       <PageHeader
@@ -237,14 +297,30 @@ export default function WalletPage() {
         subtitle="The cards you hold. We only store the last 4 digits, never full card numbers."
         action={!adding && <Button onClick={() => setAdding(true)}>+ Add card</Button>}
       />
-      {adding && <AddCard onDone={() => setAdding(false)} />}
+      {adding && <AddCard onDone={() => setAdding(false)} defaultOwner={who !== 'ALL' && who !== primaryId ? who : ''} />}
+      {list.length > 1 && (
+        <div className="max-w-xs" data-testid="wallet-member-filter">
+          <Field label="Show cards held by" htmlFor="wallet-who">
+            <Select id="wallet-who" value={who} onChange={(e) => setWho(e.target.value)}>
+              <option value="ALL">Everyone ({wallet.data?.length ?? 0})</option>
+              {list.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nickname}
+                  {m.isPrimary ? ' (you)' : ''} ({counts.get(m.id) ?? 0})
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
+      )}
       <MatchCustomCards />
       {wallet.isLoading && <Spinner />}
       <ErrorText error={wallet.error} />
+      {wallet.data && wallet.data.length > 0 && shown.length === 0 && <EmptyState title="No cards for this member">Pick another member or add a card.</EmptyState>}
       {wallet.data && wallet.data.length === 0 && !adding && <EmptyState title="Your wallet is empty">Add a card to see your best card everywhere.</EmptyState>}
       <ul className="space-y-3" data-testid="wallet-list">
-        {wallet.data?.map((wc) => (
-          <WalletCardRow key={wc.id} wc={wc} />
+        {shown.map((wc) => (
+          <WalletCardRow key={wc.id} wc={wc} members={list} />
         ))}
       </ul>
     </div>

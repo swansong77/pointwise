@@ -6,7 +6,7 @@ import { WalletCardArt } from '@/components/card-bits';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, PageHeader, Panel, Select, Spinner } from '@/components/ui';
 import { money } from '@/lib/format';
 import { RELATIONSHIP_LABEL } from '@/lib/portfolio';
-import type { HouseholdDashboard, Relationship } from '@/lib/portfolio-types';
+import type { HouseholdDashboard, Member, Relationship } from '@/lib/portfolio-types';
 import { useApiMutation, useAuthedQuery } from '@/lib/queries';
 
 const KEYS = [['household'], ['portfolio'], ['five24']] as const;
@@ -71,6 +71,7 @@ export default function HouseholdPage() {
             <p className="mt-3 border-t border-slate-100 pt-3 text-sm text-slate-600">
               Fees {money(m.totals.annualFeeCents)} · benefits {money(m.totals.faceBenefitCents)} · effective <strong>{money(m.totals.effectiveValueCents)}</strong>
             </p>
+            <EditMember member={m.profile} />
             {!m.profile.isPrimary && <MemberActions id={m.profile.id} nickname={m.profile.nickname} relationship={m.profile.relationship} />}
           </Panel>
         ))}
@@ -172,5 +173,119 @@ function AddMember() {
       <p className="mt-2 text-xs text-slate-500">Children can only hold authorized-user cards. Household members need the Pro plan.</p>
       <ErrorText error={add.error} />
     </Panel>
+  );
+}
+
+const BANDS = [
+  ['', 'Not set'],
+  ['EXCELLENT', 'Excellent (800+)'],
+  ['VERY_GOOD', 'Very good (740–799)'],
+  ['GOOD', 'Good (670–739)'],
+  ['FAIR', 'Fair (580–669)'],
+  ['POOR', 'Poor (<580)'],
+] as const;
+const GOALS = [
+  ['TRAVEL', 'Travel'],
+  ['CASHBACK', 'Cash back'],
+  ['HOTEL', 'Hotel'],
+  ['AIRLINE', 'Airline'],
+  ['LOW_FEE', 'Low fee'],
+] as const;
+
+/** Edit a member's name and details (the primary member too; their relationship stays "You"). */
+function EditMember({ member }: { member: Member }) {
+  const [open, setOpen] = useState(false);
+  const [nickname, setNickname] = useState(member.nickname);
+  const [relationship, setRelationship] = useState<Relationship>(member.relationship);
+  const [email, setEmail] = useState(member.email ?? '');
+  const [birthYear, setBirthYear] = useState(member.birthYear ? String(member.birthYear) : '');
+  const [creditBand, setCreditBand] = useState<string>(member.creditBand ?? '');
+  const [goals, setGoals] = useState<string[]>(member.goals ?? []);
+  const [hasBusiness, setHasBusiness] = useState(!!member.hasBusiness);
+  const save = useApiMutation<void>(
+    () => ({
+      path: `/household/members/${member.id}`,
+      method: 'PATCH',
+      body: {
+        nickname: nickname.trim(),
+        ...(member.isPrimary ? {} : { relationship }),
+        ...(email.trim() ? { email: email.trim() } : {}),
+        ...(birthYear ? { birthYear: Number(birthYear) } : {}),
+        creditBand: creditBand || null,
+        goals,
+        hasBusiness,
+      },
+    }),
+    KEYS,
+  );
+  const id = member.id;
+  if (!open)
+    return (
+      <Button variant="secondary" className="mt-3" onClick={() => setOpen(true)} aria-label={`Edit ${member.nickname}`}>
+        Edit details
+      </Button>
+    );
+  return (
+    <form
+      className="mt-3 space-y-3 rounded-lg border border-slate-200 p-3"
+      data-testid="edit-member"
+      onSubmit={(e) => {
+        e.preventDefault();
+        save.mutate(undefined, { onSuccess: () => setOpen(false) });
+      }}
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Name" htmlFor={`n-${id}`}>
+          <Input id={`n-${id}`} value={nickname} maxLength={40} onChange={(e) => setNickname(e.target.value)} />
+        </Field>
+        {!member.isPrimary && (
+          <Field label="Relationship" htmlFor={`r-${id}`}>
+            <Select id={`r-${id}`} value={relationship} onChange={(e) => setRelationship(e.target.value as Relationship)}>
+              {(['SPOUSE', 'PARTNER', 'CHILD', 'PARENT', 'OTHER'] as Relationship[]).map((r) => (
+                <option key={r} value={r}>
+                  {RELATIONSHIP_LABEL[r]}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
+        <Field label="Email (optional)" htmlFor={`e-${id}`}>
+          <Input id={`e-${id}`} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </Field>
+        <Field label="Birth year (optional)" htmlFor={`b-${id}`}>
+          <Input id={`b-${id}`} inputMode="numeric" value={birthYear} onChange={(e) => setBirthYear(e.target.value.replace(/\D/g, '').slice(0, 4))} />
+        </Field>
+        <Field label="Credit score band (optional)" htmlFor={`c-${id}`}>
+          <Select id={`c-${id}`} value={creditBand} onChange={(e) => setCreditBand(e.target.value)}>
+            {BANDS.map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </div>
+      <fieldset className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        <legend className="mb-1 text-xs font-medium text-slate-600">Reward goals</legend>
+        {GOALS.map(([v, l]) => (
+          <label key={v} className="flex items-center gap-1">
+            <input type="checkbox" checked={goals.includes(v)} onChange={(e) => setGoals(e.target.checked ? [...goals, v] : goals.filter((g) => g !== v))} /> {l}
+          </label>
+        ))}
+        <label className="flex items-center gap-1">
+          <input type="checkbox" checked={hasBusiness} onChange={(e) => setHasBusiness(e.target.checked)} /> Has a business
+        </label>
+      </fieldset>
+      <p className="text-xs text-slate-500">Credit band and goals stay on your account and are never sent to an AI provider.</p>
+      <div className="flex gap-2">
+        <Button type="submit" loading={save.isPending} disabled={!nickname.trim() || (!!birthYear && birthYear.length !== 4)}>
+          Save
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+          Cancel
+        </Button>
+      </div>
+      <ErrorText error={save.error} />
+    </form>
   );
 }
