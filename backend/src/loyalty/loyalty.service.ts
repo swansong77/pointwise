@@ -1,6 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { LoyaltyEventKind, LoyaltyKind, Prisma } from '@prisma/client';
 import { PrismaService } from '../common/prisma.service';
+import { evidenceHashOf, IngestResult, LoyaltyIngestService } from './loyalty-ingest.service';
+import { ParsedObservation } from '../domain/loyalty-email';
+import { freshness, Priority } from '../domain/loyalty-refresh';
+import { refreshConfidence, SourceType } from '../domain/loyalty-provenance';
 import { decryptSecret, encryptSecret } from '../common/crypto';
 import { alertText, ExpiryPrediction, lotsFromEvents, predictExpiration, preservationAdvice } from '../domain/loyalty-expiration';
 import { growthSummary, monthlyHistory, trackingTotals } from '../domain/loyalty-tracking';
@@ -40,7 +44,10 @@ type AccountRow = Prisma.LoyaltyAccountGetPayload<{ include: typeof accountInclu
 /** Loyalty assets: accounts and balances, certificates, status, memberships, valuation, forecast, transfers, award trips. */
 @Injectable()
 export class LoyaltyService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly ingest: LoyaltyIngestService,
+  ) {}
 
   // ───────────── helpers ─────────────
 
@@ -95,7 +102,23 @@ export class LoyaltyService {
     });
     const oneYearAgo = new Date(now.getTime() - 365 * DAY);
     const recent = a.events.filter((e) => e.occurredAt >= oneYearAgo);
+    const prov = (a.provenance ?? {}) as Record<string, { sourceType: SourceType; reliability: number; observedAt: string; verification: string }>;
+    const observed = Object.values(prov).map((p) => new Date(p.observedAt).getTime());
+    const lastObservedAt = observed.length ? new Date(Math.max(...observed)) : a.balance > 0 ? a.refreshedAt : null;
+    const bal = prov.balance;
+    const priority = a.refreshPriority as Priority;
     return {
+      provenance: prov,
+      balanceSource: (bal?.sourceType ?? a.balanceSource ?? (a.balance > 0 ? 'MANUAL' : null)) as SourceType | null,
+      balanceReliability: bal?.reliability ?? (a.balance > 0 ? 25 : null),
+      balanceObservedAt: bal ? new Date(bal.observedAt) : a.balanceObservedAt,
+      balanceVerification: bal?.verification ?? 'UNVERIFIED',
+      refreshConfidence: bal ? refreshConfidence(bal.reliability, new Date(bal.observedAt), now) : a.balance > 0 ? refreshConfidence(25, a.refreshedAt, now) : 0,
+      lastObservedAt,
+      lastSuccessfulRefreshAt: a.lastSuccessfulRefreshAt,
+      nextRefreshAt: a.nextRefreshAt,
+      refreshPriority: priority,
+      freshness: freshness(lastObservedAt, priority, now),
       id: a.id,
       profileId: a.profileId,
       member: a.profile.nickname,
@@ -170,6 +193,15 @@ export class LoyaltyService {
         source: dto.source ?? 'MANUAL',
         transferable: dto.transferable ?? null,
         notes: dto.notes ?? null,
+        provenance: Object.fromEntries(
+          (['balance', 'pendingBalance', 'lifetimePoints', 'statusLevel', 'statusDeadline', 'expiresAt', 'lastActivityAt'] as const)
+            .filter((f) => (dto as unknown as Record<string, unknown>)[f] != null && (dto as unknown as Record<string, unknown>)[f] !== 0)
+            .map((f) => [f, { sourceType: 'MANUAL', reliability: 25, observedAt: new Date().toISOString(), verification: 'UNVERIFIED' }]),
+        ) as Prisma.InputJsonValue,
+        balanceSource: balance > 0 ? 'MANUAL' : null,
+        balanceObservedAt: balance > 0 ? new Date() : null,
+        refreshConfidence: balance > 0 ? 25 : 0,
+        lastSuccessfulRefreshAt: new Date(),
         events: balance > 0 ? { create: [{ userId, kind: 'SNAPSHOT', points: 0, balanceAfter: balance, note: 'Opening balance' }] } : undefined,
       },
       include: accountInclude,
@@ -183,28 +215,37 @@ export class LoyaltyService {
     return a;
   }
 
+  /**
+   * Manual edits go through the same funnel as every other source (source MANUAL, reliability 25), so they are
+   * audited and a lower-confidence value never silently replaces a higher one. `force` records an explicit override.
+   */
   async updateAccount(userId: string, id: string, dto: UpdateAccountDto) {
     const a = await this.ownedAccount(userId, id);
-    const data: Prisma.LoyaltyAccountUpdateInput = { refreshedAt: new Date() };
+    const data: Prisma.LoyaltyAccountUpdateInput = {};
     if (dto.nickname !== undefined) data.nickname = dto.nickname;
     if (dto.accountNumber !== undefined) {
       data.accountNumberEnc = encryptSecret(dto.accountNumber);
       data.accountLast4 = dto.accountNumber.slice(-4);
     }
-    if (dto.pendingBalance !== undefined) data.pendingBalance = dto.pendingBalance;
-    if (dto.lifetimePoints !== undefined) data.lifetimePoints = dto.lifetimePoints;
-    if (dto.statusLevel !== undefined) data.statusLevel = dto.statusLevel;
-    if (dto.statusDeadline !== undefined) data.statusDeadline = date(dto.statusDeadline);
-    if (dto.expiresAt !== undefined) data.expiresAt = date(dto.expiresAt);
-    if (dto.lastActivityAt !== undefined) data.lastActivityAt = date(dto.lastActivityAt);
     if (dto.transferable !== undefined) data.transferable = dto.transferable;
     if (dto.notes !== undefined) data.notes = dto.notes;
-    if (dto.balance !== undefined && dto.balance !== a.balance) {
-      data.balance = dto.balance;
-      data.events = { create: { userId, kind: 'ADJUST', points: dto.balance - a.balance, balanceAfter: dto.balance, note: 'Balance updated' } };
-    }
-    const row = await this.prisma.loyaltyAccount.update({ where: { id }, data, include: accountInclude });
-    return this.view(row, new Date());
+    if (Object.keys(data).length) await this.prisma.loyaltyAccount.update({ where: { id }, data });
+    const now = new Date();
+    const obs: ParsedObservation[] = [];
+    const push = (field: string, value: unknown, changed: boolean) => {
+      if (changed) obs.push({ entity: 'ACCOUNT', field, value, rule: 'manual', ruleConfidence: 100, observedAt: now });
+    };
+    push('balance', dto.balance, dto.balance !== undefined && dto.balance !== a.balance);
+    push('pendingBalance', dto.pendingBalance, dto.pendingBalance !== undefined && dto.pendingBalance !== a.pendingBalance);
+    push('lifetimePoints', dto.lifetimePoints, dto.lifetimePoints !== undefined && dto.lifetimePoints !== a.lifetimePoints);
+    push('statusLevel', dto.statusLevel, dto.statusLevel !== undefined && dto.statusLevel !== a.statusLevel);
+    push('statusDeadline', date(dto.statusDeadline), dto.statusDeadline !== undefined);
+    push('expiresAt', dto.expiresAt === null ? null : date(dto.expiresAt), dto.expiresAt !== undefined);
+    push('lastActivityAt', date(dto.lastActivityAt), dto.lastActivityAt !== undefined);
+    let outcome: IngestResult | null = null;
+    if (obs.length) outcome = await this.ingest.apply({ userId, programCode: 'MANUAL', sourceType: 'MANUAL', method: 'manual-edit', evidenceHash: evidenceHashOf('manual', id, obs.map((o) => `${o.field}=${String(o.value)}`).join(','), now.getTime()), now, accountId: id, force: dto.force }, obs);
+    const row = await this.ownedAccount(userId, id);
+    return { ...this.view(row, new Date()), ingest: outcome };
   }
 
   async deleteAccount(userId: string, id: string) {
@@ -232,6 +273,12 @@ export class LoyaltyService {
       balance = a.balance - dto.points;
     }
     const data: Prisma.LoyaltyAccountUpdateInput = { balance, refreshedAt: new Date() };
+    if (balance !== a.balance) {
+      // the balance now comes from this manual entry
+      data.provenance = { ...((a.provenance ?? {}) as Record<string, unknown>), balance: { sourceType: 'MANUAL', reliability: 25, observedAt: at.toISOString(), verification: 'UNVERIFIED' } } as Prisma.InputJsonValue;
+      data.balanceSource = 'MANUAL';
+      data.balanceObservedAt = at;
+    }
     if (ACTIVITY.includes(dto.kind) && (!a.lastActivityAt || at > a.lastActivityAt)) data.lastActivityAt = at;
     if (['EARN', 'BONUS', 'PURCHASE'].includes(dto.kind)) data.lifetimePoints = a.lifetimePoints + dto.points;
     await this.prisma.$transaction([

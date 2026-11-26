@@ -6,7 +6,7 @@
 
 export const LOYALTY_ENGINE_VERSION = 'loyalty-expiration/1';
 /** alert thresholds in days before expiration */
-export const ALERT_DAYS = [365, 180, 90, 60, 30, 14, 7, 1] as const;
+export const ALERT_DAYS = [365, 180, 120, 90, 60, 30, 14, 7, 1] as const;
 
 export type PolicyType = 'NEVER' | 'ACTIVITY' | 'FIXED' | 'WHILE_CARD_OPEN' | 'UNKNOWN';
 export type RiskLevel = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'EXPIRED';
@@ -185,19 +185,21 @@ export interface PreserveMethod {
   effort: 'LOW' | 'MEDIUM' | 'HIGH';
   /** days before the activity posts */
   leadDays: number;
+  /** estimated chance (0–100) that the activity counts and resets the clock */
+  successPct: number;
   kinds: string[];
   note: string;
 }
 
 export const PRESERVE_METHODS: PreserveMethod[] = [
-  { key: 'earn-1-point', label: 'Earn at least 1 point', tokens: ['EARN'], estCostCents: 0, effort: 'LOW', leadDays: 7, kinds: ['AIRLINE', 'HOTEL', 'OTHER', 'SHOPPING', 'DINING'], note: 'Any partner earning activity counts for most programs; confirm which ones do.' },
-  { key: 'card-spend', label: 'Spend on a co-brand credit card', tokens: ['CARD_SPEND'], estCostCents: 0, effort: 'LOW', leadDays: 30, kinds: ['AIRLINE', 'HOTEL'], note: 'Spend you already make; posts with the statement.' },
-  { key: 'shopping-portal', label: 'Buy through the program’s shopping portal', tokens: ['PORTAL', 'EARN', 'PARTNER'], estCostCents: 500, effort: 'LOW', leadDays: 14, kinds: ['AIRLINE', 'HOTEL', 'SHOPPING'], note: 'A small purchase you need anyway; points post after the merchant confirms.' },
-  { key: 'dining', label: 'Dining program purchase', tokens: ['DINING', 'EARN'], estCostCents: 2000, effort: 'LOW', leadDays: 14, kinds: ['AIRLINE', 'DINING'], note: 'Register a card and dine at a participating restaurant.' },
-  { key: 'transfer-in', label: 'Transfer a small block of bank points', tokens: ['TRANSFER', 'EARN'], estCostCents: 1000, effort: 'LOW', leadDays: 3, kinds: ['AIRLINE', 'HOTEL'], note: 'Costs the transferred points (usually a 1,000-point minimum); fast, but transfers cannot be undone.' },
-  { key: 'buy-points', label: 'Buy a small number of points', tokens: ['PURCHASE', 'EARN'], estCostCents: 3500, effort: 'LOW', leadDays: 1, kinds: ['AIRLINE', 'HOTEL'], note: 'Usually the most expensive option; only if the deadline is close.' },
-  { key: 'partner-purchase', label: 'Partner purchase (flowers, wine, car rental)', tokens: ['PARTNER', 'EARN'], estCostCents: 2500, effort: 'MEDIUM', leadDays: 21, kinds: ['AIRLINE', 'HOTEL'], note: 'Needs a purchase from a partner and time to post.' },
-  { key: 'stay-or-fly', label: 'Take a qualifying stay or flight', tokens: ['STAY', 'FLIGHT'], estCostCents: 15_000, effort: 'HIGH', leadDays: 30, kinds: ['AIRLINE', 'HOTEL', 'RENTAL_CAR', 'CRUISE'], note: 'Only if you were going anyway.' },
+  { key: 'earn-1-point', label: 'Earn at least 1 point', tokens: ['EARN'], estCostCents: 0, effort: 'LOW', leadDays: 7, successPct: 90, kinds: ['AIRLINE', 'HOTEL', 'OTHER', 'SHOPPING', 'DINING'], note: 'Any partner earning activity counts for most programs; confirm which ones do.' },
+  { key: 'card-spend', label: 'Spend on a co-brand credit card', tokens: ['CARD_SPEND'], estCostCents: 0, effort: 'LOW', leadDays: 30, successPct: 85, kinds: ['AIRLINE', 'HOTEL'], note: 'Spend you already make; posts with the statement.' },
+  { key: 'shopping-portal', label: 'Buy through the program’s shopping portal', tokens: ['PORTAL', 'EARN', 'PARTNER'], estCostCents: 500, effort: 'LOW', leadDays: 14, successPct: 80, kinds: ['AIRLINE', 'HOTEL', 'SHOPPING'], note: 'A small purchase you need anyway; points post after the merchant confirms.' },
+  { key: 'dining', label: 'Dining program purchase', tokens: ['DINING', 'EARN'], estCostCents: 2000, effort: 'LOW', leadDays: 14, successPct: 80, kinds: ['AIRLINE', 'DINING'], note: 'Register a card and dine at a participating restaurant.' },
+  { key: 'transfer-in', label: 'Transfer a small block of bank points', tokens: ['TRANSFER', 'EARN'], estCostCents: 1000, effort: 'LOW', leadDays: 3, successPct: 95, kinds: ['AIRLINE', 'HOTEL'], note: 'Costs the transferred points (usually a 1,000-point minimum); fast, but transfers cannot be undone.' },
+  { key: 'buy-points', label: 'Buy a small number of points', tokens: ['PURCHASE', 'EARN'], estCostCents: 3500, effort: 'LOW', leadDays: 1, successPct: 98, kinds: ['AIRLINE', 'HOTEL'], note: 'Usually the most expensive option; only if the deadline is close.' },
+  { key: 'partner-purchase', label: 'Partner purchase (flowers, wine, car rental)', tokens: ['PARTNER', 'EARN'], estCostCents: 2500, effort: 'MEDIUM', leadDays: 21, successPct: 75, kinds: ['AIRLINE', 'HOTEL'], note: 'Needs a purchase from a partner and time to post.' },
+  { key: 'stay-or-fly', label: 'Take a qualifying stay or flight', tokens: ['STAY', 'FLIGHT'], estCostCents: 15_000, effort: 'HIGH', leadDays: 30, successPct: 95, kinds: ['AIRLINE', 'HOTEL', 'RENTAL_CAR', 'CRUISE'], note: 'Only if you were going anyway.' },
 ];
 
 export interface PreserveAdvice extends PreserveMethod {

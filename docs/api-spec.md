@@ -478,3 +478,19 @@ Design: `docs/merchant-offer-platform.md`.
 | POST | `/ai/workflows/loyalty-review` · `/award-trip` | audited workflows |
 
 Design: `docs/loyalty-platform.md`.
+
+## Loyalty automation (branch pw-2026-feature-loyalty-automation)
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/loyalty/ingest/snapshot` | extension capture; `Authorization: Bearer pw_pat_…` with scope `loyalty:ingest` (not a login token); `{program, text, pageHash?, capturedAt?, memberDigits?}` |
+| GET · POST · DELETE | `/loyalty/tokens[/:id]` | extension tokens (shown once, scope `loyalty:ingest`, max 5) |
+| POST | `/loyalty/import/email-sample` | `{fromDomain, subject, text, apply?}` — preview what a program email would produce, or apply it |
+| POST | `/loyalty/import/statement` | multipart PDF; preview, or `apply=true` to import |
+| GET | `/loyalty/observations` | every value any source reported, with outcome and reason (`outcome`, `accountId` filters) |
+| POST | `/loyalty/observations/:id/resolve` | `{decision: ACCEPT \| REJECT}` for conflicts and pending changes |
+| GET | `/loyalty/refresh-status` | per account: priority, freshness, confidence, source, next refresh, plan |
+| POST | `/loyalty/refresh` · `/loyalty/accounts/:id/refresh` | sync connected mailboxes now and report what is still stale |
+| GET | `/loyalty/health` · `/loyalty/audit` · `/loyalty/changes` | health 0–100, the eight audit questions, recent changes |
+| PATCH | `/loyalty/accounts/:id` | now routed through the provenance funnel; `force: true` overrides a higher-confidence value |
+| POST | `/ai/workflows/loyalty-audit` | audited workflow |

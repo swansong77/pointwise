@@ -31,3 +31,4 @@ raw/
 # OS / editor
 .DS_Store
 !backend/prisma/migrations/**/*.sql
+extension/dist/

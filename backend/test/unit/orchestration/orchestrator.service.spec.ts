@@ -37,13 +37,17 @@ function build(models: Array<{ kind: string; name?: string }>, opts: { consent?:
     memberships: jest.fn().mockResolvedValue([{ member: "Me", view: { state: "EXPIRING", headline: "Global Entry expires in 46 day(s)." }, creditSuggestion: "Use the credit on Amex Platinum for renewal." }]),
     evaluateTrip: jest.fn().mockResolvedValue({ pointsEstimated: true, estimateNote: "Estimated.", options: [{ programName: "United MileagePlus", pointsNeeded: 170_000, shortfall: 0, reasons: ["Your balances fully cover this award."], warnings: [] }], certificates: [{ usable: true, name: "IHG Free Night", member: "Me", note: "Valid for the stay." }] }),
   };
+  const loyaltyAuto = {
+    audit: jest.fn().mockResolvedValue({ questions: [{ question: "What loyalty assets are expiring next?", answer: "Test Air: 25,000 miles in 12 day(s) (confidence 80%)." }, { question: "What accounts have not refreshed recently?", answer: "1: Test Stay (Me)." }] }),
+    health: jest.fn().mockResolvedValue({ household: { score: 72, label: "NEEDS_ATTENTION", reasons: ["Test Stay is the weakest account (40)"] } }),
+  };
   const chat = jest.fn().mockResolvedValue({ response: { text: "Narrated text" } });
   const router = {
     usableModels: jest.fn().mockResolvedValue(models.map((m, i) => ({ id: `m${i}`, displayName: m.name ?? m.kind, capabilities: [], inputPrice: null, outputPrice: null, provider: { kind: m.kind } }))),
     chat,
   };
-  const svc = new OrchestratorService(prisma as never, services.portfolio as never, services.strategy as never, services.smart as never, services.benefits as never, router as never, new PromptsService(prisma as never), offers as never, loyalty as never);
-  return { svc, prisma, chat, created, services, offers, loyalty };
+  const svc = new OrchestratorService(prisma as never, services.portfolio as never, services.strategy as never, services.smart as never, services.benefits as never, router as never, new PromptsService(prisma as never), offers as never, loyalty as never, loyaltyAuto as never);
+  return { svc, prisma, chat, created, services, offers, loyalty, loyaltyAuto };
 }
 
 describe("TC-ORC: orchestrator service", () => {
@@ -91,7 +95,7 @@ describe("TC-ORC: orchestrator service", () => {
   it("an unknown workflow is a 404 and lists the known ones", async () => {
     const { svc } = build([]);
     await expect(svc.run("u1", "nope")).rejects.toBeInstanceOf(NotFoundException);
-    expect(svc.list().map((w) => w.key)).toEqual(["next-card", "portfolio-review", "purchase-plan", "offer-review", "loyalty-review", "award-trip"]);
+    expect(svc.list().map((w) => w.key)).toEqual(["next-card", "portfolio-review", "purchase-plan", "offer-review", "loyalty-review", "award-trip", "loyalty-audit"]);
     expect(svc.list()[0].steps.map((s) => s.privacy)).toEqual(["PUBLIC", "USER", "USER", "USER", "USER"]);
   });
   it("the portfolio-review workflow reports fees, benefit use and 5/24", async () => {
@@ -175,7 +179,7 @@ describe("TC-ORC: offer workflows", () => {
     expect(r.answer).toMatch(/Audit trail, last 30 days: 2 recommended/);
   });
   it("lists the four workflows", () => {
-    expect(build([]).svc.list().map((w) => w.key)).toEqual(["next-card", "portfolio-review", "purchase-plan", "offer-review", "loyalty-review", "award-trip"]);
+    expect(build([]).svc.list().map((w) => w.key)).toEqual(["next-card", "portfolio-review", "purchase-plan", "offer-review", "loyalty-review", "award-trip", "loyalty-audit"]);
   });
 });
 
@@ -215,5 +219,28 @@ describe("TC-ORC: loyalty workflows", () => {
     loyalty.statuses.mockResolvedValue([]);
     loyalty.memberships.mockResolvedValue([]);
     expect((await svc.run("u1", "loyalty-review", {})).answer).toMatch(/Nothing needs attention right now/);
+  });
+});
+
+describe("TC-ORC: loyalty audit workflow", () => {
+  it("answers the audit questions from the engines and leads with the health score", async () => {
+    const { svc, loyaltyAuto } = build([]);
+    const r = await svc.run("u1", "loyalty-audit", {});
+    expect(r.status).toBe("COMPLETED");
+    expect(r.privacy).toBe("USER");
+    expect(r.steps.map((s) => [s.id, s.agent, s.engine])).toEqual([["audit", "loyalty-audit", "loyalty-audit/1"], ["health", "refresh-health", "loyalty-health/1"]]);
+    expect(loyaltyAuto.audit).toHaveBeenCalledWith("u1", [], expect.any(Date));
+    expect(r.answer).toMatch(/^Loyalty health: 72\/100 \(needs attention\)\. Test Stay is the weakest account \(40\)\./);
+    expect(r.answer).toMatch(/What loyalty assets are expiring next\? Test Air: 25,000 miles in 12 day\(s\)/);
+    expect(r.answer).toMatch(/What accounts have not refreshed recently\? 1: Test Stay \(Me\)\./);
+    expect(r.answer).toMatch(/confirm with the program/);
+  });
+  it("the health step is optional: the audit still completes without it", async () => {
+    const { svc, loyaltyAuto } = build([]);
+    loyaltyAuto.health.mockRejectedValue(new Error("down"));
+    const r = await svc.run("u1", "loyalty-audit", {});
+    expect(r.status).toBe("COMPLETED");
+    expect(r.steps[1].status).toBe("FAILED"); // recorded, but an optional step does not fail the run
+    expect(r.answer).not.toMatch(/Loyalty health/);
   });
 });

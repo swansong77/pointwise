@@ -3,6 +3,7 @@
  * rules, elite status progress, and memberships. Every judgement carries its reasons so it can be audited.
  */
 import { daysBetween } from './loyalty-expiration';
+import { Condition, evaluateConditions } from './loyalty-conditions';
 
 export const EXPIRING_SOON_DAYS = 90;
 
@@ -27,6 +28,8 @@ export interface Cert {
   restrictions: string | null;
   transferable: boolean;
   potentialValueCents: number;
+  /** structured rules parsed from the restriction text (loyalty-conditions.ts) */
+  conditions?: Condition[];
 }
 
 export type CertState = 'AVAILABLE' | 'EXPIRING' | 'EXPIRED' | 'USED' | 'CANCELLED';
@@ -55,6 +58,10 @@ export interface Stay {
   cashRateCents: number;
   checkIn: Date;
   nights?: number;
+  /** hotel category 1–9, when known */
+  category?: number;
+  bookingType?: 'AWARD' | 'CASH';
+  originCountry?: string;
 }
 
 export interface RedemptionCheck {
@@ -94,6 +101,13 @@ export function checkFreeNight(c: Cert, stay: Stay, now: Date): RedemptionCheck 
   }
   const ranges = parseBlackout(c.blackout);
   if (ranges.some((r) => stay.checkIn >= r.from && stay.checkIn <= r.to)) reasons.push('The check-in date falls in a blackout period.');
+  if (c.conditions?.length) {
+    // point cap, blackout and expiry are already enforced above from the structured fields
+    const rest = c.conditions.filter((x) => !['POINT_CAP', 'BLACKOUT', 'EXPIRATION_RULE'].includes(x.type));
+    const ev = evaluateConditions(rest, { pointsPerNight: stay.pointsPerNight, category: stay.category, bookingType: stay.bookingType ?? 'AWARD', originCountry: stay.originCountry, date: stay.checkIn });
+    reasons.push(...ev.violations);
+    warnings.push(...ev.warnings);
+  }
   if (c.blackout && !ranges.length) warnings.push(`Blackout rule could not be read automatically: "${c.blackout}". Check it before booking.`);
   if (c.restrictions) warnings.push(`Restrictions: ${c.restrictions}`);
   if (view.state === 'EXPIRING' && view.daysLeft != null) warnings.push(`Expires in ${view.daysLeft} day(s).`);

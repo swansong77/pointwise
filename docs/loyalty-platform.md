@@ -59,3 +59,22 @@ Output: expiry date, days left, points at risk, **risk score 0–100** (by days 
 - Award prices are a coarse estimate unless the member enters the exact points; award availability is not known.
 - Transfer-bonus history is only what Pointwise has observed (or an admin recorded); it starts empty, so early advice has low confidence.
 - Hotel cash prices for certificate valuation are entered by the member; there is no live hotel search.
+
+## 7. Automation (branch pw-2026-feature-loyalty-automation)
+Sources, provenance and conflicts: `loyalty-architecture-review.md`, `email-loyalty-imports.md`, `loyalty-extension.md`. Research: `loyalty-aggregation-research.md`, `awardwallet-comparison.md`.
+
+| Part | Where |
+|---|---|
+| Provenance and conflict rules (source scale 100/90/80/75/70/50/25) | `domain/loyalty-provenance.ts` |
+| Ingestion funnel, observations, conflict resolution | `loyalty/loyalty-ingest.service.ts` |
+| Email / page parser (33 programs), statement parser | `domain/loyalty-email.ts`, `domain/loyalty-statement.ts` |
+| Certificate condition engine ("Valid up to 40,000 points.", "Valid for Category 1-4 hotels.", …) | `domain/loyalty-conditions.ts` |
+| Refresh priority, schedule, staleness, refresh plan | `domain/loyalty-refresh.ts`, `loyalty/loyalty-automation.service.ts` |
+| Health score 0–100 (account, program, household) | `domain/loyalty-health.ts` |
+| Weekly audit (the eight questions), recent changes | `loyalty-automation.service.ts`, workflow `loyalty-audit` |
+| Jobs | `refresh-loyalty` (hourly, syncs mailboxes for urgent due accounts, flags stale data), `loyalty-audit` (weekly) |
+| Expiration alerts | 365 / 180 / 120 / 90 / 60 / 30 / 14 / 7 / 1 days and on expiry; prevention methods carry cost, effort and expected success |
+| UI | Loyalty → Miles, Points, Transfer bonuses, Refresh health, Imports & conflicts; source badges, reliability and refresh confidence on every account |
+| Extension | `extension/` |
+
+What "automatic" means: an account updates itself when the member's own mail, statements or browser session supply the data. Stale accounts say exactly what to do. Pointwise never signs in to a program.

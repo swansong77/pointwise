@@ -11,6 +11,7 @@
  *   "… at UBER, a pending authorization or purchase in the amount of $23.45 … ending in 1234" (Capital One-style)
  */
 import { DEFAULT_ISSUER_DOMAINS } from "../catalog-refresh/fetcher";
+import { loyaltySenderDomains } from "./loyalty-email";
 
 export const ALERT_SENDER_DOMAINS = [
   ...DEFAULT_ISSUER_DOMAINS,
@@ -29,7 +30,7 @@ export function senderDomains(env: NodeJS.ProcessEnv = process.env): string[] {
     .split(",")
     .map((d) => d.trim().toLowerCase())
     .filter(Boolean);
-  return [...ALERT_SENDER_DOMAINS, ...extra];
+  return [...new Set([...ALERT_SENDER_DOMAINS, ...loyaltySenderDomains(), ...extra])];
 }
 
 export function domainOf(address: string): string {

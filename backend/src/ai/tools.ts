@@ -7,6 +7,7 @@ import { OffersService } from '../offers/offers.service';
 import { OfferAnalysisService } from '../offers/offer-analysis.service';
 import { OfferIntelService } from '../offers/offer-intel.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
+import { LoyaltyAutomationService } from '../loyalty/loyalty-automation.service';
 import { BenefitsService } from '../portfolio/benefits';
 import { HouseholdsService } from '../portfolio/households';
 import { PortfolioService } from '../portfolio/portfolio';
@@ -87,6 +88,7 @@ export class ToolRegistry {
     private readonly offerAnalysis: OfferAnalysisService,
     private readonly offerIntel: OfferIntelService,
     private readonly loyalty: LoyaltyService,
+    private readonly loyaltyAuto: LoyaltyAutomationService,
   ) {
     this.tools = this.build();
   }
@@ -690,6 +692,37 @@ export class ToolRegistry {
           const r = await this.loyalty.evaluateTrip(ctx.userId, { destination: S(input.destination) ?? 'trip', dateFrom: S(input.dateFrom) ?? '', dateTo: S(input.dateTo) ?? '', cabin, pointsNeeded: N(input.pointsNeeded) } as never, ctx.now);
           const best = r.options[0];
           return { summary: best ? `Best: ${best.programName} (${best.pointsNeeded.toLocaleString('en-US')} points${r.pointsEstimated ? ', estimated' : ''}). ${[...best.reasons, ...best.warnings].join(' ')}` : 'No program in reach for this trip.', data: r };
+        },
+      },
+      {
+        name: 'get_loyalty_health',
+        description: 'Loyalty health score 0-100 for the household, each program and each account, with the factors behind it.',
+        inputSchema: obj({}),
+        readOnly: true,
+        handler: async (ctx) => {
+          const h = await this.loyaltyAuto.health(ctx.userId, [], ctx.now);
+          return { summary: `Household health ${h.household.score}/100 (${h.household.label.toLowerCase().replace('_', ' ')}).${h.household.reasons.length ? ` ${h.household.reasons.join('; ')}.` : ''}\n${h.accounts.slice(0, 8).map((a) => `• ${a.member} ${a.program}: ${a.score}`).join('\n')}`, data: h };
+        },
+      },
+      {
+        name: 'get_stale_accounts',
+        description: 'Loyalty accounts whose data is stale or never refreshed, with priority, confidence and the steps to refresh each.',
+        inputSchema: obj({}),
+        readOnly: true,
+        handler: async (ctx) => {
+          const r = await this.loyaltyAuto.refreshStatus(ctx.userId, ctx.now);
+          const stale = r.accounts.filter((a) => a.freshness === 'STALE' || a.freshness === 'NEVER' || a.freshness === 'AGING');
+          return { summary: stale.length ? stale.slice(0, 10).map((a) => `• ${a.member} ${a.program}: ${String(a.freshness).toLowerCase()}, ${String(a.priority).toLowerCase()} priority — ${(a.plan as Array<{ text: string }>)[0]?.text ?? ''}`).join('\n') : 'Every account is current.', data: r };
+        },
+      },
+      {
+        name: 'get_recent_balance_changes',
+        description: 'Balance, status and certificate changes recorded in the last N days, with the source and reliability of each.',
+        inputSchema: obj({ days: num('Look-back window in days', { exclusiveMinimum: 0 }) }),
+        readOnly: true,
+        handler: async (ctx, input) => {
+          const r = await this.loyaltyAuto.recentChanges(ctx.userId, Math.min(N(input.days) ?? 30, 365), ctx.now);
+          return { summary: r.changes.length ? r.changes.slice(0, 10).map((c) => `• ${c.program}: ${c.what}${c.source ? ` (${String(c.source).toLowerCase()}, ${c.reliability})` : ''}`).join('\n') : 'No recent changes.', data: r };
         },
       },
       {

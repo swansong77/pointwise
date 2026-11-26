@@ -93,3 +93,22 @@ Format: Context · Options · Decision · Consequences · Status. Evidence and i
 ## ADR-016 — Award planning reuses the transfer planner and states its estimates
 - **Decision:** award trips call the existing `planAward` per candidate program (balances first, then lowest-cost transfers, with active bonuses) and rank the results with the trip's preferences, expiring points and certificates. Without the exact points the price is a coarse table flagged as an estimate; transfer time beyond the departure date is penalised.
 - **Status:** accepted.
+
+---
+## ADR-017 — Loyalty automation: hybrid sources behind one ingestion funnel
+- **Context:** `loyalty-aggregation-research.md`, `loyalty-architecture-review.md`. No free permitted consumer API or aggregator returns loyalty balances; AwardWallet's API is business-only and its parsing uses the user's program passwords; Chase and Rakuten terms prohibit scripts and bots (verified).
+- **Options:** official APIs · aggregators · email · server-side browser automation · hybrid.
+- **Decision:** hybrid of email, statement PDFs, a user-side browser extension and manual entry. All observations enter through `LoyaltyIngestService.apply`; API and aggregator adapters share an interface but stay disabled. Server-side automation is rejected.
+- **Consequences:** no credentials held, free, auditable; freshness depends on the user's own data, which the UI states. **Status:** accepted.
+
+## ADR-018 — Source reliability and conflict policy
+- **Decision:** Official API 100, Aggregator 90, Email 80, Statement 75, Extension 70, AI-detected 50, Manual 25. A lower-reliability observation never overwrites a higher one; the same value confirms; different values from sources within 10 points are a conflict for the user; stale high-confidence data is flagged and newer lower observations wait as pending. Manual edits go through the same funnel.
+- **Status:** accepted.
+
+## ADR-019 — Browser extension security model
+- **Decision:** Manifest V3, read-only, user-initiated capture, no credentials read or sent, no remote code, personal access token scoped `loyalty:ingest` (revocable, expiring, rate- and size-limited). Terms risk per program is shown before enabling.
+- **Status:** accepted.
+
+## ADR-020 — Refresh tiers
+- **Decision:** CRITICAL / HIGH / NORMAL / LOW by expiry, pending changes and stale data; event-driven, daily, weekly, scheduled and manual refresh; refresh confidence decays with age; stale accounts produce a "needs refresh" action rather than a silent gap.
+- **Status:** accepted.

@@ -78,6 +78,8 @@ model User {
   eliteStatuses EliteStatus[]
   memberships Membership[]
   awardTrips AwardTrip[]
+  loyaltyObservations LoyaltyObservation[]
+  loyaltySyncRuns LoyaltySyncRun[]
 }
 
 model PasswordResetToken {
@@ -642,6 +644,7 @@ model EmailInbox {
 enum InboundKind {
   ALERT                 // a transaction alert
   STATEMENT             // a statement PDF attachment
+  LOYALTY               // a loyalty program email or statement (balance, status, certificate, expiry)
   FORWARD_CONFIRMATION  // Gmail asks to confirm forwarding
   IGNORED               // not a transaction (marketing, payment confirmation, declined …)
 }
@@ -808,6 +811,7 @@ model Subscription {
 }
 
 enum NotificationType {
+  LOYALTY_STALE
   LOYALTY_EXPIRING
   BENEFIT_EXPIRING
   OFFER_EXPIRING
@@ -849,6 +853,7 @@ model NotificationPreference {
   transferBonuses   Boolean @default(true)
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   loyaltyExpiring Boolean @default(true)
+  loyaltyStale Boolean @default(true)
 }
 
 model AnalyticsEvent {
@@ -2041,6 +2046,16 @@ model LoyaltyAccount {
 
   @@index([userId])
   @@index([profileId])
+  /// per-field provenance: { field: { sourceType, reliability, observedAt, verification } }
+  provenance    Json                @default("{}")
+  balanceSource LoyaltyDataSource?
+  balanceObservedAt DateTime?
+  refreshConfidence Int             @default(0)
+  lastSuccessfulRefreshAt DateTime?
+  nextRefreshAt DateTime?
+  refreshPriority RefreshPriority   @default(NORMAL)
+  observations LoyaltyObservation[]
+  syncRuns     LoyaltySyncRun[]
 }
 
 /// Every balance change (and monthly snapshots): the history behind charts, and the redeemed / expired / transferred totals.
@@ -2096,6 +2111,13 @@ model LoyaltyCertificate {
 
   @@index([userId, status])
   @@index([expiresAt])
+  source        LoyaltyDataSource   @default(MANUAL)
+  reliability   Int                 @default(25)
+  observedAt    DateTime?
+  verification  LoyaltyVerification @default(UNVERIFIED)
+  /// structured rules parsed from the restriction text
+  conditions    Json?
+  externalKey   String?
 }
 
 /// Elite status for one qualification period; earlier rows are the qualification history.
@@ -2128,6 +2150,10 @@ model EliteStatus {
 
   @@index([userId])
   @@index([profileId, programName])
+  source        LoyaltyDataSource   @default(MANUAL)
+  reliability   Int                 @default(25)
+  observedAt    DateTime?
+  verification  LoyaltyVerification @default(UNVERIFIED)
 }
 
 /// CLEAR, TSA PreCheck, Global Entry, lounge access and similar memberships.
@@ -2155,6 +2181,10 @@ model Membership {
   profile          Profile        @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  source        LoyaltyDataSource   @default(MANUAL)
+  reliability   Int                 @default(25)
+  observedAt    DateTime?
+  verification  LoyaltyVerification @default(UNVERIFIED)
 }
 
 /// Observed transfer bonuses over time (history, averages, seasonal expectation).
@@ -2190,4 +2220,100 @@ model AwardTrip {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+
+// ───────────── loyalty automation ─────────────
+
+enum LoyaltyDataSource {
+  OFFICIAL_API
+  AGGREGATOR
+  EMAIL
+  STATEMENT
+  EXTENSION
+  AI_DETECTED
+  MANUAL
+}
+
+enum LoyaltyVerification {
+  UNVERIFIED
+  CROSS_CONFIRMED
+}
+
+enum ObservationOutcome {
+  ACCEPTED   // applied
+  CONFIRMED  // agrees with the stored value
+  KEPT       // lower reliability or older; stored value stands
+  CONFLICT   // disagrees with a similarly reliable source; needs the member
+  PENDING    // stored value is stale; waits for the member
+  REJECTED   // the member declined it
+}
+
+enum RefreshPriority {
+  CRITICAL
+  HIGH
+  NORMAL
+  LOW
+}
+
+enum SyncStatus {
+  OK
+  PARTIAL
+  FAILED
+}
+
+/// Every value any source reports, with where it came from and what was done with it (the audit trail).
+model LoyaltyObservation {
+  id          String             @id @default(uuid())
+  userId      String
+  accountId   String?
+  /// ACCOUNT | CERTIFICATE | STATUS | MEMBERSHIP
+  entity      String             @db.VarChar(12)
+  entityId    String?
+  field       String             @db.VarChar(40)
+  value       Json
+  sourceType  LoyaltyDataSource
+  reliability Int
+  observedAt  DateTime
+  /// parser rule, extractor or import that produced it
+  method      String             @db.VarChar(80)
+  /// hash of the message / statement / snapshot; no content is stored
+  evidenceHash String            @db.VarChar(64)
+  dedupeKey   String             @db.VarChar(200)
+  outcome     ObservationOutcome
+  reason      String
+  /// value that was stored when this was observed (for conflicts)
+  storedValue Json?
+  resolvedAt  DateTime?
+  createdAt   DateTime           @default(now())
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account     LoyaltyAccount?    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, createdAt])
+  @@index([accountId, createdAt])
+  @@index([userId, outcome])
+}
+
+/// One refresh cycle: what ran, how, and what changed.
+model LoyaltySyncRun {
+  id           String         @id @default(uuid())
+  userId       String
+  accountId    String?
+  /// EMAIL | STATEMENT | EXTENSION | MANUAL | SCHEDULED
+  method       String         @db.VarChar(16)
+  /// EVENT | DAILY | WEEKLY | MANUAL | SCHEDULED
+  trigger      String         @db.VarChar(16)
+  status       SyncStatus
+  startedAt    DateTime       @default(now())
+  finishedAt   DateTime?
+  observations Int            @default(0)
+  changes      Int            @default(0)
+  error        String?
+  detail       Json?
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account      LoyaltyAccount? @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startedAt])
+  @@index([accountId, startedAt])
 }

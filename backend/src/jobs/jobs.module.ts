@@ -24,6 +24,7 @@ import { AiCoreModule } from "../ai/ai.module";
 import { MailboxCoreModule } from "../mailbox/mailbox.module";
 import { OfferCoreModule } from "../offers/offer-jobs.service";
 import { LoyaltyCoreModule } from "../loyalty/loyalty.module";
+import { LoyaltyAutomationCoreModule } from "../loyalty/loyalty-automation.module";
 import { CardRefreshCoreModule } from "../catalog-refresh/card-refresh.module";
 import { CardResearchCoreModule } from "../catalog-research/card-research.module";
 import { JOB_NAMES, JOB_QUEUE, JobName, JobsService } from "./jobs.service";
@@ -54,6 +55,10 @@ export const SCHEDULE: Record<JobName, string> = {
   "scan-loyalty-expirations": "45 13 * * *",
   /** a balance snapshot per account on the 1st */
   "snapshot-loyalty-balances": "30 0 1 * *",
+  /** syncs mailboxes for members with urgent due accounts; nudges about stale data */
+  "refresh-loyalty": "10 * * * *",
+  /** weekly loyalty audit (Mondays) */
+  "loyalty-audit": "30 14 * * 1",
 };
 
 const JobNameEnum = Object.fromEntries(JOB_NAMES.map((n) => [n, n])) as Record<
@@ -162,6 +167,7 @@ const jobDeps = () => [
   MailboxCoreModule,
   OfferCoreModule,
   LoyaltyCoreModule,
+  LoyaltyAutomationCoreModule,
 ];
 
 @Module({

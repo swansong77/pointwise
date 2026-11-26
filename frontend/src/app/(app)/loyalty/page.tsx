@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, PageHeader, Panel, Select, Spinner } from '@/components/ui';
 import { money, shortDate } from '@/lib/format';
+import { HealthPanel, ImportsAndConflicts, RefreshHealth, SourceBadge } from '@/components/loyalty-automation';
 import { useApiMutation, useAuthedQuery } from '@/lib/queries';
 import {
   AccountView,
@@ -36,16 +37,20 @@ import {
   VERDICT_LABEL,
 } from '@/lib/loyalty';
 
-type Tab = 'overview' | 'points' | 'certificates' | 'status' | 'expirations' | 'valuation' | 'household' | 'award';
+type Tab = 'overview' | 'miles' | 'points' | 'transfers' | 'refresh' | 'imports' | 'certificates' | 'status' | 'expirations' | 'valuation' | 'household' | 'award';
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: 'overview', label: 'Loyalty dashboard' },
+  { id: 'miles', label: 'Miles' },
   { id: 'points', label: 'Points' },
+  { id: 'transfers', label: 'Transfer bonuses' },
   { id: 'certificates', label: 'Certificates' },
   { id: 'status', label: 'Status & memberships' },
   { id: 'expirations', label: 'Expirations' },
   { id: 'valuation', label: 'Asset valuation' },
   { id: 'household', label: 'Household' },
   { id: 'award', label: 'Award travel' },
+  { id: 'refresh', label: 'Refresh health' },
+  { id: 'imports', label: 'Imports & conflicts' },
 ];
 
 const KEYS = [['loyalty']] as const;
@@ -94,6 +99,7 @@ function Overview() {
         <Stat label="Expired" value={money(v.expiredCents)} />
         <Stat label="Recovered" value={money(v.recoveredCents)} tone="text-emerald-700" />
       </dl>
+      <HealthPanel />
       {empty && <EmptyState title="Nothing tracked yet">Add your loyalty accounts on the Points tab, then certificates, status and memberships. Pointwise will watch every expiration for you.</EmptyState>}
       {d.expiringAccounts.length > 0 && (
         <Panel title="Needs attention: points">
@@ -247,6 +253,7 @@ function AccountRow({ a }: { a: AccountView }) {
         <span className="ml-auto font-semibold">{pointsLabel(a.balance, a.unit)}</span>
         <span className="text-slate-600">{money(a.valueCents)}</span>
         <Badge tone={RISK_TONE[p.level]}>{p.expiresAt ? `${RISK_LABEL[p.level]} · ${daysLabel(p.daysLeft)}` : RISK_LABEL[p.level]}</Badge>
+        <SourceBadge source={a.balanceSource} reliability={a.balanceReliability} />
         <button type="button" className="text-xs text-brand-700 hover:underline" onClick={() => setOpen(!open)} aria-expanded={open}>
           {open ? 'Close' : 'Details'}
         </button>
@@ -304,11 +311,13 @@ function AccountRow({ a }: { a: AccountView }) {
   );
 }
 
-function Points() {
-  const q = useAuthedQuery<AccountView[]>(['loyalty', 'accounts'], '/loyalty/accounts');
+function Points({ only }: { only: 'miles' | 'points' }) {
+  const q0 = useAuthedQuery<AccountView[]>(['loyalty', 'accounts'], '/loyalty/accounts');
+  const q = { ...q0, data: q0.data?.filter((a) => (only === 'miles' ? a.kind === 'AIRLINE' : a.kind !== 'AIRLINE')) };
   return (
-    <div className="space-y-5">
-      <AddAccount />
+    <div className="space-y-5" data-testid={`${only}-tab`}>
+      {only === 'points' && <AddAccount />}
+      {only === 'miles' && <p className="text-sm text-slate-600">Airline miles. Add an airline account on the Points tab; it appears here.</p>}
       {q.isLoading && <Spinner />}
       {q.data && q.data.length === 0 && <EmptyState title="No accounts yet">Add an airline, hotel or bank rewards account above.</EmptyState>}
       {q.data && q.data.length > 0 && (
@@ -670,6 +679,34 @@ function HouseholdTab() {
 
 // ───────────── award travel ─────────────
 
+function TransferBonuses() {
+  const routes = useAuthedQuery<TransferRoute[]>(['loyalty', 'transfers'], '/loyalty/transfers');
+  if (routes.isLoading) return <Spinner />;
+  const list = routes.data ?? [];
+  return (
+    <Panel title="Transfer partners and bonuses" data-testid="transfer-tab">
+      <p className="mb-2 text-sm text-slate-600">Ratios are from general knowledge; confirm in your bank's portal. Bonus history builds as Pointwise observes bonuses, so early advice has low confidence.</p>
+      {list.length === 0 ? (
+        <EmptyState title="No transfer routes">Transfer partners appear once programs and bank currencies are in the catalog.</EmptyState>
+      ) : (
+        <table className="w-full text-sm">
+          <thead className="text-left text-xs text-slate-600"><tr><th className="py-1">Route</th><th>Ratio</th><th>Bonus</th><th>Advice</th></tr></thead>
+          <tbody>
+            {list.map((r) => (
+              <tr key={`${r.currency}-${r.program}`} className="border-t border-slate-100 align-top">
+                <td className="py-1">{r.currencyName} → {r.programName}</td>
+                <td>{r.ratio}</td>
+                <td>{r.activeBonusPercent ? `${r.activeBonusPercent}%` : '—'}</td>
+                <td><Badge tone={VERDICT_LABEL[r.advice.verdict].tone}>{VERDICT_LABEL[r.advice.verdict].label}</Badge> <span className="text-xs text-slate-700">{r.advice.text}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Panel>
+  );
+}
+
 function AwardTravel() {
   const routes = useAuthedQuery<TransferRoute[]>(['loyalty', 'transfers'], '/loyalty/transfers');
   const [f, setF] = useState({ destination: '', from: '', to: '', cabin: 'BUSINESS', region: 'LONG_HAUL', points: '', airline: '', hotel: '' });
@@ -760,7 +797,11 @@ export default function LoyaltyPage() {
         ))}
       </div>
       {tab === 'overview' && <Overview />}
-      {tab === 'points' && <Points />}
+      {tab === 'miles' && <Points only="miles" />}
+      {tab === 'points' && <Points only="points" />}
+      {tab === 'transfers' && <TransferBonuses />}
+      {tab === 'refresh' && <RefreshHealth />}
+      {tab === 'imports' && <ImportsAndConflicts />}
       {tab === 'certificates' && <Certificates />}
       {tab === 'status' && <StatusAndMemberships />}
       {tab === 'expirations' && <Expirations />}

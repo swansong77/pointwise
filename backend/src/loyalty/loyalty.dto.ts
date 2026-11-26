@@ -40,6 +40,7 @@ export class UpdateAccountDto {
   @ApiPropertyOptional() @IsOptional() @IsDateString() lastActivityAt?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() transferable?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(1000) notes?: string;
+  @ApiPropertyOptional({ description: 'replace a higher-confidence stored value with this manual entry' }) @IsOptional() @IsBoolean() force?: boolean;
 }
 
 export class AccountEventDto {

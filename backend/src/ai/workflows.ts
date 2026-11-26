@@ -7,6 +7,7 @@ import { SmartRecommendationService } from '../strategy/smart-recommendation.ser
 import { StrategyService } from '../strategy/strategy.service';
 import { OfferAnalysisService } from '../offers/offer-analysis.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
+import { LoyaltyAutomationService } from '../loyalty/loyalty-automation.service';
 import { SmartResult } from './workflow-types';
 
 export interface WfCtx {
@@ -25,6 +26,7 @@ export interface WfDeps {
   benefits: BenefitAuditService;
   offers: OfferAnalysisService;
   loyalty: LoyaltyService;
+  loyaltyAuto: LoyaltyAutomationService;
 }
 
 const $ = (c: number) => `$${Math.round(c / 100).toLocaleString('en-US')}`;
@@ -274,4 +276,25 @@ export function awardTripWorkflow(d: WfDeps): WorkflowDef<WfCtx> {
   };
 }
 
-export const WORKFLOW_KEYS = ['next-card', 'portfolio-review', 'purchase-plan', 'offer-review', 'loyalty-review', 'award-trip'] as const;
+/** Weekly loyalty audit: the eight questions, answered from the engines, plus the health score. */
+export function loyaltyAuditWorkflow(d: WfDeps): WorkflowDef<WfCtx> {
+  return {
+    key: 'loyalty-audit',
+    title: 'Audit my loyalty assets',
+    steps: [
+      { id: 'audit', agentKey: 'loyalty-audit', engine: 'loyalty-audit/1', privacy: 'USER', run: (c) => d.loyaltyAuto.audit(c.userId, [], c.now) },
+      { id: 'health', agentKey: 'refresh-health', engine: 'loyalty-health/1', privacy: 'USER', optional: true, run: (c) => d.loyaltyAuto.health(c.userId, [], c.now) },
+    ],
+    compose: (r): Composed => {
+      const a = r.audit as Awaited<ReturnType<LoyaltyAutomationService['audit']>> | undefined;
+      const h = r.health as Awaited<ReturnType<LoyaltyAutomationService['health']>> | undefined;
+      const lines: string[] = [];
+      if (h) lines.push(`Loyalty health: ${h.household.score}/100 (${h.household.label.toLowerCase().replace('_', ' ')}).${h.household.reasons.length ? ` ${h.household.reasons.join('; ')}.` : ''}`);
+      for (const q of a?.questions ?? []) lines.push(`${q.question} ${q.answer}`);
+      lines.push('Dates come from each program’s policy and your records, with the confidence shown; confirm with the program.');
+      return { answer: lines.join('\n'), highlights: (a?.questions ?? []).slice(0, 2).map((q) => q.question) };
+    },
+  };
+}
+
+export const WORKFLOW_KEYS = ['next-card', 'portfolio-review', 'purchase-plan', 'offer-review', 'loyalty-review', 'award-trip', 'loyalty-audit'] as const;

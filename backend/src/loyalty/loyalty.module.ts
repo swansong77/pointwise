@@ -9,6 +9,7 @@ import { alertText, alertThreshold } from '../domain/loyalty-expiration';
 import { certState } from '../domain/loyalty-assets';
 import { AccountEventDto, AwardTripDto, BonusRecordDto, CertificateDto, CertificateQuery, CreateAccountDto, MembershipDto, RedemptionCheckDto, StatusDto, UpdateAccountDto, UpdateCertificateDto, UpdateMembershipDto, UpdateStatusDto } from './loyalty.dto';
 import { CreditInfo, LoyaltyService } from './loyalty.service';
+import { LoyaltyIngestModule } from './loyalty-ingest.service';
 
 const day = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -220,7 +221,7 @@ export class LoyaltyJobsService {
 export { certState };
 
 /** Providers only (no controllers): shared by the API, the worker and the AI tools. */
-@Module({ imports: [NotificationsModule], providers: [LoyaltyService, LoyaltyJobsService], exports: [LoyaltyService, LoyaltyJobsService] })
+@Module({ imports: [NotificationsModule, LoyaltyIngestModule], providers: [LoyaltyService, LoyaltyJobsService], exports: [LoyaltyService, LoyaltyJobsService, LoyaltyIngestModule] })
 export class LoyaltyCoreModule {}
 
 @Module({ imports: [LoyaltyCoreModule, BenefitAuditModule], controllers: [LoyaltyController, LoyaltyAdminController] })

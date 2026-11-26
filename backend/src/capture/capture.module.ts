@@ -27,6 +27,7 @@ import { IsBoolean, IsOptional, IsUUID } from "class-validator";
 import type { Request } from "express";
 import { AuthUser, CurrentUser, Public } from "../common/decorators";
 import { SpendCoreModule } from "../spend/spend.module";
+import { LoyaltyIngestModule } from "../loyalty/loyalty-ingest.service";
 import { CaptureService } from "./capture.service";
 
 export class InboxDto {
@@ -115,7 +116,7 @@ export class CaptureController {
 }
 
 /** Shared by the API, the mailbox connector and the worker (no controllers). */
-@Module({ imports: [SpendCoreModule], providers: [CaptureService], exports: [CaptureService] })
+@Module({ imports: [SpendCoreModule, LoyaltyIngestModule], providers: [CaptureService], exports: [CaptureService] })
 export class CaptureCoreModule {}
 
 @Module({ imports: [CaptureCoreModule], controllers: [CaptureController] })

@@ -71,6 +71,8 @@ describe('consent, models and agents', () => {
         'membership',
         'redemption',
         'valuation',
+        'loyalty-audit',
+        'refresh-health',
       ].sort(),
     );
     await api(app).put(`${V}/ai/settings`).set(t).send({ preferredModelId: '00000000-0000-4000-8000-000000000000' }).expect(404);
@@ -285,7 +287,7 @@ describe('admin: providers, models, agents, usage', () => {
 
   it('agent updates are validated', async () => {
     const agents = await api(app).get(`${V}/admin/ai/agents`).set(bearer(admin)).expect(200);
-    expect(agents.body).toHaveLength(27);
+    expect(agents.body).toHaveLength(29);
     await api(app).patch(`${V}/admin/ai/agents/offer-monitoring`).set(bearer(admin)).send({ tools: ['rm_rf'] }).expect(400);
     await api(app).patch(`${V}/admin/ai/agents/offer-monitoring`).set(bearer(admin)).send({ modelChain: ['00000000-0000-4000-8000-000000000000'] }).expect(400);
     await api(app).patch(`${V}/admin/ai/agents/offer-monitoring`).set(bearer(admin)).send({ maxSteps: 99 }).expect(400);

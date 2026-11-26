@@ -36,6 +36,16 @@ export interface AccountView {
   valueCents: number;
   policy: { type: string; months: number | null; resetConditions: string[]; verified: boolean; source: string | null };
   prediction: Prediction;
+  balanceSource: SourceType | null;
+  balanceReliability: number | null;
+  balanceObservedAt: string | null;
+  balanceVerification: string;
+  refreshConfidence: number;
+  lastObservedAt: string | null;
+  lastSuccessfulRefreshAt: string | null;
+  nextRefreshAt: string | null;
+  refreshPriority: 'CRITICAL' | 'HIGH' | 'NORMAL' | 'LOW';
+  freshness: 'FRESH' | 'AGING' | 'STALE' | 'NEVER';
 }
 
 export interface PreserveAdvice {
@@ -264,3 +274,94 @@ export function barHeights(months: Array<{ balance: number }>): number[] {
 }
 
 export const effortLabel = (e: PreserveAdvice['effort']) => ({ LOW: 'Easy', MEDIUM: 'Some effort', HIGH: 'Significant effort' })[e];
+
+
+// ───────────── automation ─────────────
+
+export type SourceType = 'OFFICIAL_API' | 'AGGREGATOR' | 'EMAIL' | 'STATEMENT' | 'EXTENSION' | 'AI_DETECTED' | 'MANUAL';
+export const SOURCE_LABEL: Record<SourceType, string> = { OFFICIAL_API: 'Official API', AGGREGATOR: 'Aggregator', EMAIL: 'Email', STATEMENT: 'Statement', EXTENSION: 'Browser extension', AI_DETECTED: 'AI detected', MANUAL: 'Manual entry' };
+export const FRESH_LABEL: Record<string, { label: string; tone: Tone }> = { FRESH: { label: 'Fresh', tone: 'green' }, AGING: { label: 'Aging', tone: 'amber' }, STALE: { label: 'Stale', tone: 'red' }, NEVER: { label: 'Never refreshed', tone: 'red' } };
+export const PRIORITY_TONE: Record<string, Tone> = { CRITICAL: 'red', HIGH: 'amber', NORMAL: 'slate', LOW: 'slate' };
+export const HEALTH_TONE = (score: number): Tone => (score >= 80 ? 'green' : score >= 50 ? 'amber' : 'red');
+export const OUTCOME_LABEL: Record<string, { label: string; tone: Tone }> = {
+  ACCEPTED: { label: 'Applied', tone: 'green' },
+  CONFIRMED: { label: 'Confirmed', tone: 'green' },
+  KEPT: { label: 'Kept as it was', tone: 'slate' },
+  CONFLICT: { label: 'Needs your decision', tone: 'red' },
+  PENDING: { label: 'Waiting for you', tone: 'amber' },
+  REJECTED: { label: 'Dismissed', tone: 'slate' },
+};
+
+export interface RefreshRow {
+  accountId: string;
+  member: string;
+  program: string;
+  priority: 'CRITICAL' | 'HIGH' | 'NORMAL' | 'LOW';
+  reasons: string[];
+  freshness: 'FRESH' | 'AGING' | 'STALE' | 'NEVER';
+  lastObservedAt: string | null;
+  nextRefreshAt: string;
+  due: boolean;
+  refreshConfidence: number;
+  source: SourceType | null;
+  reliability: number | null;
+  sync: { total: number; ok: number; failed: number; successRate: number | null };
+  plan: Array<{ kind: string; text: string; automated: boolean }>;
+}
+
+export interface RefreshStatus {
+  sources: { mailbox: boolean; extension: boolean };
+  summary: { accounts: number; fresh: number; aging: number; stale: number; never: number; due: number; sync: { total: number; successRate: number | null } };
+  accounts: RefreshRow[];
+}
+
+export interface HealthResponse {
+  household: { score: number; label: string; reasons: string[]; accounts: number };
+  programs: Array<{ program: string; name: string; score: number; label: string; count: number }>;
+  accounts: Array<{ accountId: string; program: string; member: string; score: number; label: string; factors: Array<{ factor: string; weight: number; points: number; reason: string }> }>;
+}
+
+export interface ObservationRow {
+  id: string;
+  field: string;
+  value: unknown;
+  storedValue: unknown;
+  sourceType: SourceType;
+  reliability: number;
+  outcome: string;
+  reason: string;
+  observedAt: string;
+  createdAt: string;
+  method: string;
+  account: { nickname: string | null; program: { name: string } | null; currency: { name: string } | null } | null;
+}
+
+export interface ExtensionToken {
+  id: string;
+  name: string;
+  prefix: string;
+  lastUsedAt: string | null;
+  expiresAt: string | null;
+}
+
+export interface EmailSamplePreview {
+  program: string | null;
+  kind: string;
+  rules?: string[];
+  observations: Array<{ entity: string; field: string; value: unknown; rule: string; ruleConfidence: number }>;
+  note?: string;
+}
+
+export interface AuditResponse {
+  questions: Array<{ question: string; answer: string; items: string[] }>;
+}
+
+/** A value from an observation, readable: dates, numbers, text. */
+export function showValue(v: unknown): string {
+  if (v == null) return '—';
+  if (typeof v === 'number') return v.toLocaleString('en-US');
+  if (typeof v === 'string') return /^\d{4}-\d{2}-\d{2}T/.test(v) ? v.slice(0, 10) : v;
+  return JSON.stringify(v).slice(0, 80);
+}
+
+export const FIELD_LABEL: Record<string, string> = { balance: 'Balance', pendingBalance: 'Pending balance', lifetimePoints: 'Lifetime points', statusLevel: 'Status', statusDeadline: 'Status deadline', expiresAt: 'Expiry date', lastActivityAt: 'Last activity', certificate: 'Certificate', activity: 'Activity', expiringPoints: 'Points expiring' };

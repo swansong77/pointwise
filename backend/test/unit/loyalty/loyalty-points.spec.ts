@@ -64,8 +64,9 @@ describe("TC-EXP: expiration prediction", () => {
 });
 
 describe("TC-EXP: alert thresholds and text", () => {
-  it("thresholds 365/180/90/60/30/14/7/1", () => {
-    expect([...ALERT_DAYS]).toEqual([365, 180, 90, 60, 30, 14, 7, 1]);
+  it("thresholds 365/180/120/90/60/30/14/7/1", () => {
+    expect([...ALERT_DAYS]).toEqual([365, 180, 120, 90, 60, 30, 14, 7, 1]);
+    expect([alertThreshold(110), alertThreshold(150), alertThreshold(121)]).toEqual([120, 180, 180]);
     const t = (n: number | null) => alertThreshold(n);
     expect([t(400), t(365), t(200), t(90), t(61), t(30), t(15), t(8), t(7), t(2), t(1), t(0), t(-3), t(null)]).toEqual([null, 365, 365, 90, 90, 30, 30, 14, 7, 7, 1, 1, null, null]);
   });

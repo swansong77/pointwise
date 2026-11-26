@@ -7992,6 +7992,392 @@
         ]
       }
     },
+    "/api/v1/loyalty/ingest/snapshot": {
+      "post": {
+        "operationId": "LoyaltyIngestController_snapshot",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnapshotDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/import/email-sample": {
+      "post": {
+        "operationId": "LoyaltyIngestController_emailSample",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailSampleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/import/statement": {
+      "post": {
+        "operationId": "LoyaltyIngestController_statement",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "apply": {
+                    "type": "string",
+                    "enum": [
+                      "true",
+                      "false"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/observations": {
+      "get": {
+        "operationId": "LoyaltyIngestController_observations",
+        "parameters": [
+          {
+            "name": "outcome",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACCEPTED",
+                "CONFIRMED",
+                "KEPT",
+                "CONFLICT",
+                "PENDING",
+                "REJECTED"
+              ]
+            }
+          },
+          {
+            "name": "accountId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/observations/{id}/resolve": {
+      "post": {
+        "operationId": "LoyaltyIngestController_resolve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/tokens": {
+      "get": {
+        "operationId": "LoyaltyIngestController_listTokens",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      },
+      "post": {
+        "operationId": "LoyaltyIngestController_createToken",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/tokens/{id}": {
+      "delete": {
+        "operationId": "LoyaltyIngestController_revokeToken",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/refresh-status": {
+      "get": {
+        "operationId": "LoyaltyAutomationController_status",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/refresh": {
+      "post": {
+        "operationId": "LoyaltyAutomationController_refresh",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/accounts/{id}/refresh": {
+      "post": {
+        "operationId": "LoyaltyAutomationController_refreshAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/health": {
+      "get": {
+        "operationId": "LoyaltyAutomationController_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/audit": {
+      "get": {
+        "operationId": "LoyaltyAutomationController_audit",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/changes": {
+      "get": {
+        "operationId": "LoyaltyAutomationController_changes",
+        "parameters": [
+          {
+            "name": "days",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
     "/api/v1/mailboxes/providers": {
       "get": {
         "operationId": "MailboxController_providers",
@@ -10863,6 +11249,10 @@
           },
           "notes": {
             "type": "string"
+          },
+          "force": {
+            "type": "boolean",
+            "description": "replace a higher-confidence stored value with this manual entry"
           }
         }
       },
@@ -11314,6 +11704,88 @@
           "program",
           "bonusPercent",
           "startsAt"
+        ]
+      },
+      "SnapshotDto": {
+        "type": "object",
+        "properties": {
+          "program": {
+            "type": "string",
+            "description": "registry program code, e.g. MAR_BONVOY"
+          },
+          "text": {
+            "type": "string",
+            "description": "the visible text of the page the member captured (never stored)"
+          },
+          "pageHash": {
+            "type": "string",
+            "description": "hash of the page, to make repeated captures idempotent"
+          },
+          "capturedAt": {
+            "type": "string"
+          },
+          "memberDigits": {
+            "type": "string",
+            "description": "last digits of the member number shown on the page"
+          }
+        },
+        "required": [
+          "program",
+          "text"
+        ]
+      },
+      "EmailSampleDto": {
+        "type": "object",
+        "properties": {
+          "fromDomain": {
+            "type": "string",
+            "description": "sender domain, e.g. e.marriott.com"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "apply": {
+            "type": "boolean",
+            "description": "save the result as if the email had arrived"
+          }
+        },
+        "required": [
+          "fromDomain",
+          "subject",
+          "text"
+        ]
+      },
+      "ResolveDto": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "ACCEPT",
+              "REJECT"
+            ]
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "TokenDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "expiresInDays": {
+            "type": "number",
+            "default": 90
+          }
+        },
+        "required": [
+          "name"
         ]
       },
       "ConnectMailboxDto": {
