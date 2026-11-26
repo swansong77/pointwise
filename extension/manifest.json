@@ -3,9 +3,33 @@
   "name": "Pointwise loyalty capture",
   "version": "0.1.0",
   "description": "Capture your own loyalty account page, on your click, and send it to your own Pointwise server. Never reads passwords or form fields.",
-  "action": { "default_popup": "popup.html", "default_title": "Capture this loyalty page" },
-  "permissions": ["activeTab", "scripting", "storage"],
-  "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
-  "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'self'" },
-  "minimum_chrome_version": "110"
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Capture this loyalty page",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    }
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "minimum_chrome_version": "110",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
 }

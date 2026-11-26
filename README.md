@@ -1,3 +1,5 @@
+<p align="center"><img src="frontend/public/logo/pointwise-logo.svg" alt="Pointwise" width="280" /></p>
+
 claude rc# project-analysis — CardPointers analysis & Pointwise web app
 
 Start with **[final-report/final-report.md](final-report/final-report.md)**. Progress log: [docs/progress.md](docs/progress.md).

@@ -6,7 +6,7 @@ self.addEventListener('push', (event) => {
   } catch (e) {
     /* non-JSON payload: keep defaults */
   }
-  event.waitUntil(self.registration.showNotification(data.title, { body: data.body, data: { link: data.link }, icon: '/favicon.ico' }));
+  event.waitUntil(self.registration.showNotification(data.title, { body: data.body, data: { link: data.link }, icon: '/icons/icon-192.png', badge: '/icons/icon-192.png' }));
 });
 
 self.addEventListener('notificationclick', (event) => {

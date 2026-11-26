@@ -1,5 +1,6 @@
 'use client';
 
+import { Logo } from '@/components/logo';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -66,8 +67,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button className="md:hidden" aria-label="Toggle navigation" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
             ☰
           </button>
-          <Link href="/dashboard" className="flex items-center gap-2 font-bold text-brand-700">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-600 text-white">P</span> Pointwise
+          <Link href="/dashboard" className="flex items-center" aria-label="Pointwise home">
+            <Logo size="sm" />
           </Link>
           <div className="ml-auto flex items-center gap-3">
             <Link
