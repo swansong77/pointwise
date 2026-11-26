@@ -16,7 +16,7 @@ export const ALLOWED_ATTRS = new Set([
   'gradientunits', 'gradienttransform', 'spreadmethod', 'fx', 'fy', 'id', 'clip-path', 'xmlns', 'preserveaspectratio', 'role', 'aria-label', 'aria-hidden', 'version', 'clippathunits',
 ]);
 const CANON_ATTR = { viewbox: 'viewBox', gradientunits: 'gradientUnits', gradienttransform: 'gradientTransform', spreadmethod: 'spreadMethod', preserveaspectratio: 'preserveAspectRatio', clippathunits: 'clipPathUnits' };
-const STYLE_PROPS = new Set(['fill', 'fill-opacity', 'fill-rule', 'clip-rule', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'stroke-dasharray', 'stroke-dashoffset', 'opacity', 'stop-color', 'stop-opacity']);
+const STYLE_PROPS = new Set(['clip-path', 'fill', 'fill-opacity', 'fill-rule', 'clip-rule', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'stroke-dasharray', 'stroke-dashoffset', 'opacity', 'stop-color', 'stop-opacity']);
 export const MAX_BYTES = 200 * 1024;
 
 const IGNORED_PROP = /^(display|visibility|mix-blend-mode|isolation|enable-background|paint-order|vector-effect|font[\w-]*|text[\w-]*|letter-spacing|word-spacing|line-height|white-space|writing-mode|-inkscape[\w-]*|marker[\w-]*|shape-rendering|image-rendering|color[\w-]*|solid-[\w-]+)$/;

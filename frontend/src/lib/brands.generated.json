@@ -580,6 +580,33 @@
     "url": "https://commons.wikimedia.org/wiki/File:Best_Western_logo.svg",
     "retrieved": "2026-11-26"
   },
+  "choice": {
+    "file": "choice.svg",
+    "hex": null,
+    "title": "Choice Privileges",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Choice_Hotels_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "accor": {
+    "file": "accor.svg",
+    "hex": null,
+    "title": "Accor Live Limitless",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:AccorHotels_Logo_2016.svg",
+    "retrieved": "2026-11-26"
+  },
+  "radisson": {
+    "file": "radisson.svg",
+    "hex": null,
+    "title": "Radisson Hotels",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Radisson_Hotels_logo.svg",
+    "retrieved": "2026-11-26"
+  },
   "hertz": {
     "file": "hertz.svg",
     "hex": null,
@@ -625,6 +652,15 @@
     "url": "https://commons.wikimedia.org/wiki/File:Best_Buy_logo_2018.svg",
     "retrieved": "2026-11-26"
   },
+  "walgreens": {
+    "file": "walgreens.svg",
+    "hex": null,
+    "title": "Walgreens",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Walgreens_2020_primary_logo.svg",
+    "retrieved": "2026-11-26"
+  },
   "chevron": {
     "file": "chevron.svg",
     "hex": null,
@@ -641,6 +677,42 @@
     "source": "wikimedia-commons",
     "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
     "url": "https://commons.wikimedia.org/wiki/File:Sephora_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "grubhub": {
+    "file": "grubhub.svg",
+    "hex": null,
+    "title": "Grubhub",
+    "source": "wikimedia-commons",
+    "license": "PD-shape: \"ineligible for copyright\". Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Grubhub_2025_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "five-guys": {
+    "file": "five-guys.svg",
+    "hex": null,
+    "title": "Five Guys",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"This logo image consists only of simple geometric shapes or text.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Five_Guys_logo.svg",
+    "retrieved": "2026-11-26"
+  },
+  "tsa-precheck": {
+    "file": "tsa-precheck.svg",
+    "hex": null,
+    "title": "TSA PreCheck",
+    "source": "wikimedia-commons",
+    "license": "PD-USGov-DHS-TSA: \"work prepared by an officer or employee of the United States Federal Government as part of that person's official duties\".",
+    "url": "https://commons.wikimedia.org/wiki/File:TSA_PreCheck_Logo_2020.svg",
+    "retrieved": "2026-11-26"
+  },
+  "bilt": {
+    "file": "bilt.svg",
+    "hex": null,
+    "title": "Bilt Rewards",
+    "source": "wikimedia-commons",
+    "license": "PD-textlogo: \"It does not meet the threshold of originality needed for copyright protection, and is therefore in the public domain.\" Also tagged Trademarked.",
+    "url": "https://commons.wikimedia.org/wiki/File:Bilt_Rewards_logo.svg",
     "retrieved": "2026-11-26"
   },
   "unionpay": {
