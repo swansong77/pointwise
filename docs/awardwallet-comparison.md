@@ -1,9 +1,9 @@
 # AwardWallet comparison
 
-Source: AwardWallet's own pages, retrieved 2026-11-25 (`/api`, `/api/account`, `/api/loyalty`, `/faqs`; see `loyalty-aggregation-research.md`). Pointwise columns describe this branch after the automation work. Nothing here was tested against AwardWallet itself.
+Source: AwardWallet's own pages, retrieved 2026-11-25 (`/api`, `/api/account`, `/api/loyalty`, `/faqs`; see `loyalty-aggregation-research.md`). PointWise columns describe this branch after the automation work. Nothing here was tested against AwardWallet itself.
 
 ## How each gets its data
-| | AwardWallet | Pointwise |
+| | AwardWallet | PointWise |
 |---|---|---|
 | Balance updates | Logs in to the program site "on your behalf" with stored (encrypted) credentials; also email parsing | The user's own mail, statements and browser session; manual entry. **No credentials, ever.** |
 | Auto-refresh | Yes, on a schedule (free: 2 updates per account per 24 h) | Only where the user's data arrives (email, statement, extension click); stale accounts get a clear "needs refresh" action |
@@ -11,7 +11,7 @@ Source: AwardWallet's own pages, retrieved 2026-11-25 (`/api`, `/api/account`, `
 | Cost | Free; Plus $49.99 per year; business API $4 per managed member per month | Free |
 
 ## Feature by feature
-| Feature | AwardWallet | Pointwise | Verdict |
+| Feature | AwardWallet | PointWise | Verdict |
 |---|---|---|---|
 | Balance monitoring | Yes, automatic | Yes, automatic from email/statement/extension; per-update source, reliability, confidence; history by refresh | Equal on tracking and audit; **behind** on unattended coverage |
 | Expiration monitoring | Expiry date from the program, alerts | Policy-based prediction with risk score and confidence, member-entered date wins, alerts at 365/180/120/90/60/30/14/7/1 days and on expiry, **prevention actions with cost, complexity and expected success** | **Superior** on prevention and honesty about confidence |
@@ -27,6 +27,6 @@ Source: AwardWallet's own pages, retrieved 2026-11-25 (`/api`, `/api/account`, `
 | Privacy | Stores program passwords | No program credentials; account numbers encrypted; nothing sent to an AI provider | **Superior** |
 
 ## Where AwardWallet is stronger (be honest)
-- It refreshes unattended for hundreds of programs because it holds the user's credentials. Pointwise deliberately does not, so freshness depends on the user's mail, statements and browser visits.
+- It refreshes unattended for hundreds of programs because it holds the user's credentials. PointWise deliberately does not, so freshness depends on the user's mail, statements and browser visits.
 - Its parsers have years of real-world tuning; ours start generic and are flagged unverified.
 - It imports itineraries.

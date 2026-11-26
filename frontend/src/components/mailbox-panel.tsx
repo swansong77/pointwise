@@ -34,7 +34,7 @@ export function MailboxPanel() {
   return (
     <Panel title="Connected mailboxes" data-testid="mailbox-panel">
       <p className="mb-3 text-sm text-slate-600">
-        Pointwise reads your mailbox <strong>read-only</strong> (Gmail and Outlook use the provider's own sign-in; for any other provider use IMAP with an app password) and looks only at messages from card issuers (statements, transaction alerts, credits). Other mail is never opened, message bodies are
+        PointWise reads your mailbox <strong>read-only</strong> (Gmail and Outlook use the provider's own sign-in; for any other provider use IMAP with an app password) and looks only at messages from card issuers (statements, transaction alerts, credits). Other mail is never opened, message bodies are
         not stored, and nothing is sent to an AI service. Use an app password you can revoke.
       </p>
       {banner && (

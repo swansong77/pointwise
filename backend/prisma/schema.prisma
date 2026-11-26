@@ -1,4 +1,4 @@
-// Pointwise — PostgreSQL schema (Prisma)
+// PointWise — PostgreSQL schema (Prisma)
 // Canonical location: project-analysis/database/schema.prisma
 // Domain mapping to the analyzed app (see docs/storage.md):
 //   DBCard -> CreditCard, DBEarning/DBPointerCard -> Reward, DBPointer -> Category,
@@ -626,7 +626,7 @@ enum TransactionSource {
   CSV
   PDF
   BANK
-  EMAIL   // card transaction alert forwarded to the user's Pointwise address
+  EMAIL   // card transaction alert forwarded to the user's PointWise address
 }
 
 /// A user's private forwarding address for card alert emails: <token>@INBOUND_EMAIL_DOMAIN.
@@ -1235,7 +1235,7 @@ model AgentProfile {
   name         String
   description  String
   systemPrompt String
-  tools        String[] // Pointwise tool names
+  tools        String[] // PointWise tool names
   mcpToolIds   String[] // approved external MCP tools
   modelChain   String[] // AiModel ids, in failover order
   effort       String?  // low | medium | high (providers that support it)
@@ -1334,7 +1334,7 @@ model AiPendingAction {
   @@index([userId, status])
 }
 
-/// Personal access tokens (for the Pointwise MCP server). Only a SHA-256 hash is stored.
+/// Personal access tokens (for the PointWise MCP server). Only a SHA-256 hash is stored.
 model PersonalAccessToken {
   id         String    @id @default(uuid())
   userId     String

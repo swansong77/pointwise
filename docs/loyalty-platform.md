@@ -54,10 +54,10 @@ Output: expiry date, days left, points at risk, **risk score 0–100** (by days 
 
 ## 6. Limits
 
-- **No automatic balance refresh.** Balances come from the member (or later from an email or import); Pointwise never logs in to a program. `refreshedAt` and `source` record how fresh a balance is.
+- **No automatic balance refresh.** Balances come from the member (or later from an email or import); PointWise never logs in to a program. `refreshedAt` and `source` record how fresh a balance is.
 - Program policies, transfer ratios and valuations (¢ per point) are unverified planning data.
 - Award prices are a coarse estimate unless the member enters the exact points; award availability is not known.
-- Transfer-bonus history is only what Pointwise has observed (or an admin recorded); it starts empty, so early advice has low confidence.
+- Transfer-bonus history is only what PointWise has observed (or an admin recorded); it starts empty, so early advice has low confidence.
 - Hotel cash prices for certificate valuation are entered by the member; there is no live hotel search.
 
 ## 7. Automation (branch pw-2026-feature-loyalty-automation)
@@ -77,4 +77,4 @@ Sources, provenance and conflicts: `loyalty-architecture-review.md`, `email-loya
 | UI | Loyalty → Miles, Points, Transfer bonuses, Refresh health, Imports & conflicts; source badges, reliability and refresh confidence on every account |
 | Extension | `extension/` |
 
-What "automatic" means: an account updates itself when the member's own mail, statements or browser session supply the data. Stale accounts say exactly what to do. Pointwise never signs in to a program.
+What "automatic" means: an account updates itself when the member's own mail, statements or browser session supply the data. Stale accounts say exactly what to do. PointWise never signs in to a program.

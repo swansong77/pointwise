@@ -22,7 +22,7 @@ Selection against the criteria asked for: **reliability** (every value carries i
 
 ## 3. What "automatic" means here (stated in the UI too)
 
-Pointwise updates a program automatically when the user's own mail, statements or browser session supply the data. It cannot refresh a program the user never emails, exports or visits, and it says so: stale accounts get a "needs refresh" notice naming what to do (sync the mailbox, capture the page, forward the statement).
+PointWise updates a program automatically when the user's own mail, statements or browser session supply the data. It cannot refresh a program the user never emails, exports or visits, and it says so: stale accounts get a "needs refresh" notice naming what to do (sync the mailbox, capture the page, forward the statement).
 
 ## 4. Source reliability scale (ADR-018)
 
@@ -30,7 +30,7 @@ Official API 100 · Aggregator 90 · Email confirmation 80 · Statement import 7
 
 ## 5. Extension security model (ADR-019)
 
-Manifest V3, minimal permissions, no remote code, read-only. Runs only when the user clicks "Capture this page" (auto-capture off by default). Sends `{program, fields, capturedAt, pageHash}` to the user's own Pointwise server with a **personal access token of scope `loyalty:ingest`** (revocable, expiring, rate-limited, size-limited, schema-validated). The user's program credentials are never read, stored or transmitted. Terms risk is shown before enabling a program, because Chase's verified terms forbid "robots, spiders, scripts".
+Manifest V3, minimal permissions, no remote code, read-only. Runs only when the user clicks "Capture this page" (auto-capture off by default). Sends `{program, fields, capturedAt, pageHash}` to the user's own PointWise server with a **personal access token of scope `loyalty:ingest`** (revocable, expiring, rate-limited, size-limited, schema-validated). The user's program credentials are never read, stored or transmitted. Terms risk is shown before enabling a program, because Chase's verified terms forbid "robots, spiders, scripts".
 
 ## 6. Refresh tiers (ADR-020)
 

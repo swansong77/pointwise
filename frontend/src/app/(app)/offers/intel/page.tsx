@@ -128,7 +128,7 @@ function Activation() {
   return (
     <div data-testid="activation">
       <p className="mb-3 text-sm text-slate-600">
-        Pointwise never signs in to your bank. Open your card issuer's offers page yourself, add the offer, then mark it here. We confirm it later when the statement credit appears.
+        PointWise never signs in to your bank. Open your card issuer's offers page yourself, add the offer, then mark it here. We confirm it later when the statement credit appears.
       </p>
       <ErrorText error={mark.error} />
       {[...byCard.entries()].map(([card, rows]) => (

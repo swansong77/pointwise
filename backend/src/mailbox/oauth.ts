@@ -5,7 +5,7 @@ import { decryptSecret, encryptSecret } from '../common/crypto';
  * OAuth 2.0 authorization-code flow for Gmail and Microsoft Graph mail (read-only). Endpoints, scopes and
  * parameters are the ones documented by Google and Microsoft (docs/email-ingestion-research.md, retrieved
  * 2026-11-25). The app owner supplies a client id and secret from their own free Google Cloud / Microsoft Entra
- * app registration; nothing is shared with Pointwise or any third party.
+ * app registration; nothing is shared with PointWise or any third party.
  */
 export type OAuthKind = 'GMAIL' | 'GRAPH';
 

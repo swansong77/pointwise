@@ -38,7 +38,7 @@ Date: 2026-11-21 · Scope: the "Additional Product Requirements Revision" (card-
 6. **`scheduler` / `notification-service`** are separate processes of the same backend image (no new codebases).
 7. **Push** = Web Push (VAPID) + service worker + subscription table; endpoints restricted to browser push services (SSRF guard).
 8. **Privacy** — imports are processed at runtime only; the real workbook is never copied into seed, fixtures, logs, screenshots or docs. Bank tokens are AES-256-GCM encrypted. Uploads ≤ 5 MB, `.xlsx`/`.csv` only, formulas never evaluated (cached values read).
-9. **Naming** — the product stays **Pointwise**, a self-hosted card-portfolio tracker; it is not marketed under another product's name.
+9. **Naming** — the product stays **PointWise**, a self-hosted card-portfolio tracker; it is not marketed under another product's name.
 
 ## 4. What was delivered
 

@@ -22,7 +22,7 @@ export class MailService {
       await this.transport.sendMail({
         from:
           this.config.get("MAIL_FROM") ??
-          "Pointwise <no-reply@pointwise.local>",
+          "PointWise <no-reply@pointwise.local>",
         to,
         subject,
         text,

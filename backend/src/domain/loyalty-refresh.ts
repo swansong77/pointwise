@@ -1,5 +1,5 @@
 /**
- * Refresh strategy (pure). Pointwise never logs in to a program, so a "refresh" means getting fresh data from the
+ * Refresh strategy (pure). PointWise never logs in to a program, so a "refresh" means getting fresh data from the
  * member's own sources: syncing their mailbox, a statement, or a page capture. This module decides how urgent each
  * account is, when it is next due, how stale its data is, and what the member (or the mailbox sync) must do.
  */
@@ -83,7 +83,7 @@ export interface SourceAvailability {
 export interface RefreshAction {
   kind: 'SYNC_MAILBOX' | 'CONNECT_MAILBOX' | 'CAPTURE_PAGE' | 'FORWARD_STATEMENT' | 'UPDATE_MANUALLY';
   text: string;
-  /** done by Pointwise without the member */
+  /** done by PointWise without the member */
   automated: boolean;
 }
 

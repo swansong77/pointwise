@@ -318,10 +318,10 @@ describe("TC-XFER: transfer bonuses", () => {
   it("active bonuses are logged as history once", async () => {
     const jobs = app.get(LoyaltyJobsService, { strict: false });
     await jobs.scanExpirations(new Date());
-    const n = await prisma.transferBonusRecord.count({ where: { source: "observed by Pointwise", currency: { code: "T_BANK" } } });
+    const n = await prisma.transferBonusRecord.count({ where: { source: "observed by PointWise", currency: { code: "T_BANK" } } });
     expect(n).toBe(1);
     await jobs.scanExpirations(new Date());
-    expect(await prisma.transferBonusRecord.count({ where: { source: "observed by Pointwise", currency: { code: "T_BANK" } } })).toBe(1);
+    expect(await prisma.transferBonusRecord.count({ where: { source: "observed by PointWise", currency: { code: "T_BANK" } } })).toBe(1);
   });
 });
 

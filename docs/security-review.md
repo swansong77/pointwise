@@ -1,6 +1,6 @@
 # Phase 21 — Security Review (OWASP Top 10:2021)
 
-Scope: (A) the **Pointwise** web application built in this project, reviewed against the source and the test evidence; (B) brief observations on the **analyzed CardPointers binary** from static analysis.
+Scope: (A) the **PointWise** web application built in this project, reviewed against the source and the test evidence; (B) brief observations on the **analyzed CardPointers binary** from static analysis.
 Review date: 2026-11-21. Method: code review, automated tests (unit, integration, E2E security cases), `npm audit`, REA release-exposure audit.
 
 ## Summary
@@ -11,7 +11,7 @@ Review date: 2026-11-21. Method: code review, automated tests (unit, integration
 | Medium | 4 | 3 (admin PATCH accepted only full objects → partial DTOs; all users shared one auth rate-limit bucket via NextAuth server calls → per-client-IP guard) |
 | Low | 10 | — |
 
-## A. Pointwise — OWASP Top 10
+## A. PointWise — OWASP Top 10
 
 | # | Category | Controls in place | Evidence | Residual risk |
 |---|---|---|---|---|
@@ -78,7 +78,7 @@ New residual risks: **L-9** a malicious approved MCP server can still return mis
 
 | Area | Control | Evidence |
 |---|---|---|
-| Next-card scorer and travel (user data) | member ids checked against the caller's household (404 otherwise); balances owner-scoped; assistant tools `recommend_next_card`, `get_transfer_options`, `plan_award` are USER data — answered by Pointwise, never sent to a model; only `get_transfer_partners` (public catalog) may reach a model or the MCP server | INT scoping, provider-spy test incl. the new tools, MCP tool list |
+| Next-card scorer and travel (user data) | member ids checked against the caller's household (404 otherwise); balances owner-scoped; assistant tools `recommend_next_card`, `get_transfer_options`, `plan_award` are USER data — answered by PointWise, never sent to a model; only `get_transfer_partners` (public catalog) may reach a model or the MCP server | INT scoping, provider-spy test incl. the new tools, MCP tool list |
 | Balance integrity | one target per row (DB check constraint) + partial unique indexes per member and currency/program; points 0–100 M validated | migration, INT |
 | Admin curation | programs and partners admin-only, validated codes, audited; cash back cannot be a transfer source | INT |
 | Streaming endpoint | same guards as `/ai/chat` (JWT, consent, budget, AI rate limit, validation); errors are events without internals; truncated tool calls (`max_tokens`) are never executed; streamed Claude tool inputs are validated by the tool handlers | INT stream cases, U runtime |
@@ -89,7 +89,7 @@ New residual risks: **L-9** a malicious approved MCP server can still return mis
 | PDF statements (Phase H) | untrusted PDFs parsed only in a child process (pdfjs eval disabled, 256 MB heap, 20 s timeout, output cap, empty env, 40 pages, 10 MB upload); file and text discarded; only parsed rows stored; digit runs ≥ 8 removed; no AI | U extractor limits, INT broken / scanned PDFs |
 | Spend tracking (Phase H) | owner-scoped (wallet card ownership on every route; other users 404); statement upload ≤ 2 MB, .csv only, parsed as data (no formulas), 5,000 rows; dedupe by bank id / content hash; transactions never sent to AI providers; Plaid access token stays encrypted, transactions product only adds read access | INT ownership + validation, U parser |
 | Research lead sites (Phase G) | Doctor of Credit / The Points Guy / MileMoa readable for discovery only (`CARD_RESEARCH_LEAD_DOMAINS`); never accepted as product URL or evidence; only link + title stored (no third-party text); facts still checked on issuer pages | U lead filtering, INT lead fact dropped and no lead text stored |
-| Card-research agent (Phase G) | admin-only; Claude server tools restricted with `allowed_domains` to the issuer's domain / issuer allow-list; product URLs re-validated; Pointwise re-fetches pages (robots.txt) and drops facts whose quote is not on the page or does not state the value; page text treated as data, agent has no write tools; approval required (atomic claim, audit log); only issuer/card names sent to the model; bounded searches/fetches/turns per run | U normalise/verify, INT off-domain drop, injection text, override needed |
+| Card-research agent (Phase G) | admin-only; Claude server tools restricted with `allowed_domains` to the issuer's domain / issuer allow-list; product URLs re-validated; PointWise re-fetches pages (robots.txt) and drops facts whose quote is not on the page or does not state the value; page text treated as data, agent has no write tools; approval required (atomic claim, audit log); only issuer/card names sent to the model; bounded searches/fetches/turns per run | U normalise/verify, INT off-domain drop, injection text, override needed |
 | Fine-print search (Phase F) | public catalog only (private/inactive cards excluded); `$queryRaw` tagged template with bound parameters (`websearch_to_tsquery` never raises on user syntax); query ≤ 200 chars; snippets rendered as text (no HTML) | INT injection-shaped query, U `highlightParts` |
 | Credit band (Phase F) | self-reported, optional, owner-scoped, used only by the scorer; never sent to an AI provider or bureau | INT, privacy rule |
 | Operations endpoints | admin-only; return no keys, secrets or user identities; job failure reasons truncated | INT (no `apiKeyEnc`/password in body), PW-OPS-02 |

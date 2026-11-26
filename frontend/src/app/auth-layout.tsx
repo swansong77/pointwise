@@ -6,7 +6,7 @@ export function AuthCard({ title, subtitle, children, footer }: { title: string;
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 to-white px-4 py-12">
       <div className="w-full max-w-md">
-        <Link href="/" className="mb-6 flex items-center justify-center" aria-label="Pointwise home">
+        <Link href="/" className="mb-6 flex items-center justify-center" aria-label="PointWise home">
           <Logo size="md" />
         </Link>
         <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">

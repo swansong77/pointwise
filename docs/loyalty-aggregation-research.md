@@ -33,7 +33,7 @@ Planning assumption (to be corrected if a program publishes one): there is no co
 | Reliability | Depends on scraping program sites that change; they run it as their core product | – | – |
 | Cost | Business account, per-member fee, partner approval | – | Premium |
 | Privacy / risk | Web Parsing sends program passwords through a third party; the consumer path stores them; the API page says it does not store credentials but the contracts are not read | – | – |
-| Fit with Pointwise rules | **Conflicts**: business-only (not free for a household app), and credential handoff is the exact pattern the project forbids | No data | No data |
+| Fit with PointWise rules | **Conflicts**: business-only (not free for a household app), and credential handoff is the exact pattern the project forbids | No data | No data |
 
 **Conclusion.** No free, permitted, consumer-level source returns loyalty balances. Credential-based aggregation is both unavailable to this project (partner/paid) and against its rules. The viable free paths are the ones the user controls: **email**, **statement PDFs**, a **browser extension** in the user's own session, and **manual entry**, merged by a provenance engine. The AwardWallet slot stays in the code as a disabled adapter (documented, never enabled).
 

@@ -3,8 +3,8 @@ import type { MetadataRoute } from 'next';
 /** Lets the app be installed to a phone or desktop with its own icon. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Pointwise',
-    short_name: 'Pointwise',
+    name: 'PointWise',
+    short_name: 'PointWise',
     description: 'Use the right card every time. Track offers, bonuses, renewals and loyalty assets.',
     start_url: '/dashboard',
     display: 'standalone',

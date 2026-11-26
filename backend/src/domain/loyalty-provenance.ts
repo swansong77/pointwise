@@ -1,5 +1,5 @@
 /**
- * Data provenance and conflict resolution for loyalty data (pure). Every value that enters Pointwise, from any
+ * Data provenance and conflict resolution for loyalty data (pure). Every value that enters PointWise, from any
  * source, carries where it came from, how far to trust that source, and when it was observed. This module
  * decides what to do when a new observation meets a stored value (ADR-017, ADR-018):
  *

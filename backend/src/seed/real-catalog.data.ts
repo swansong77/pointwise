@@ -1,6 +1,6 @@
 /**
  * Curated list of real U.S. credit cards (public product facts: name, issuer, network, annual fee,
- * category earning rates). Written by the Pointwise team from general knowledge as of DATA_AS_OF — not
+ * category earning rates). Written by the PointWise team from general knowledge as of DATA_AS_OF — not
  * copied from any card app or aggregator database. Issuer terms change often: every card is imported
  * as catalogSource SEED and shown as "unverified" until the card-research agent or a registered issuer
  * page confirms it (admin-approved). Welcome offers are deliberately left out — they change every few
@@ -8,7 +8,7 @@
  *
  * Earning rates here are those that apply to a whole category anywhere; portal-only, rotating,
  * chosen-category and co-brand merchant rates are listed as features (or merchant rewards).
- * Point values (¢/pt) are Pointwise's own conservative defaults; users can override them.
+ * Point values (¢/pt) are PointWise's own conservative defaults; users can override them.
  */
 import { CardNetwork, CardType, CreditBand, IssuerKind } from "@prisma/client";
 

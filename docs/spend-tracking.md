@@ -56,7 +56,7 @@ Matching (word boundaries; "clear" ≠ "nuclear"):
 | Deleting a transaction | its usage is removed (FK cascade); usage a deleted credit had confirmed goes back to EXPECTED |
 | Manual first | expected/confirmed and manual usage share the period cap, so auto-tracking never pushes a benefit past its value |
 | Display | `/benefits` shows the rules (or "suggested"), the latest automatic matches with "auto · credit expected / posted" and the transaction; `/spending` shows each transaction's benefit updates |
-| Privacy | deterministic code only — transactions are never sent to an AI provider or MCP client; the assistant's benefit tools stay private (answered by Pointwise) |
+| Privacy | deterministic code only — transactions are never sent to an AI provider or MCP client; the assistant's benefit tools stay private (answered by PointWise) |
 
 ## 6. API
 | Route | Purpose |

@@ -1,4 +1,4 @@
-# Phase 15 — API Specification (Pointwise)
+# Phase 15 — API Specification (PointWise)
 
 - **Machine-readable spec:** [`../api/openapi.json`](../api/openapi.json), exported from the running code (`backend/scripts/export-openapi.ts`). Live Swagger UI: `http://localhost:4000/api/docs` (also proxied at `http://localhost:3000/api/docs`).
 - **Base URL:** `/api/v1` (health is at `/health`).
@@ -386,7 +386,7 @@ radius 50–25,000 m. Returns locations sorted by distance with `bestCard` and t
 
 ## 6. Traceability to the analyzed app's API
 
-| CardPointers endpoint (observed) | Pointwise endpoint |
+| CardPointers endpoint (observed) | PointWise endpoint |
 |---|---|
 | `/auth/login`, `/auth/signon`, `/passkey/*` | `/auth/login`, `/auth/register`, `/auth/oauth` (passkeys: roadmap) |
 | `/v1/user/token/refresh` | `/auth/refresh` |

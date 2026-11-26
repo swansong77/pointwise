@@ -142,7 +142,7 @@ function CreditReportPanel() {
   return (
     <Panel title="Open dates from your credit report" data-testid="credit-report">
       <p className="mb-4 text-sm text-slate-600">
-        Banks don&apos;t share account open dates. Copy them from your free credit report (annualcreditreport.com) — Pointwise matches each account to your cards by last digits.
+        Banks don&apos;t share account open dates. Copy them from your free credit report (annualcreditreport.com) — PointWise matches each account to your cards by last digits.
       </p>
       <form
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6 lg:items-end"

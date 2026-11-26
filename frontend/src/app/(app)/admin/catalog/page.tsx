@@ -266,7 +266,7 @@ function Research() {
     <div className="space-y-6">
       <Panel title="Research cards on issuer websites" data-testid="research-start">
         <p className="mb-4 text-sm text-slate-600">
-          A Claude agent searches and reads the issuer&apos;s own site (allow-listed issuer domains only), then Pointwise checks every quoted fact against the product page. Nothing
+          A Claude agent searches and reads the issuer&apos;s own site (allow-listed issuer domains only), then PointWise checks every quoted fact against the product page. Nothing
           is published until you approve it below. Only public product information is sent to the model — never user data.
         </p>
         {status.data && !status.data.available && (

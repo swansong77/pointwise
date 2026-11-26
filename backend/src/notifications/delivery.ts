@@ -131,7 +131,7 @@ export class DeliveryService {
       const user = await this.prisma.user.findUnique({ where: { id: job.userId }, select: { email: true, deletedAt: true } });
       if (user && !user.deletedAt) {
         const link = job.link ? `\n\nOpen: ${(process.env.APP_URL ?? 'http://localhost:3000').replace(/\/$/, '')}${job.link}` : '';
-        ok = await this.mail.send(user.email, `Pointwise: ${job.title}`, `${job.body}${link}`);
+        ok = await this.mail.send(user.email, `PointWise: ${job.title}`, `${job.body}${link}`);
       }
     } else {
       ok = await this.push.send(job.userId, { title: job.title, body: job.body, link: job.link });

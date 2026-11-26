@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-# Pointwise API / worker image. Targets:
+# PointWise API / worker image. Targets:
 #   runtime (default) — production API & worker
 #   test              — full toolchain for unit + integration tests
 

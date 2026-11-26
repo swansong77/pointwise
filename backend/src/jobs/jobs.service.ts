@@ -379,7 +379,7 @@ export class JobsService {
     let sent = 0;
     for (const [userId, items] of byUser) {
       const body = items.map((i) => `• ${i.title}\n  ${i.body}`).join("\n\n");
-      const subject = `Pointwise: ${items.length} update${items.length > 1 ? "s" : ""}`;
+      const subject = `PointWise: ${items.length} update${items.length > 1 ? "s" : ""}`;
       const ok = await this.mail.send(items[0].user.email, subject, body);
       if (ok) {
         await this.prisma.notification.updateMany({

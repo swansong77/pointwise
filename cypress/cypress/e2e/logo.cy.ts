@@ -9,7 +9,7 @@ describe('Logo assets', () => {
     cy.request('/logo/pointwise-logo.svg').its('status').should('eq', 200);
     for (const f of ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png']) cy.request({ url: `/icons/${f}`, encoding: 'binary' }).then((r) => expect(r.headers['content-type']).to.match(/image\/png/));
     cy.request('/manifest.webmanifest').then((r) => {
-      expect(r.body.name).to.eq('Pointwise');
+      expect(r.body.name).to.eq('PointWise');
       expect(r.body.icons.length).to.be.greaterThan(2);
     });
   });

@@ -67,7 +67,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button className="md:hidden" aria-label="Toggle navigation" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
             ☰
           </button>
-          <Link href="/dashboard" className="flex items-center" aria-label="Pointwise home">
+          <Link href="/dashboard" className="flex items-center" aria-label="PointWise home">
             <Logo size="sm" />
           </Link>
           <div className="ml-auto flex items-center gap-3">

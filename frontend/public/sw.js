@@ -1,6 +1,6 @@
-/* Pointwise service worker: shows web-push notifications (benefit expiry alerts). */
+/* PointWise service worker: shows web-push notifications (benefit expiry alerts). */
 self.addEventListener('push', (event) => {
-  let data = { title: 'Pointwise', body: '', link: '/notifications' };
+  let data = { title: 'PointWise', body: '', link: '/notifications' };
   try {
     data = Object.assign(data, event.data ? event.data.json() : {});
   } catch (e) {

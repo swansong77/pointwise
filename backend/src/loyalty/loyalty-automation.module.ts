@@ -77,7 +77,7 @@ export class LoyaltyIngestController {
   async snapshot(@Headers('authorization') auth: string | undefined, @Body() dto: SnapshotDto) {
     const token = auth?.startsWith('Bearer ') ? auth.slice(7).trim() : undefined;
     const userId = await this.tokens.verify(token, EXTENSION_SCOPE);
-    if (!userId) throw new UnauthorizedException('A valid Pointwise extension token is required');
+    if (!userId) throw new UnauthorizedException('A valid PointWise extension token is required');
     const program = programByCode(dto.program.toUpperCase());
     if (!program) throw new BadRequestException(`Unknown program "${dto.program}"`);
     const when = dto.capturedAt ? new Date(dto.capturedAt) : new Date();
@@ -193,7 +193,7 @@ export class LoyaltyAutomationController {
   }
 }
 
-/** Scheduled refresh work. Pointwise never logs in anywhere, so "refresh" syncs the member's mailbox and flags what stays stale. */
+/** Scheduled refresh work. PointWise never logs in anywhere, so "refresh" syncs the member's mailbox and flags what stays stale. */
 @Injectable()
 export class LoyaltyRefreshJobs {
   constructor(

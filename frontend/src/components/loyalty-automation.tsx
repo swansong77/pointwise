@@ -96,7 +96,7 @@ export function RefreshHealth() {
         }
       >
         <p className="mb-3 text-sm text-slate-600">
-          Pointwise never signs in to your programs. An account refreshes when your mailbox, a statement or the browser extension supplies new data; anything that stays stale shows exactly what to do.
+          PointWise never signs in to your programs. An account refreshes when your mailbox, a statement or the browser extension supplies new data; anything that stays stale shows exactly what to do.
         </p>
         <ErrorText error={refresh.error} />
         {q.isLoading && <Spinner />}
@@ -226,7 +226,7 @@ function EmailTester() {
   const run = useApiMutation<{ apply: boolean }, EmailSamplePreview>((v) => ({ path: '/loyalty/import/email-sample', method: 'POST', body: { fromDomain: from.trim(), subject, text, apply: v.apply } }), KEYS);
   return (
     <Panel title="Test a program email" data-testid="email-tester">
-      <p className="mb-2 text-sm text-slate-600">Paste a loyalty email to see what Pointwise would read from it. The text is not stored. Reading rules are generic and unverified, so check the result.</p>
+      <p className="mb-2 text-sm text-slate-600">Paste a loyalty email to see what PointWise would read from it. The text is not stored. Reading rules are generic and unverified, so check the result.</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Sender domain" htmlFor="es-from">
           <Input id="es-from" value={from} onChange={(e) => setFrom(e.target.value)} placeholder="e.marriott.com" />

@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 
 /**
- * The Pointwise logo: a bold "P" with a gold dot (the point) on an indigo tile. The same mark is the favicon,
+ * The PointWise logo: a bold "P" with a gold dot (the point) on an indigo tile. The same mark is the favicon,
  * the install icon and the browser-extension icon (public/logo/pointwise-mark.svg).
  */
 const SIZE = { sm: 24, md: 32, lg: 56, xl: 80 } as const;
@@ -32,7 +32,7 @@ export function Logo({ size = 'md', className, tone = 'color' }: { size?: keyof 
       <LogoMark size={size} />
       <span className={clsx('tracking-tight', text, tone === 'light' ? 'text-white' : 'text-brand-900')}>
         <span className="font-medium">Point</span>
-        <span className={clsx('font-extrabold', tone === 'light' ? 'text-white' : 'text-brand-600')}>wise</span>
+        <span className={clsx('font-extrabold', tone === 'light' ? 'text-white' : 'text-brand-600')}>Wise</span>
       </span>
     </span>
   );

@@ -41,7 +41,7 @@ Format: Context · Options · Decision · Consequences · Status. Evidence and i
 ## ADR-006 — OpenClaw via the OpenAI-compatible adapter and MCP
 - **Context:** `openclaw-integration.md` (verified from official docs, defaults partly unverified).
 - **Options:** custom adapter · OpenAI-compatible preset + MCP · skip.
-- **Decision:** preset on the OpenAI-compatible adapter (`http://127.0.0.1:18789/v1`, model `openclaw/default`); Pointwise public tools exposed to OpenClaw via MCP; OpenClaw treated as non-local by default, so it gets PUBLIC data only.
+- **Decision:** preset on the OpenAI-compatible adapter (`http://127.0.0.1:18789/v1`, model `openclaw/default`); PointWise public tools exposed to OpenClaw via MCP; OpenClaw treated as non-local by default, so it gets PUBLIC data only.
 - **Consequences:** no adapter code; security follows OpenClaw's single-operator model (loopback/Tailscale only).
 - **Status:** accepted; endpoint default-enablement to be confirmed against a running gateway.
 

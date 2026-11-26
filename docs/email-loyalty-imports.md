@@ -13,7 +13,7 @@ Status: implemented on branch `pw-2026-feature-loyalty-automation`. Decision rec
 | Monthly summary | balance plus activity in one message | all of the above |
 
 ## 2. Pipeline
-1. Mail reaches Pointwise by a connected mailbox (read-only sync) or the forwarding address. Sender domains of known programs are on the allow-list (`senderDomains()` includes `loyaltySenderDomains()`), DKIM/DMARC is checked, bodies are never stored.
+1. Mail reaches PointWise by a connected mailbox (read-only sync) or the forwarding address. Sender domains of known programs are on the allow-list (`senderDomains()` includes `loyaltySenderDomains()`), DKIM/DMARC is checked, bodies are never stored.
 2. `CaptureService.loyaltyMail` matches the sender to a program (`domain/loyalty-email.ts`, `PROGRAM_RULES`, 33 programs including the airlines, hotels, bank programs and portals asked for) and runs `parseLoyaltyEmail`. A genuine card transaction alert from the same domain (a bank that is also a points program) still continues to the card flow.
 3. Observations pass through `LoyaltyIngestService.apply`, the single funnel for every source: they are matched to the member's account (by program, then by the account digits the message mentions), decided by the provenance engine (`loyalty-provenance.ts`), logged as `LoyaltyObservation` (value, source, reliability, outcome, reason, evidence hash — no message text) and applied.
 4. Unmatched mail (no account for the program, or several and no digits) is recorded with the reason; nothing is guessed.
@@ -27,4 +27,4 @@ Official API 100, aggregator 90, **email 80**, **statement 75**, **extension 70*
 ## 5. Honest limits
 - **The reading rules are generic and have not been checked against real program emails or statements** (no real accounts were used; fixtures are synthetic). Every parser result is flagged unverified. To improve a program, paste a redacted real email into Loyalty → Imports → "Test a program email" and compare, then adjust that program's entry.
 - Programs that send no useful email give nothing here; use statements, the browser extension or manual entry.
-- Only what the member's own mail contains can be read; Pointwise never signs in to a program.
+- Only what the member's own mail contains can be read; PointWise never signs in to a program.

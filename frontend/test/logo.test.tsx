@@ -4,15 +4,15 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { Logo, LogoMark } from '../src/components/logo';
 
-describe('Pointwise logo', () => {
+describe('PointWise logo', () => {
   it('the logo keeps the name as real text', () => {
     render(<Logo size="sm" />);
-    expect(screen.getByTestId('logo')).toHaveTextContent('Pointwise');
+    expect(screen.getByTestId('logo')).toHaveTextContent('PointWise');
     expect(screen.getByTestId('logo-mark')).toHaveAttribute('aria-hidden', 'true');
   });
   it('a stand-alone mark is named for screen readers', () => {
-    render(<LogoMark size="xl" title="Pointwise" />);
-    const m = screen.getByRole('img', { name: 'Pointwise' });
+    render(<LogoMark size="xl" title="PointWise" />);
+    const m = screen.getByRole('img', { name: 'PointWise' });
     expect(m).toHaveAttribute('width', '80');
   });
   it('light tone is for dark backgrounds', () => {

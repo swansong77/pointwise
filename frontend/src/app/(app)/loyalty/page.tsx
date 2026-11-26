@@ -101,7 +101,7 @@ function Overview() {
         <Stat label="Recovered" value={money(v.recoveredCents)} tone="text-emerald-700" />
       </dl>
       <HealthPanel />
-      {empty && <EmptyState title="Nothing tracked yet">Add your loyalty accounts on the Points tab, then certificates, status and memberships. Pointwise will watch every expiration for you.</EmptyState>}
+      {empty && <EmptyState title="Nothing tracked yet">Add your loyalty accounts on the Points tab, then certificates, status and memberships. PointWise will watch every expiration for you.</EmptyState>}
       {d.expiringAccounts.length > 0 && (
         <Panel title="Needs attention: points">
           <ul className="space-y-1 text-sm" data-testid="overview-expiring">
@@ -691,7 +691,7 @@ function TransferBonuses() {
   const list = routes.data ?? [];
   return (
     <Panel title="Transfer partners and bonuses" data-testid="transfer-tab">
-      <p className="mb-2 text-sm text-slate-600">Ratios are from general knowledge; confirm in your bank's portal. Bonus history builds as Pointwise observes bonuses, so early advice has low confidence.</p>
+      <p className="mb-2 text-sm text-slate-600">Ratios are from general knowledge; confirm in your bank's portal. Bonus history builds as PointWise observes bonuses, so early advice has low confidence.</p>
       {list.length === 0 ? (
         <EmptyState title="No transfer routes">Transfer partners appear once programs and bank currencies are in the catalog.</EmptyState>
       ) : (
@@ -777,7 +777,7 @@ function AwardTravel() {
         </Panel>
       )}
       <Panel title="Transfer bonuses">
-        {hot.length === 0 ? <p className="text-sm text-slate-600">No active or expected bonuses. Bonus history builds as Pointwise observes them.</p> : (
+        {hot.length === 0 ? <p className="text-sm text-slate-600">No active or expected bonuses. Bonus history builds as PointWise observes them.</p> : (
           <ul className="space-y-2 text-sm" data-testid="transfer-bonuses">
             {hot.map((r) => (
               <li key={`${r.currency}-${r.program}`}>

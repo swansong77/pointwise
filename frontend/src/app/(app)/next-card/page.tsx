@@ -29,7 +29,7 @@ export default function NextCardPage() {
     <div className="space-y-6">
       <PageHeader
         title="Next card"
-        subtitle="Which card each person should open next — first-year and ongoing value from your spending, current cards and 5/24 status. Calculated by Pointwise; nothing is sent to an AI provider."
+        subtitle="Which card each person should open next — first-year and ongoing value from your spending, current cards and 5/24 status. Calculated by PointWise; nothing is sent to an AI provider."
       />
       <HouseholdPick plan={plan.data} loading={plan.isLoading} error={plan.error} />
       <WorkflowPanel />

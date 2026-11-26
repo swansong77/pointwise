@@ -1,11 +1,11 @@
 /**
- * Pure helpers for the Pointwise loyalty capture extension (no browser APIs, so they are unit-tested in Node).
+ * Pure helpers for the PointWise loyalty capture extension (no browser APIs, so they are unit-tested in Node).
  *
  * What the extension does, and does not do:
  *  - runs only when the member clicks "Capture this page" (activeTab), never in the background;
  *  - only on a program's own domain (a page on any other site is refused);
  *  - reads the page's visible text, never form fields, cookies, storage or passwords;
- *  - sends the text to the member's OWN Pointwise server with a revocable token that can only post loyalty
+ *  - sends the text to the member's OWN PointWise server with a revocable token that can only post loyalty
  *    snapshots; the server parses it and discards the text.
  */
 

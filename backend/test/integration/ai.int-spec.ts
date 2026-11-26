@@ -8,7 +8,7 @@ import { ModelRouter } from '../../src/ai/router';
 import { defaultProviderFactory } from '../../src/ai/providers';
 import { ChatRequest } from '../../src/ai/types';
 
-/** AI platform: consent, agent runtime with Pointwise tools (offline demo model), actions, admin, MCP. */
+/** AI platform: consent, agent runtime with PointWise tools (offline demo model), actions, admin, MCP. */
 const V = '/api/v1';
 let app: INestApplication;
 let baseUrl: string;
@@ -82,7 +82,7 @@ describe('consent, models and agents', () => {
   });
 });
 
-describe('assistant answers the spec questions from Pointwise data (family account)', () => {
+describe('assistant answers the spec questions from PointWise data (family account)', () => {
   let token: string;
   beforeAll(async () => {
     token = await login(app, 'family@pointwise.local', 'Family12345!');
@@ -306,7 +306,7 @@ describe('admin: providers, models, agents, usage', () => {
   });
 });
 
-describe('Pointwise MCP server + admin MCP registry', () => {
+describe('PointWise MCP server + admin MCP registry', () => {
   let familyPat: string;
   let tokenId: string;
   let familyToken: string;

@@ -90,7 +90,7 @@ function AutoCapture() {
         <a className="text-brand-700 underline" href="/import">
           bank connection
         </a>
-        , or by forwarding the issuer&apos;s transaction alert emails to your private Pointwise address. Pointwise never asks for bank passwords and never sends your transactions
+        , or by forwarding the issuer&apos;s transaction alert emails to your private PointWise address. PointWise never asks for bank passwords and never sends your transactions
         to an AI service.
       </p>
       <ul className="divide-y divide-slate-100 text-sm" aria-label="Cards and how they are imported">
@@ -157,7 +157,7 @@ function AutoCapture() {
                 )}
               </li>
               <li>
-                Create a filter with this search and choose <em>Forward it to</em> your Pointwise address:{' '}
+                Create a filter with this search and choose <em>Forward it to</em> your PointWise address:{' '}
                 <code className="rounded bg-slate-100 px-1 text-xs">{s.inbox.gmailFilter}</code>{' '}
                 <button type="button" className="text-brand-700 underline" onClick={() => copy(s.inbox.gmailFilter, 'filter')}>
                   {copied === 'filter' ? 'copied' : 'copy'}

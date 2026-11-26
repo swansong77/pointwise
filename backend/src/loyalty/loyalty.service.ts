@@ -572,7 +572,7 @@ export class LoyaltyService {
         continue;
       }
       const startsAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-      await this.prisma.transferBonusRecord.upsert({ where: { currencyId_programId_startsAt: { currencyId: p.currencyId, programId: p.programId, startsAt } }, update: {}, create: { currencyId: p.currencyId, programId: p.programId, bonusPercent: p.bonusPercent, startsAt, endsAt: p.bonusEndsAt, source: 'observed by Pointwise' } });
+      await this.prisma.transferBonusRecord.upsert({ where: { currencyId_programId_startsAt: { currencyId: p.currencyId, programId: p.programId, startsAt } }, update: {}, create: { currencyId: p.currencyId, programId: p.programId, bonusPercent: p.bonusPercent, startsAt, endsAt: p.bonusEndsAt, source: 'observed by PointWise' } });
       n++;
     }
     return n;

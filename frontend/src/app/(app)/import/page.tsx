@@ -292,7 +292,7 @@ function BankConnections() {
               </Button>
             )}
           </div>
-          <p className="text-xs text-slate-500">After connecting, new card transactions arrive automatically (the bank notifies Pointwise; a daily sync is the fallback).</p>
+          <p className="text-xs text-slate-500">After connecting, new card transactions arrive automatically (the bank notifies PointWise; a daily sync is the fallback).</p>
           {sandbox.data && <p role="status">{sandbox.data.note}</p>}
           <ul className="divide-y divide-slate-100">
             {list.data?.map((c) => (
@@ -403,7 +403,7 @@ function CreditReportImport() {
         </li>
       </ul>
       <p className="mb-3 text-xs text-slate-500">
-        None of these offer automated access, so Pointwise never logs in to them. Reports are read here and discarded; only the card accounts are kept, and nothing is sent to any
+        None of these offer automated access, so PointWise never logs in to them. Reports are read here and discarded; only the card accounts are kept, and nothing is sent to any
         AI service.
       </p>
       <form

@@ -3,7 +3,7 @@
  * never sent to an AI provider).
  *
  * Users turn on "every transaction" alerts at their card issuers and forward them (a Gmail / Outlook
- * filter) to their private Pointwise address. Issuers word alerts differently; the parser looks for
+ * filter) to their private PointWise address. Issuers word alerts differently; the parser looks for
  * the pieces every alert has: an amount, a merchant, the card's last digits and usually a date.
  *   "You made a $23.45 transaction with UBER *TRIP on November 2, 2026 … ending in 1234"   (Chase-style)
  *   "Merchant: UBER TRIP  Amount: $23.45  Card ending: 31007"                             (key/value)

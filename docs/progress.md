@@ -11,7 +11,7 @@
 | 7 Data storage | ✅ | docs/storage.md | 24 Core Data entities, ER diagram |
 | 8 Functional analysis | ✅ | docs/features.md | 30 features w/ traceability |
 | 9 User flows | ✅ | docs/user-flows.md | 9 flows |
-| 10 PRD | ✅ | docs/prd.md | Web product "Pointwise" |
+| 10 PRD | ✅ | docs/prd.md | Web product "PointWise" |
 | 11 Web architecture | ✅ | docs/web-architecture.md | system/container/sequence/data-flow/ER diagrams |
 | 12 Database design | ✅ | database/schema.prisma, backend/prisma/migrations/20261121000000_init | 27 models, 26 tables, 42 indexes |
 | 13 Frontend design + build | ✅ | docs/frontend-spec.md, frontend/ | Next.js 15, 18 routes, build green |
@@ -50,14 +50,14 @@ Results: backend unit 296 · integration 51 · frontend 38 · Playwright 44 · C
 
 ## AI platform & MCP (2026-11-23)
 
-Review decisions: build Phase A (AI core) + B (MCP) now; card knowledge base via **admin-reviewed AI extraction** (Phase C, designed); MCP **restricted** (user chats get only Pointwise tools; filesystem/DB/Git/browser MCP are operator tooling).
+Review decisions: build Phase A (AI core) + B (MCP) now; card knowledge base via **admin-reviewed AI extraction** (Phase C, designed); MCP **restricted** (user chats get only PointWise tools; filesystem/DB/Git/browser MCP are operator tooling).
 
 | Item | Status | Artifact |
 |---|---|---|
 | Provider-agnostic AI layer (Anthropic, OpenAI/Azure/compatible incl. Grok, Mistral, DeepSeek, OpenRouter, Ollama, Gemini, offline demo) | ✅ | backend/src/ai/providers, docs/ai-platform.md |
 | Model registry, failover, circuit breaker, budgets, usage & cost | ✅ | ai/router.ts, admin /admin/ai |
 | Assistant + 10 agent profiles + 12 tools; confirm-before-write | ✅ | ai/ai.service.ts, ai/tools.ts, /assistant |
-| Pointwise MCP server (PAT) + admin MCP registry with approval pinning | ✅ | ai/mcp-server.ts, ai/mcp-client.ts, docs/mcp-architecture.md, docs/mcp-registry.md |
+| PointWise MCP server (PAT) + admin MCP registry with approval pinning | ✅ | ai/mcp-server.ts, ai/mcp-client.ts, docs/mcp-architecture.md, docs/mcp-registry.md |
 | Card refresh engine, offer history | ✅ Phase C (below) | docs/card-refresh-engine.md, docs/card-offer-history.md |
 | Recommendation scorer, travel optimisation | ⏭ next round | docs/roadmap.md |
 | Tests | ✅ | tests/ai/ (34 cases) |
@@ -86,7 +86,7 @@ Results: backend unit 384 · integration 89 · frontend 43 · Playwright 52 (×3
 
 | Item | Status | Artifact |
 |---|---|---|
-| Next-card scorer: first-year / long-term value, return on fee, 5/24 impact and slot cost, eligibility (minors, held cards, 5/24-enforcing issuers, product family), confidence, Pointwise-written reasons | ✅ | backend/src/domain/card-scorer.ts, docs/recommendation-scorer.md |
+| Next-card scorer: first-year / long-term value, return on fee, 5/24 impact and slot cost, eligibility (minors, held cards, 5/24-enforcing issuers, product family), confidence, PointWise-written reasons | ✅ | backend/src/domain/card-scorer.ts, docs/recommendation-scorer.md |
 | Who should apply (per card) and household plan; spend profile (entered → transactions → typical) | ✅ | backend/src/strategy/, /next-card |
 | Travel: loyalty programs, transfer partners with bonuses, member balances, best transfer per balance, award planner with household pooling | ✅ | backend/src/domain/travel.ts, docs/travel-optimization.md, /travel, admin Transfer partners tab |
 | Assistant tools `recommend_next_card`, `get_transfer_options`, `plan_award` (user data, never sent to a model) and `get_transfer_partners` (public) | ✅ | ai/tools.ts, agents updated |

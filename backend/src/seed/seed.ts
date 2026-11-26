@@ -886,7 +886,7 @@ async function seedDemoUsers(ctx: Awaited<ReturnType<typeof upsertCatalog>>) {
     data: {
       userId: demo.id,
       type: "SYSTEM",
-      title: "Welcome to Pointwise",
+      title: "Welcome to PointWise",
       body: "Add your cards to see your best card everywhere.",
       link: "/wallet",
       dedupeKey: "welcome",

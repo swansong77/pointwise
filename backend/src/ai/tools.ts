@@ -18,7 +18,7 @@ import { WalletService } from '../wallet/wallet.service';
 import { JsonSchemaObject, ToolSpec } from './types';
 
 /**
- * Pointwise tools for the AI layer and the Pointwise MCP server. Every handler is scoped to the
+ * PointWise tools for the AI layer and the PointWise MCP server. Every handler is scoped to the
  * calling user (same services and guards as the REST API) and returns `{ summary, data }`:
  * numbers come from the deterministic engines, the model only explains them. Outputs are
  * minimised — no card digits, emails or internal ids beyond what a follow-up call needs.

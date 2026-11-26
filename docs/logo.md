@@ -1,4 +1,4 @@
-# Pointwise logo
+# PointWise logo
 
 An original mark made for this project: a bold white **P** on an indigo rounded square, with a gold dot as the P's full stop: the "point". It uses the app's existing brand colours (indigo `#6366f1 → #3730a3`, gold `#fbbf24`). The wordmark is **Point** (medium) + **wise** (extra-bold, brand indigo).
 

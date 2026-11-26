@@ -2,7 +2,7 @@
 
 Source: `Credit Card Benefits Tracker-v4.xlsx`, sheet **Usage**. This document describes the sheet's
 structure, formulas and rules only. No values from the workbook are copied here (the file is the
-user's private data; Pointwise tests use synthetic fixtures).
+user's private data; PointWise tests use synthetic fixtures).
 
 ## 1. Layout
 
@@ -67,9 +67,9 @@ None. Anniversary and cardmember-year benefits are noted in text ("Anniversary",
 year", "Card year") but the sheet has no renewal date, no period start/end and no formula that rolls a
 benefit over. The Cards tab keeps an *Opened* date, but nothing connects it to a benefit period.
 
-## 7. What Pointwise does instead
+## 7. What PointWise does instead
 
-| Workbook behavior | Pointwise |
+| Workbook behavior | PointWise |
 |---|---|
 | Usage keyed by card name | Usage keyed by **wallet card account** (`UserBenefit.walletCardId`); the account level never groups by product |
 | One year-to-date number | One `BenefitUsage` row per period with amount, date, source, status |

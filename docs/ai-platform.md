@@ -2,7 +2,7 @@
 
 Source: `backend/src/ai/` · UI: `/assistant`, Settings → AI assistant / Connect an AI app, `/admin/ai` · Tests: `backend/test/unit/ai/`, `backend/test/integration/ai.int-spec.ts`, `playwright/tests/ai-assistant.spec.ts`, `cypress/cypress/e2e/ai-assistant.cy.ts`, `tests/ai/`.
 
-Review of the original request and the decisions taken: see the plan summary in `docs/progress.md` (AI platform section). In short: provider-agnostic LLM layer, assistant + 10 agent profiles over Pointwise tools, Pointwise as an MCP server, admin-only MCP client registry; card knowledge base / live offer refresh and travel optimisation are the next phase ([card-refresh-engine.md](card-refresh-engine.md), [card-offer-history.md](card-offer-history.md)).
+Review of the original request and the decisions taken: see the plan summary in `docs/progress.md` (AI platform section). In short: provider-agnostic LLM layer, assistant + 10 agent profiles over PointWise tools, PointWise as an MCP server, admin-only MCP client registry; card knowledge base / live offer refresh and travel optimisation are the next phase ([card-refresh-engine.md](card-refresh-engine.md), [card-offer-history.md](card-offer-history.md)).
 
 ## 0. Privacy rule (product owner decision, 2026-11-23)
 
@@ -11,7 +11,7 @@ Review of the original request and the decisions taken: see the plan summary in 
 | Mechanism | Effect |
 |---|---|
 | Tool data classes | `PUBLIC` (search_card_catalog, compare_cards, get_card_offer_history, get_transfer_partners, search_card_terms — public catalog only, no "already held"/user values) may return results to the model. Every other tool is `USER`: wallet, benefits, 5/24, household, values, renewals, offers, best card, next-card scorer, transfer options, award planner, writes. |
-| Server-side answers | When the model calls a `USER` tool, Pointwise runs it and **answers the user directly** from the tool summaries; the result is never sent to the model and the loop ends. Responses carry `private: true` and a "your data was not shared with the AI" badge. |
+| Server-side answers | When the model calls a `USER` tool, PointWise runs it and **answers the user directly** from the tool summaries; the result is never sent to the model and the loop ends. Responses carry `private: true` and a "your data was not shared with the AI" badge. |
 | History | Turns that touched user data are stored `private` and never replayed to any model. |
 | Redaction | Card-number-like digit runs (12–19 digits) and email addresses are removed from the user's question before it is sent. |
 | MCP server | Exposes only the public catalog tools (an MCP client is an AI provider). |
@@ -30,10 +30,10 @@ flowchart LR
   ROUTER --> O[OpenAiProvider<br/>OpenAI · Azure · Grok · Mistral · DeepSeek · OpenRouter · Ollama]
   ROUTER --> G[GeminiProvider<br/>@google/genai]
   ROUTER --> M[MockProvider<br/>offline demo / tests]
-  SVC --> TOOLS[ToolRegistry<br/>12 Pointwise tools, user-scoped]
+  SVC --> TOOLS[ToolRegistry<br/>12 PointWise tools, user-scoped]
   TOOLS --> ENGINES[five24 · benefits · portfolio · recommendations · offers]
   SVC --> MCPC[McpClientService<br/>admin-approved remote tools]
-  EXT[User's AI app<br/>Claude / ChatGPT] -->|Streamable HTTP + PAT| MCPS[/mcp<br/>Pointwise MCP server/]
+  EXT[User's AI app<br/>Claude / ChatGPT] -->|Streamable HTTP + PAT| MCPS[/mcp<br/>PointWise MCP server/]
   MCPS --> TOOLS
 ```
 
@@ -58,7 +58,7 @@ Errors normalise to `ProviderError {retryable}`: 408/409/429/5xx/network are ret
 | Anthropic | Claude Opus 5.5 (`claude-opus-5-5`, $4/$20), Claude Sonnet 5.5 (`claude-sonnet-5-5`, $2/$10), Claude Haiku 5.5 (`claude-haiku-5-5`, $0.10/$0.50) — 1M context | usable when `ANTHROPIC_API_KEY` is set |
 | OpenAI, Google Gemini | GPT-5, GPT-5 mini, Gemini Pro, Gemini Flash (examples) | disabled — verify ids/prices, add a key, enable |
 | Azure OpenAI, xAI Grok, Mistral, DeepSeek, OpenRouter, Ollama | — (add in admin) | disabled |
-| Pointwise demo (offline) | `pointwise-demo` | usable when `AI_ENABLE_MOCK=true` |
+| PointWise demo (offline) | `pointwise-demo` | usable when `AI_ENABLE_MOCK=true` |
 
 ### Routing, failover, cost
 Each agent has an ordered `modelChain` (default Opus 5.5 → Sonnet 5.5 → demo). The user's preferred model (Settings) goes first. The router skips unusable providers and open circuits (3 retryable failures in 2 min → open 60 s), tries the next model on any failure, records every attempt in `AiUsage` (tokens incl. cache read/write, latency, success, error code, cost = tokens × $/1M), and returns 503 when the chain is exhausted.

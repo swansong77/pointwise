@@ -41,7 +41,7 @@ export interface IssuerListing {
   pagesOnly?: Array<[slug: string, url: string]>;
 }
 
-/** Points currencies used by cards first seen on these listings (Pointwise default values). */
+/** Points currencies used by cards first seen on these listings (PointWise default values). */
 export const LISTING_CURRENCIES: Array<{
   code: string;
   name: string;

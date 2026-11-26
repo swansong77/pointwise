@@ -14,7 +14,7 @@ export default async function Home() {
       <Logo size="xl" className="mb-6" />
       <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">Use the right card. Every time.</h1>
       <p className="mt-4 text-lg text-slate-600">
-        Pointwise shows your best card for every store and category, tracks card-linked offers before they expire, and keeps
+        PointWise shows your best card for every store and category, tracks card-linked offers before they expire, and keeps
         welcome bonuses and annual fees on schedule.
       </p>
       <div className="mt-8 flex gap-3">

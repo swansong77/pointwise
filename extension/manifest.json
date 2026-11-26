@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Pointwise loyalty capture",
+  "name": "PointWise loyalty capture",
   "version": "0.1.0",
-  "description": "Capture your own loyalty account page, on your click, and send it to your own Pointwise server. Never reads passwords or form fields.",
+  "description": "Capture your own loyalty account page, on your click, and send it to your own PointWise server. Never reads passwords or form fields.",
   "action": {
     "default_popup": "popup.html",
     "default_title": "Capture this loyalty page",
