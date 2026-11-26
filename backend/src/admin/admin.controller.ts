@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Injectable, Module, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Injectable, Module, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiPropertyOptional, ApiTags, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsEnum, IsHexColor, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
@@ -6,10 +6,27 @@ import { CardNetwork, CardType, OfferKind, Role, CreditBand } from '@prisma/clie
 import { AuthUser, CurrentUser, Roles } from '../common/decorators';
 import { RolesGuard } from '../common/guards';
 import { PrismaService } from '../common/prisma.service';
+import { applyRotating, rotatingCoverage } from '../seed/rotating.apply';
+import { ROTATING_SOURCES } from '../seed/rotating-sources';
+import { ROTATING_SCHEDULE } from '../jobs/rotating.job';
 import { PageQuery, paginate } from '../common/pagination';
 import { AnalyticsModule, AnalyticsService } from '../analytics/analytics.service';
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export class RotatingCategoryInput {
+  @ApiProperty() @IsString() @Matches(SLUG) cat!: string;
+  @ApiProperty() @IsNumber() @Min(0.1) @Max(10) mult!: number;
+  @ApiProperty() @IsString() @MinLength(8) @MaxLength(300) desc!: string;
+}
+export class RotatingQuarterInput {
+  @ApiProperty({ example: '2027-Q1' }) @IsString() @Matches(/^20\d\d-Q[1-4]$/) quarter!: string;
+  @ApiProperty({ type: [String] }) @IsArray() @ArrayMaxSize(20) @Matches(SLUG, { each: true }) cards!: string[];
+  @ApiProperty({ type: [RotatingCategoryInput] }) @IsArray() @ArrayMaxSize(10) @ValidateNested({ each: true }) @Type(() => RotatingCategoryInput) categories!: RotatingCategoryInput[];
+  @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(1) @Max(100000) capDollars?: number;
+  @ApiProperty({ description: 'The issuer page that announces the quarter' }) @IsString() @MaxLength(500) sourceUrl!: string;
+  @ApiProperty({ example: '2026-12-15' }) @IsString() @Matches(/^20\d\d-\d\d-\d\d$/) checkedOn!: string;
+}
 
 export class RewardInput {
   @ApiPropertyOptional() @IsOptional() @IsUUID() categoryId?: string;
@@ -84,6 +101,28 @@ export class RoleInput {
 @Injectable()
 export class AdminService {
   constructor(private readonly prisma: PrismaService, private readonly analytics: AnalyticsService) {}
+
+  /** Adds or corrects one quarter of rotating categories from an issuer's announcement a person has read. Contacts no issuer. */
+  async setRotating(actorId: string, dto: RotatingQuarterInput) {
+    const result = await applyRotating(this.prisma, [dto]);
+    if (result.problems.length) throw new BadRequestException(result.problems.join('; '));
+    await this.audit(actorId, 'ROTATING_CATEGORIES', 'Reward', dto.quarter, { cards: dto.cards, categories: dto.categories.map((c) => c.cat), sourceUrl: dto.sourceUrl });
+    return result;
+  }
+
+  /** The state of the scheduled rotating-category refresh: whether the public-page read is on, when it runs, what it reads. */
+  rotatingSettings() {
+    return {
+      autoFetch: process.env.ROTATING_AUTO_FETCH !== 'false',
+      schedule: ROTATING_SCHEDULE,
+      override: 'User override of the no-issuer-automation rule, scoped to reading public rotating-category pages (ADR-029).',
+      sources: ROTATING_SOURCES.map((s) => ({ cards: s.cards, url: s.url, unreadable: s.unreadable ?? null })),
+    };
+  }
+
+  async rotatingStatus(now = new Date()) {
+    return rotatingCoverage(this.prisma, now);
+  }
 
   private audit(actorId: string, action: string, entity: string, entityId: string, diff?: unknown) {
     return this.prisma.auditLog.create({ data: { actorId, action, entity, entityId, diff: (diff ?? undefined) as object | undefined } });
@@ -199,6 +238,9 @@ export class AdminController {
   constructor(private readonly admin: AdminService) {}
 
   @Get('stats') stats() { return this.admin.stats(); }
+  @Post('rotating-categories') @HttpCode(200) rotating(@CurrentUser() u: AuthUser, @Body() dto: RotatingQuarterInput) { return this.admin.setRotating(u.sub, dto); }
+  @Get('rotating-categories') rotatingStatus() { return this.admin.rotatingStatus(); }
+  @Get('rotating-categories/settings') rotatingSettings() { return this.admin.rotatingSettings(); }
   @Get('users') users(@Query() q: PageQuery) { return this.admin.users(q); }
   @Patch('users/:id/role') role(@CurrentUser() u: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: RoleInput) { return this.admin.setRole(u.sub, id, dto.role); }
   @Get('audit') audit(@Query() q: PageQuery) { return this.admin.auditLog(q); }

@@ -152,3 +152,20 @@ Format: Context · Options · Decision · Consequences · Status. Evidence and i
 ## ADR-027 — Restore safety
 - **Decision:** verify the whole file before touching anything; require the same database version; make a pre-restore backup; one transaction (truncate, insert in foreign-key order, check every model's count and checksum against the manifest); roll back on any difference; maintenance mode off afterwards. Maintenance mode (a SystemSetting) answers 503 to everyone but administrators, health checks and sign-in.
 - **Status:** accepted.
+
+
+---
+## ADR-028 — Category rates: what ranks, what is confirmed
+- **Context:** "Best Card by Category" is only as good as the earning rates. The list of 112 curated cards was written from general knowledge; 211 more come from issuer listing pages; 54 of those have no rates; the engine ignored caps, treated categories as flat and could not tell a travel-portal rate from a general one.
+- **Decision:** (1) A rate carries `conditional` (needs a portal, a linked account or similar; shown on the card, never used to rank), `verifiedAt` and `sourceUrl`. (2) Airlines, Hotels, Car rental and Transit are sub-categories of Travel: a travel rate applies to them, a sub-category rate does not apply to Travel. (3) A capped rate is blended with the card's base rate for the part of the member's yearly spend above the cap when the spending profile gives that spend; otherwise the headline rate ranks and the cap is shown. (4) Each ranked card says whether an issuer page confirmed the rate it used. (5) The ranking stays a rate comparison: annual fees are not in it (the portfolio and next-card pages net them). (6) About 60 popular cards were checked against the issuers' own pages (rate-verification.ts); pages that could not be read leave the card unverified; a rate that looks wrong and cannot be checked is made conditional until someone confirms it. (7) docs/rewards-audit.md is generated from the data by rules that run in the unit tests.
+- **Consequences:** a portal bonus can no longer make a card "best at travel"; a capped card stops winning for a heavy spender; unverified rates are visible; gaps (cards with no recorded rates) are listed, not hidden.
+- **Status:** accepted.
+
+
+---
+## ADR-029 — Scheduled refresh of rotating categories (scoped override of no-issuer-automation)
+- **Context:** the standing rule forbids automating issuer sites. Quarterly rotating categories (Freedom Flex, Discover it) change every quarter and a hand-kept calendar goes stale. On 2026-11-26 the owner explicitly overrode the rule for this feature.
+- **Decision:** the daily job `update-rotating-categories` (04:00 UTC, `ROTATING_AUTO_FETCH`, on by default) may read an issuer's PUBLIC announcement page listed in `seed/rotating-sources.ts`, only when the current quarter (or the next, in the last 45 days) is missing. It uses the catalog-refresh `PageFetcher`: https, allow-listed issuer domains, robots.txt, one request per host per interval, no cookies or credentials. A conservative parser applies a quarter only when the page states one quarter and one rate with recognised categories; otherwise admins are told once a day and import the quarter by hand. Pages known to be unreadable are marked and not requested. `GET /admin/rotating-categories/settings` shows the state.
+- **Not covered:** logins, credentials, activating a category for a member, any page behind a login, offers, portals, or any other feature. Each of those still follows the standing rule.
+- **Consequences:** quarters appear without a code change when an issuer's page is readable; a wrong or unreadable page degrades to an admin notice, never to a wrong calendar. Issuer terms against automated access are the operator's to check; the job is polite and can be switched off.
+- **Status:** accepted.

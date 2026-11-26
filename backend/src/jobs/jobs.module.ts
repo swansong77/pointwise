@@ -30,6 +30,7 @@ import { LoyaltyAutomationCoreModule } from "../loyalty/loyalty-automation.modul
 import { CardRefreshCoreModule } from "../catalog-refresh/card-refresh.module";
 import { CardResearchCoreModule } from "../catalog-research/card-research.module";
 import { JOB_NAMES, JOB_QUEUE, JobName, JobsService } from "./jobs.service";
+import { ROTATING_SCHEDULE } from "./rotating.job";
 
 /** Cron schedule (UTC). */
 export const SCHEDULE: Record<JobName, string> = {
@@ -71,6 +72,8 @@ export const SCHEDULE: Record<JobName, string> = {
   "offer-digest": "45 13 * * *",
   /** encrypted backup into BACKUP_DIR, only when BACKUP_PASSPHRASE is set */
   "backup-nightly": "30 3 * * *",
+  /** applies the quarterly rotating-category calendar and tells holders what is new (no issuer is contacted) */
+  "update-rotating-categories": ROTATING_SCHEDULE,
 };
 
 const JobNameEnum = Object.fromEntries(JOB_NAMES.map((n) => [n, n])) as Record<
