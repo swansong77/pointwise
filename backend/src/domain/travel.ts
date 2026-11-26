@@ -26,7 +26,7 @@ export interface Program {
   id: string;
   code: string;
   name: string;
-  kind: 'AIRLINE' | 'HOTEL' | 'OTHER';
+  kind: 'AIRLINE' | 'HOTEL' | 'OTHER' | 'SHOPPING' | 'DINING' | 'CRUISE' | 'RENTAL_CAR' | 'CASINO' | 'RETAIL';
   centsPerPoint: number;
   householdPooling: boolean;
 }

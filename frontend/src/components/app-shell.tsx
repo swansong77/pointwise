@@ -26,6 +26,7 @@ const NAV = [
   { href: '/offers/market', label: 'Offer market', icon: '📈' },
   { href: '/offers/intel', label: 'Offer intelligence', icon: '🎯' },
   { href: '/offers/plan', label: 'Plan a purchase', icon: '🧭' },
+  { href: '/loyalty', label: 'Loyalty assets', icon: '✈️' },
   { href: '/nearby', label: 'Nearby', icon: '📍' },
   { href: '/merchants', label: 'Merchants', icon: '🏪' },
   { href: '/calculator', label: 'Calculator', icon: '🧮' },

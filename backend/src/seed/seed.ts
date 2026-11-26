@@ -19,6 +19,7 @@ import {
 import { seedFamilyStrategy, seedStrategyCatalog } from "./strategy";
 import { seedAi } from "./ai";
 import { applyMerchantIdentities } from "./merchant-identities";
+import { applyLoyaltyRegistry } from "./loyalty-registry";
 import { CATEGORIES } from "./categories";
 import { importRealCatalog } from "./real-catalog";
 
@@ -912,6 +913,7 @@ async function main() {
       JSON.stringify(await importRealCatalog(prisma)),
     );
     console.log("merchant identities", JSON.stringify(await applyMerchantIdentities(prisma)));
+    console.log("loyalty registry", JSON.stringify(await applyLoyaltyRegistry(prisma)));
     if (process.env.SEED_DEMO_USERS !== "false") {
       await upsertUser(
         "admin@pointwise.local",
@@ -958,7 +960,7 @@ async function main() {
     }
     // both: real cards in the catalog; with SEED_RETIRE_DEMO=true the fictional ones leave the
     // public catalog but stay in the demo accounts' wallets
-    if (mode === "both")
+    if (mode === "both") {
       console.log(
         "real catalog",
         JSON.stringify(
@@ -967,6 +969,9 @@ async function main() {
           }),
         ),
       );
+      // the real bank currencies exist now, so the registry's transfer routes can attach to them
+      console.log("loyalty registry", JSON.stringify(await applyLoyaltyRegistry(prisma)));
+    }
   }
   const counts = {
     categories: await prisma.category.count(),

@@ -72,6 +72,12 @@ model User {
   auditLogs       AuditLog[]
   passwordResets  PasswordResetToken[]
   statementImports StatementImport[]
+  loyaltyAccounts LoyaltyAccount[]
+  loyaltyEvents LoyaltyEvent[]
+  loyaltyCertificates LoyaltyCertificate[]
+  eliteStatuses EliteStatus[]
+  memberships Membership[]
+  awardTrips AwardTrip[]
 }
 
 model PasswordResetToken {
@@ -160,6 +166,10 @@ model Profile {
 
   @@index([userId])
   @@index([householdId])
+  loyaltyAccounts LoyaltyAccount[]
+  loyaltyCertificates LoyaltyCertificate[]
+  eliteStatuses EliteStatus[]
+  memberships Membership[]
 }
 
 // ───────────────────────────── Catalog ─────────────────────────────
@@ -217,6 +227,15 @@ model RewardCurrency {
   userValuations UserValuation[]
   transferPartners TransferPartner[]
   balances     LoyaltyBalance[]
+  /// how points expire (general knowledge until verified; users can override per account)
+  policyType     ExpirationPolicyType @default(UNKNOWN)
+  policyMonths   Int?
+  resetConditions String[]            @default([])
+  policyNote     String?
+  policySource   String?
+  policyVerified Boolean              @default(false)
+  accounts LoyaltyAccount[]
+  bonusRecords TransferBonusRecord[]
 }
 
 model CreditCard {
@@ -789,6 +808,7 @@ model Subscription {
 }
 
 enum NotificationType {
+  LOYALTY_EXPIRING
   BENEFIT_EXPIRING
   OFFER_EXPIRING
   CARD_RENEWAL
@@ -828,6 +848,7 @@ model NotificationPreference {
   benefitPush       Boolean @default(false)
   transferBonuses   Boolean @default(true)
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loyaltyExpiring Boolean @default(true)
 }
 
 model AnalyticsEvent {
@@ -1513,6 +1534,12 @@ enum LoyaltyKind {
   AIRLINE
   HOTEL
   OTHER
+  SHOPPING
+  DINING
+  CRUISE
+  RENTAL_CAR
+  CASINO
+  RETAIL
 }
 
 /// Airline / hotel loyalty program (catalog, admin-curated).
@@ -1526,6 +1553,18 @@ model LoyaltyProgram {
   isActive         Boolean           @default(true)
   partners         TransferPartner[]
   balances         LoyaltyBalance[]
+  /// how points expire (general knowledge until verified; users can override per account)
+  policyType     ExpirationPolicyType @default(UNKNOWN)
+  policyMonths   Int?
+  resetConditions String[]            @default([])
+  policyNote     String?
+  policySource   String?
+  policyVerified Boolean              @default(false)
+  transferable Boolean @default(false)
+  accounts LoyaltyAccount[]
+  certificates LoyaltyCertificate[]
+  statuses EliteStatus[]
+  bonusRecords TransferBonusRecord[]
 }
 
 /// Bank currency → loyalty program transfer (ratio, timing, current bonus).
@@ -1898,4 +1937,257 @@ model PlannedPurchase {
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, plannedFor])
+}
+
+
+// ───────────── loyalty asset management ─────────────
+
+enum ExpirationPolicyType {
+  NEVER           // no expiration
+  ACTIVITY        // expires after N months with no qualifying activity
+  FIXED           // each point expires N months after it was earned
+  WHILE_CARD_OPEN // kept while the earning card account is open
+  UNKNOWN
+}
+
+enum LoyaltySource {
+  MANUAL
+  IMPORT
+  EMAIL
+}
+
+enum LoyaltyEventKind {
+  SNAPSHOT
+  EARN
+  BONUS
+  PURCHASE
+  REDEEM
+  EXPIRE
+  TRANSFER_OUT
+  TRANSFER_IN
+  ADJUST
+}
+
+enum CertificateCategory {
+  FREE_NIGHT
+  COMPANION
+  UPGRADE
+}
+
+enum CertificateStatus {
+  AVAILABLE
+  USED
+  EXPIRED
+  CANCELLED
+}
+
+enum StatusKind {
+  AIRLINE
+  HOTEL
+  RENTAL_CAR
+  CRUISE
+  CARD
+}
+
+enum MembershipKind {
+  CLEAR
+  TSA_PRECHECK
+  GLOBAL_ENTRY
+  PRIORITY_PASS
+  DRAGONPASS
+  AIRLINE_CLUB
+  HOTEL
+  OTHER
+}
+
+/// One loyalty account of a household member: an airline / hotel / other program, or a bank rewards currency.
+model LoyaltyAccount {
+  id               String          @id @default(uuid())
+  userId           String
+  profileId        String
+  programId        String?
+  currencyId       String?
+  /// a program that is not in the registry ("future programs")
+  customName       String?
+  customKind       LoyaltyKind?
+  customCentsPerPoint Decimal?     @db.Decimal(6, 3)
+  nickname         String?
+  /// encrypted; only the last digits are ever shown
+  accountNumberEnc String?
+  accountLast4     String?         @db.VarChar(8)
+  memberSince      DateTime?
+  balance          Int             @default(0)
+  pendingBalance   Int             @default(0)
+  lifetimePoints   Int             @default(0)
+  statusLevel      String?
+  statusDeadline   DateTime?
+  /// expiry date the member knows from the program, overriding the predicted one
+  expiresAt        DateTime?
+  lastActivityAt   DateTime?
+  source           LoyaltySource   @default(MANUAL)
+  refreshedAt      DateTime        @default(now())
+  /// overrides the program's transferability
+  transferable     Boolean?
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile          Profile         @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  program          LoyaltyProgram? @relation(fields: [programId], references: [id], onDelete: SetNull)
+  currency         RewardCurrency? @relation(fields: [currencyId], references: [id], onDelete: SetNull)
+  events           LoyaltyEvent[]
+  certificates     LoyaltyCertificate[]
+  statuses         EliteStatus[]
+
+  @@index([userId])
+  @@index([profileId])
+}
+
+/// Every balance change (and monthly snapshots): the history behind charts, and the redeemed / expired / transferred totals.
+model LoyaltyEvent {
+  id           String           @id @default(uuid())
+  userId       String
+  accountId    String
+  kind         LoyaltyEventKind
+  /// signed change in points (0 for a snapshot)
+  points       Int              @default(0)
+  balanceAfter Int
+  occurredAt   DateTime         @default(now())
+  note         String?
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account      LoyaltyAccount   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, occurredAt])
+  @@index([userId])
+}
+
+/// Free night certificates, companion certificates and upgrade certificates.
+model LoyaltyCertificate {
+  id                  String              @id @default(uuid())
+  userId              String
+  profileId           String
+  programId           String?
+  accountId           String?
+  category            CertificateCategory
+  /// e.g. GLOBAL, REGIONAL, SYSTEMWIDE for upgrades
+  subtype             String?
+  name                String
+  number              String?
+  issuedAt            DateTime?
+  expiresAt           DateTime?
+  quantity            Int                 @default(1)
+  /// free-night award point cap
+  pointCap            Int?
+  restrictions        String?
+  /// eligible hotels (brands/properties) or routes
+  eligible            String[]            @default([])
+  blackout            String?
+  fareClasses         String?
+  transferable        Boolean             @default(false)
+  status              CertificateStatus   @default(AVAILABLE)
+  potentialValueCents Int                 @default(0)
+  usedAt              DateTime?
+  usageNote           String?
+  createdAt           DateTime            @default(now())
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile             Profile             @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  program             LoyaltyProgram?     @relation(fields: [programId], references: [id], onDelete: SetNull)
+  account             LoyaltyAccount?     @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([expiresAt])
+}
+
+/// Elite status for one qualification period; earlier rows are the qualification history.
+model EliteStatus {
+  id                 String          @id @default(uuid())
+  userId             String
+  profileId          String
+  programId          String?
+  accountId          String?
+  programName        String
+  kind               StatusKind      @default(AIRLINE)
+  level              String
+  periodStart        DateTime?
+  expiresAt          DateTime?
+  /// what qualifies: nights, segments, PQP, points, spend
+  metric             String?
+  progress           Int             @default(0)
+  required           Int             @default(0)
+  /// already earned and kept for the period (no further qualification needed)
+  maintained         Boolean         @default(false)
+  renewalRequirement String?
+  benefits           String[]        @default([])
+  /// estimated annual value of the status
+  valueCents         Int             @default(0)
+  createdAt          DateTime        @default(now())
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile            Profile         @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  program            LoyaltyProgram? @relation(fields: [programId], references: [id], onDelete: SetNull)
+  account            LoyaltyAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([profileId, programName])
+}
+
+/// CLEAR, TSA PreCheck, Global Entry, lounge access and similar memberships.
+model Membership {
+  id               String         @id @default(uuid())
+  userId           String
+  profileId        String
+  kind             MembershipKind
+  name             String
+  joinedAt         DateTime?
+  renewalAt        DateTime?
+  expiresAt        DateTime?
+  /// encrypted; only the last digits are ever shown
+  memberNumberEnc  String?
+  memberLast4      String?        @db.VarChar(8)
+  benefits         String[]       @default([])
+  renewalCostCents Int            @default(0)
+  renewalMethod    String?
+  autoRenew        Boolean        @default(false)
+  linkedWalletCardId String?
+  annualValueCents Int            @default(0)
+  notes            String?
+  createdAt        DateTime       @default(now())
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile          Profile        @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Observed transfer bonuses over time (history, averages, seasonal expectation).
+model TransferBonusRecord {
+  id           String          @id @default(uuid())
+  currencyId   String
+  programId    String
+  bonusPercent Int
+  startsAt     DateTime
+  endsAt       DateTime?
+  source       String
+  createdAt    DateTime        @default(now())
+  currency     RewardCurrency  @relation(fields: [currencyId], references: [id], onDelete: Cascade)
+  program      LoyaltyProgram  @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([currencyId, programId, startsAt])
+  @@index([currencyId, programId])
+}
+
+/// A planned award trip and the latest evaluation.
+model AwardTrip {
+  id          String   @id @default(uuid())
+  userId      String
+  destination String
+  dateFrom    DateTime
+  dateTo      DateTime
+  cabin       String
+  hotelPrefs  String[] @default([])
+  airlinePrefs String[] @default([])
+  pointsNeeded Int?
+  result      Json?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

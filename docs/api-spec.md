@@ -453,3 +453,28 @@ All routes are per user; every row is one tracked benefit on one card account.
 | POST | `/ai/workflows/purchase-plan` | body `merchantText`, `amountDollars`; also workflow `offer-review` |
 
 Design: `docs/merchant-offer-platform.md`.
+
+## Loyalty asset management (branch pw-2026-feature-loyalty-mngt)
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/loyalty/programs` | registry: programs and bank currencies with their expiration policy |
+| GET · POST | `/loyalty/accounts` | accounts with balance, value, prediction · create (registry program, bank currency or custom program) |
+| PATCH · DELETE | `/loyalty/accounts/:id` | update (balance changes are logged) · remove with history |
+| POST | `/loyalty/accounts/:id/events` | record earn, bonus, purchase, redeem, expire, transfer, adjust or snapshot |
+| GET | `/loyalty/accounts/:id/history` | monthly balance series, growth, category totals |
+| GET | `/loyalty/expirations` | risk, alert wording, ways to keep points alive |
+| GET · POST | `/loyalty/certificates` | free night / companion / upgrade certificates (`category` filter) |
+| GET · POST | `/loyalty/certificates/opportunities` | what to use first; POST matches stays you provide |
+| POST | `/loyalty/certificates/:id/check` | redemption rules against candidate stays |
+| PATCH · DELETE | `/loyalty/certificates/:id` | mark used / expired, edit, remove |
+| GET · POST · PATCH · DELETE | `/loyalty/status[/:id]` | elite status with progress, renewal likelihood, history |
+| GET · POST · PATCH · DELETE | `/loyalty/memberships[/:id]` | memberships with expiry, renewal and card-credit suggestion |
+| GET | `/loyalty/memberships/:id/number` | decrypted member number (owner only) |
+| GET | `/loyalty/valuation` · `/forecast` · `/household` · `/dashboard` | value, expiration timeline, household view, summary |
+| GET | `/loyalty/transfers` | routes with ratio, bonus, history stats, transfer/wait advice |
+| POST · GET · DELETE | `/loyalty/award-trips[/:id]` | evaluate (and optionally save) an award trip |
+| PUT | `/admin/loyalty/bonus-records` | record an observed transfer bonus (admin) |
+| POST | `/ai/workflows/loyalty-review` · `/award-trip` | audited workflows |
+
+Design: `docs/loyalty-platform.md`.

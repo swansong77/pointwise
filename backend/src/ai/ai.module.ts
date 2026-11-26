@@ -18,11 +18,12 @@ import { OrchestratorService } from './orchestrator.service';
 import { PromptsService } from './prompts.service';
 import { PromptsAdminController, WorkflowsController } from './workflows.controller';
 import { BenefitAuditModule } from '../benefit-audit/benefit-audit.module';
+import { LoyaltyCoreModule } from '../loyalty/loyalty.module';
 import { ToolRegistry } from './tools';
 
 /** Core AI providers (no controllers) — shared by the API and the worker. */
 @Module({
-  imports: [PortfolioModule, BenefitsModule, HouseholdsModule, RecommendationsModule, OffersModule, WalletModule, StrategyCoreModule, SpendCoreModule, BenefitAuditModule],
+  imports: [PortfolioModule, BenefitsModule, HouseholdsModule, RecommendationsModule, OffersModule, WalletModule, StrategyCoreModule, SpendCoreModule, BenefitAuditModule, LoyaltyCoreModule],
   providers: [ToolRegistry, ModelRouter, McpClientService, AiService, TokensService, BenefitClassifyService, OrchestratorService, PromptsService],
   exports: [ToolRegistry, ModelRouter, McpClientService, AiService, TokensService, OrchestratorService, PromptsService],
 })

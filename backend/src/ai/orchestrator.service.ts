@@ -10,8 +10,9 @@ import { isLocalProvider } from "./privacy";
 import { PromptsService } from "./prompts.service";
 import { ModelRouter } from "./router";
 import { selectModels } from "./routing";
-import { nextCardWorkflow, offerReviewWorkflow, portfolioReviewWorkflow, purchasePlanWorkflow, WfCtx, WfDeps } from "./workflows";
+import { awardTripWorkflow, loyaltyReviewWorkflow, nextCardWorkflow, offerReviewWorkflow, portfolioReviewWorkflow, purchasePlanWorkflow, WfCtx, WfDeps } from "./workflows";
 import { OfferAnalysisService } from "../offers/offer-analysis.service";
+import { LoyaltyService } from "../loyalty/loyalty.service";
 
 export interface WorkflowRequest {
   question?: string;
@@ -39,9 +40,10 @@ export class OrchestratorService {
     private readonly router: ModelRouter,
     private readonly prompts: PromptsService,
     private readonly offers: OfferAnalysisService,
+    private readonly loyalty: LoyaltyService,
   ) {
-    const deps: WfDeps = { prisma, portfolio, strategy, smart, benefits, offers };
-    this.workflows = new Map([nextCardWorkflow(deps), portfolioReviewWorkflow(deps), purchasePlanWorkflow(deps), offerReviewWorkflow(deps)].map((w) => [w.key, w]));
+    const deps: WfDeps = { prisma, portfolio, strategy, smart, benefits, offers, loyalty };
+    this.workflows = new Map([nextCardWorkflow(deps), portfolioReviewWorkflow(deps), purchasePlanWorkflow(deps), offerReviewWorkflow(deps), loyaltyReviewWorkflow(deps), awardTripWorkflow(deps)].map((w) => [w.key, w]));
   }
 
   list() {

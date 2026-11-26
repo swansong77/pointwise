@@ -6,6 +6,7 @@ import { currentPublicOffers, PublicOffer } from '../strategy/offer-data';
 import { SmartRecommendationService } from '../strategy/smart-recommendation.service';
 import { StrategyService } from '../strategy/strategy.service';
 import { OfferAnalysisService } from '../offers/offer-analysis.service';
+import { LoyaltyService } from '../loyalty/loyalty.service';
 import { SmartResult } from './workflow-types';
 
 export interface WfCtx {
@@ -13,7 +14,7 @@ export interface WfCtx {
   now: Date;
   question?: string;
   /** workflow inputs, e.g. the purchase being planned */
-  params?: { merchantText?: string; amountCents?: number };
+  params?: { merchantText?: string; amountCents?: number; destination?: string; dateFrom?: string; dateTo?: string; cabin?: 'ECONOMY' | 'PREMIUM_ECONOMY' | 'BUSINESS' | 'FIRST'; pointsNeeded?: number };
 }
 
 export interface WfDeps {
@@ -23,6 +24,7 @@ export interface WfDeps {
   smart: SmartRecommendationService;
   benefits: BenefitAuditService;
   offers: OfferAnalysisService;
+  loyalty: LoyaltyService;
 }
 
 const $ = (c: number) => `$${Math.round(c / 100).toLocaleString('en-US')}`;
@@ -209,4 +211,67 @@ export function offerReviewWorkflow(d: WfDeps): WorkflowDef<WfCtx> {
   };
 }
 
-export const WORKFLOW_KEYS = ['next-card', 'portfolio-review', 'purchase-plan', 'offer-review'] as const;
+/** Loyalty review: valuation → expirations → certificates → status → memberships. Deterministic; the answer is composed from the engines. */
+export function loyaltyReviewWorkflow(d: WfDeps): WorkflowDef<WfCtx> {
+  return {
+    key: 'loyalty-review',
+    title: 'Review my loyalty assets',
+    steps: [
+      { id: 'valuation', agentKey: 'valuation', engine: 'loyalty-valuation/1', privacy: 'USER', run: (c) => d.loyalty.valuation(c.userId, [], c.now) },
+      { id: 'expirations', agentKey: 'point-expiration', engine: 'loyalty-expiration/1', privacy: 'USER', run: (c) => d.loyalty.expirations(c.userId, c.now) },
+      { id: 'certificates', agentKey: 'certificate', engine: 'loyalty-assets/1', privacy: 'USER', optional: true, run: (c) => d.loyalty.certificateIntelligence(c.userId, [], c.now) },
+      { id: 'status', agentKey: 'elite-status', engine: 'loyalty-assets/1', privacy: 'USER', optional: true, run: async (c) => (await d.loyalty.statuses(c.userId, c.now)).filter((s) => s.current) },
+      { id: 'memberships', agentKey: 'membership', engine: 'loyalty-assets/1', privacy: 'USER', optional: true, run: (c) => d.loyalty.memberships(c.userId, [], c.now) },
+    ],
+    compose: (r): Composed => {
+      const v = r.valuation as Awaited<ReturnType<LoyaltyService['valuation']>> | undefined;
+      const e = r.expirations as Awaited<ReturnType<LoyaltyService['expirations']>> | undefined;
+      const certs = (r.certificates as Awaited<ReturnType<LoyaltyService['certificateIntelligence']>> | undefined) ?? [];
+      const sts = (r.status as Awaited<ReturnType<LoyaltyService['statuses']>> | undefined) ?? [];
+      const mems = (r.memberships as Awaited<ReturnType<LoyaltyService['memberships']>> | undefined) ?? [];
+      const lines: string[] = [];
+      if (v) lines.push(`Loyalty assets: ${usd(v.currentCents)} now, ${usd(v.potentialCents)} potential; ${usd(v.atRiskCents)} at risk, ${usd(v.expiredCents)} expired, ${usd(v.recoveredCents)} recovered.`);
+      for (const i of (e?.items ?? []).filter((x) => x.message).slice(0, 3)) lines.push(`• ${i.message} (confidence ${i.prediction.confidence}%)`);
+      for (const c of certs.filter((x) => x.urgency !== 'LOW').slice(0, 3)) lines.push(`• ${c.message}`);
+      for (const s of sts.filter((x) => x.view.risk === 'HIGH' || x.view.risk === 'MEDIUM').slice(0, 2)) lines.push(`• ${s.member}: ${s.view.headline}`);
+      for (const m of mems.filter((x) => x.view.state === 'EXPIRING' || x.view.state === 'EXPIRED').slice(0, 2)) lines.push(`• ${m.member}: ${m.view.headline}${m.creditSuggestion ? ` ${m.creditSuggestion}` : ''}`);
+      if (lines.length === 1) lines.push('Nothing needs attention right now.');
+      lines.push('Expiration dates come from each program’s published policy and your own records, with the confidence shown; confirm with the program.');
+      return { answer: lines.join('\n'), highlights: (e?.items ?? []).filter((x) => x.message).slice(0, 3).map((x) => x.program) };
+    },
+  };
+}
+
+/** Award trip: balances, transfers, bonuses and certificates → ranked options. */
+export function awardTripWorkflow(d: WfDeps): WorkflowDef<WfCtx> {
+  return {
+    key: 'award-trip',
+    title: 'Plan an award trip',
+    steps: [
+      {
+        id: 'trip',
+        agentKey: 'award-travel',
+        engine: 'award-trip/1',
+        privacy: 'USER',
+        run: (c) => {
+          const p = c.params;
+          if (!p?.destination || !p.dateFrom || !p.dateTo) throw new Error('destination, dateFrom and dateTo are required');
+          return d.loyalty.evaluateTrip(c.userId, { destination: p.destination, dateFrom: p.dateFrom, dateTo: p.dateTo, cabin: p.cabin ?? 'BUSINESS', pointsNeeded: p.pointsNeeded } as never, c.now);
+        },
+      },
+    ],
+    compose: (r): Composed => {
+      const t = r.trip as Awaited<ReturnType<LoyaltyService['evaluateTrip']>> | undefined;
+      const best = t?.options[0];
+      if (!t || !best) return { answer: 'No program in reach for this trip. Add balances or transfer partners first.', highlights: [] };
+      const lines = [`Best: ${best.programName} — ${best.pointsNeeded.toLocaleString('en-US')} points${t.pointsEstimated ? ' (estimate)' : ''}, ${best.shortfall === 0 ? 'fully covered' : `${best.shortfall.toLocaleString('en-US')} short`}.`];
+      lines.push(...best.reasons.slice(0, 3), ...best.warnings.slice(0, 3).map((w) => `Note: ${w}`));
+      for (const c of t.certificates.filter((x) => x.usable).slice(0, 2)) lines.push(`Certificate: ${c.name} (${c.member}) — ${c.note}`);
+      if (t.estimateNote) lines.push(t.estimateNote);
+      lines.push('General information, not travel or financial advice; confirm award availability with the program.');
+      return { answer: lines.join('\n'), highlights: [best.programName] };
+    },
+  };
+}
+
+export const WORKFLOW_KEYS = ['next-card', 'portfolio-review', 'purchase-plan', 'offer-review', 'loyalty-review', 'award-trip'] as const;

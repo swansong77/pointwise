@@ -6,6 +6,7 @@ import { norm, tokenSimilarity } from '../domain/import';
 import { OffersService } from '../offers/offers.service';
 import { OfferAnalysisService } from '../offers/offer-analysis.service';
 import { OfferIntelService } from '../offers/offer-intel.service';
+import { LoyaltyService } from '../loyalty/loyalty.service';
 import { BenefitsService } from '../portfolio/benefits';
 import { HouseholdsService } from '../portfolio/households';
 import { PortfolioService } from '../portfolio/portfolio';
@@ -85,6 +86,7 @@ export class ToolRegistry {
     private readonly terms: TermsService,
     private readonly offerAnalysis: OfferAnalysisService,
     private readonly offerIntel: OfferIntelService,
+    private readonly loyalty: LoyaltyService,
   ) {
     this.tools = this.build();
   }
@@ -610,6 +612,84 @@ export class ToolRegistry {
         handler: async (ctx) => {
           const ev = await this.offerIntel.events(ctx.userId, { limit: 30 });
           return { summary: ev.length ? ev.map((e) => `• ${e.createdAt.toISOString().slice(0, 10)} ${e.type.toLowerCase()} (${e.actor.toLowerCase()})`).join('\n') : 'No offer events yet.', data: ev };
+        },
+      },
+      {
+        name: 'get_loyalty_summary',
+        description: "The household's loyalty assets: points by program, certificates, status, memberships, and their value (current, potential, at risk, expired, recovered).",
+        inputSchema: obj({}),
+        readOnly: true,
+        handler: async (ctx) => {
+          const [v, accts] = await Promise.all([this.loyalty.valuation(ctx.userId, [], ctx.now), this.loyalty.accounts(ctx.userId, ctx.now)]);
+          const top = accts.slice(0, 12).map((a) => `• ${a.member}: ${a.programName} ${a.balance.toLocaleString('en-US')} ${a.unit} (${$(a.valueCents)})`);
+          return { summary: `Current ${$(v.currentCents)}, potential ${$(v.potentialCents)}, at risk ${$(v.atRiskCents)}, expired ${$(v.expiredCents)}, recovered ${$(v.recoveredCents)}.\n${top.join('\n')}`, data: { valuation: v, accounts: accts } };
+        },
+      },
+      {
+        name: 'get_expiring_loyalty',
+        description: 'Balances at risk of expiring, with the predicted date, confidence, the alert wording and ways to keep them alive.',
+        inputSchema: obj({}),
+        readOnly: true,
+        handler: async (ctx) => {
+          const r = await this.loyalty.expirations(ctx.userId, ctx.now);
+          const lines = r.items.filter((i) => i.message).slice(0, 10).map((i) => `• ${i.message} (confidence ${i.prediction.confidence}%)${i.preservation[0] ? ` Cheapest fix: ${i.preservation[0].label}.` : ''}`);
+          return { summary: lines.length ? lines.join('\n') : 'No balances are at risk.', data: r };
+        },
+      },
+      {
+        name: 'get_certificates',
+        description: 'Free night, companion and upgrade certificates with expiry, potential value and restrictions, expiring first.',
+        inputSchema: obj({ category: str('Certificate kind', { enum: ['FREE_NIGHT', 'COMPANION', 'UPGRADE'] }) }),
+        readOnly: true,
+        handler: async (ctx, input) => {
+          const cat = ['FREE_NIGHT', 'COMPANION', 'UPGRADE'].includes(String(input.category)) ? String(input.category) : undefined;
+          const ops = (await this.loyalty.certificateIntelligence(ctx.userId, [], ctx.now)).filter((o) => !cat || true);
+          const rows = await this.loyalty.certificates(ctx.userId, cat, ctx.now);
+          return { summary: ops.length ? ops.slice(0, 10).map((o) => `• ${o.message}`).join('\n') : 'No unused certificates.', data: { opportunities: ops, certificates: rows } };
+        },
+      },
+      {
+        name: 'get_status_progress',
+        description: 'Elite status for each member: progress, expiry, renewal likelihood and recommended actions.',
+        inputSchema: obj({}),
+        readOnly: true,
+        handler: async (ctx) => {
+          const rows = (await this.loyalty.statuses(ctx.userId, ctx.now)).filter((s) => s.current);
+          return { summary: rows.length ? rows.map((s) => `• ${s.member}: ${s.view.headline}${s.view.actions[0] ? ` — ${s.view.actions[0]}` : ''}`).join('\n') : 'No elite status recorded.', data: rows };
+        },
+      },
+      {
+        name: 'get_memberships',
+        description: 'Memberships (Global Entry, CLEAR, lounges) with expiry, renewal eligibility and any card credit that can pay for renewal.',
+        inputSchema: obj({}),
+        readOnly: true,
+        handler: async (ctx) => {
+          const rows = await this.loyalty.memberships(ctx.userId, [], ctx.now);
+          return { summary: rows.length ? rows.map((m) => `• ${m.member}: ${m.view.headline}`).join('\n') : 'No memberships recorded.', data: rows };
+        },
+      },
+      {
+        name: 'get_transfer_bonuses',
+        description: 'Transfer routes with the current bonus, its history, and a transfer-now / wait recommendation.',
+        inputSchema: obj({}),
+        readOnly: true,
+        handler: async (ctx) => {
+          void ctx;
+          const routes = await this.loyalty.transferRoutes(ctx.now);
+          const hot = routes.filter((r) => r.activeBonusPercent || r.advice.verdict === 'WAIT').slice(0, 10);
+          return { summary: hot.length ? hot.map((r) => `• ${r.currencyName} → ${r.programName}: ${r.advice.text}`).join('\n') : 'No active transfer bonuses.', data: routes };
+        },
+      },
+      {
+        name: 'plan_award_trip',
+        description: 'Evaluate an award trip: which program to book, what to transfer, which expiring points and free night certificates to use. Prices are estimates unless pointsNeeded is given.',
+        inputSchema: obj({ destination: str('Destination'), dateFrom: str('Departure date, YYYY-MM-DD'), dateTo: str('Return date, YYYY-MM-DD'), cabin: str('Cabin', { enum: ['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST'] }), pointsNeeded: num('Exact points needed, if known', { exclusiveMinimum: 0 }) }, ['destination', 'dateFrom', 'dateTo', 'cabin']),
+        readOnly: true,
+        handler: async (ctx, input) => {
+          const cabin = ['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST'].includes(String(input.cabin)) ? (String(input.cabin) as 'BUSINESS') : 'ECONOMY';
+          const r = await this.loyalty.evaluateTrip(ctx.userId, { destination: S(input.destination) ?? 'trip', dateFrom: S(input.dateFrom) ?? '', dateTo: S(input.dateTo) ?? '', cabin, pointsNeeded: N(input.pointsNeeded) } as never, ctx.now);
+          const best = r.options[0];
+          return { summary: best ? `Best: ${best.programName} (${best.pointsNeeded.toLocaleString('en-US')} points${r.pointsEstimated ? ', estimated' : ''}). ${[...best.reasons, ...best.warnings].join(' ')}` : 'No program in reach for this trip.', data: r };
         },
       },
       {

@@ -35,6 +35,7 @@ import { StrategyModule } from './strategy/strategy.module';
 import { CardResearchModule } from './catalog-research/card-research.module';
 import { SpendModule } from './spend/spend.module';
 import { BenefitAuditModule } from './benefit-audit/benefit-audit.module';
+import { LoyaltyModule } from './loyalty/loyalty.module';
 import { MailboxModule } from './mailbox/mailbox.module';
 import { CaptureModule } from './capture/capture.module';
 import { OpsModule } from './ops/ops.module';
@@ -76,6 +77,7 @@ const rateLimit = Number(process.env.RATE_LIMIT_PER_MIN ?? 100);
     CardResearchModule,
     SpendModule,
     BenefitAuditModule,
+    LoyaltyModule,
     MailboxModule,
     CaptureModule,
     OpsModule,

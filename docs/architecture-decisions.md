@@ -75,3 +75,21 @@ Format: Context · Options · Decision · Consequences · Status. Evidence and i
 ## ADR-012 — Evidence-required recommendations and stacking
 - **Decision:** a recommendation (plan, missed-offer alert, opportunity) is generated only with at least one supporting evidence item (offer ref, transaction ids, rate) and is stored as an `OfferEvent` with evidence and confidence. Stacking rules are data (`STACK_RULES`), marked verified/unverified, and conflicts are shown as warnings.
 - **Status:** accepted.
+
+---
+## ADR-013 — Loyalty accounts are member-entered; no program logins
+- **Context:** the brief asks for AwardWallet-like tracking. Programs offer consumers no API, and the standing rule forbids logging in with credentials or scraping.
+- **Decision:** balances and dates are entered by the member (later: parsed from emails/imports they provide). Each account records `source` and `refreshedAt`; every prediction states its confidence.
+- **Consequences:** works for any program, including ones not in the registry (custom accounts); freshness depends on the member. **Status:** accepted.
+
+## ADR-014 — Expiration predictions carry a policy, a source and a confidence
+- **Decision:** policy type + months + reset conditions per program and bank currency; the member's own date wins; unverified policies cap confidence at 50–60 and unknown ones at 15–20; FIXED policies are computed from earning lots (FIFO) rather than assumed. Alerts fire once per asset, expiry date and threshold.
+- **Consequences:** honest about what is known; wrong policies are correctable by admins and overridable per account. **Status:** accepted.
+
+## ADR-015 — Asset valuation definitions
+- **Decision:** current / potential / at-risk / expired / recovered / net annual are defined once in `loyalty-valuation.ts` (points at the program's ¢ per point, certificates at stored potential value, status at member-entered annual value, memberships pro-rated, unused card credits from the benefit tracker). Valuations are planning estimates, shown with that label.
+- **Status:** accepted.
+
+## ADR-016 — Award planning reuses the transfer planner and states its estimates
+- **Decision:** award trips call the existing `planAward` per candidate program (balances first, then lowest-cost transfers, with active bonuses) and rank the results with the trip's preferences, expiring points and certificates. Without the exact points the price is a coarse table flagged as an estimate; transfer time beyond the departure date is penalised.
+- **Status:** accepted.

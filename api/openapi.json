@@ -7116,6 +7116,882 @@
         ]
       }
     },
+    "/api/v1/loyalty/programs": {
+      "get": {
+        "operationId": "LoyaltyController_programs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/accounts": {
+      "get": {
+        "operationId": "LoyaltyController_accounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      },
+      "post": {
+        "operationId": "LoyaltyController_createAccount",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/accounts/{id}": {
+      "patch": {
+        "operationId": "LoyaltyController_updateAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      },
+      "delete": {
+        "operationId": "LoyaltyController_deleteAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/accounts/{id}/events": {
+      "post": {
+        "operationId": "LoyaltyController_addEvent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountEventDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/accounts/{id}/history": {
+      "get": {
+        "operationId": "LoyaltyController_history",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "months",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/expirations": {
+      "get": {
+        "operationId": "LoyaltyController_expirations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/certificates": {
+      "get": {
+        "operationId": "LoyaltyController_certificates",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "FREE_NIGHT",
+                "COMPANION",
+                "UPGRADE"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      },
+      "post": {
+        "operationId": "LoyaltyController_createCert",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/certificates/opportunities": {
+      "get": {
+        "operationId": "LoyaltyController_certOps",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      },
+      "post": {
+        "operationId": "LoyaltyController_certOpsFor",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedemptionCheckDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/certificates/{id}": {
+      "patch": {
+        "operationId": "LoyaltyController_updateCert",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCertificateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      },
+      "delete": {
+        "operationId": "LoyaltyController_deleteCert",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/certificates/{id}/check": {
+      "post": {
+        "operationId": "LoyaltyController_check",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedemptionCheckDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/status": {
+      "get": {
+        "operationId": "LoyaltyController_statuses",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      },
+      "post": {
+        "operationId": "LoyaltyController_createStatus",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/status/{id}": {
+      "patch": {
+        "operationId": "LoyaltyController_updateStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      },
+      "delete": {
+        "operationId": "LoyaltyController_deleteStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/memberships": {
+      "get": {
+        "operationId": "LoyaltyController_memberships",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      },
+      "post": {
+        "operationId": "LoyaltyController_createMembership",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembershipDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/memberships/{id}": {
+      "patch": {
+        "operationId": "LoyaltyController_updateMembership",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMembershipDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      },
+      "delete": {
+        "operationId": "LoyaltyController_deleteMembership",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/memberships/{id}/number": {
+      "get": {
+        "operationId": "LoyaltyController_reveal",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/valuation": {
+      "get": {
+        "operationId": "LoyaltyController_valuation",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/forecast": {
+      "get": {
+        "operationId": "LoyaltyController_forecast",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/household": {
+      "get": {
+        "operationId": "LoyaltyController_household",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/dashboard": {
+      "get": {
+        "operationId": "LoyaltyController_dashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/transfers": {
+      "get": {
+        "operationId": "LoyaltyController_transfers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/award-trips": {
+      "post": {
+        "operationId": "LoyaltyController_evaluate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AwardTripDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      },
+      "get": {
+        "operationId": "LoyaltyController_trips",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/loyalty/award-trips/{id}": {
+      "delete": {
+        "operationId": "LoyaltyController_deleteTrip",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/api/v1/admin/loyalty/bonus-records": {
+      "put": {
+        "operationId": "LoyaltyAdminController_record",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BonusRecordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/api/v1/mailboxes/providers": {
       "get": {
         "operationId": "MailboxController_providers",
@@ -9458,6 +10334,26 @@
             "type": "string",
             "description": "purchase-plan: merchant name, e.g. Marriott"
           },
+          "destination": {
+            "type": "string",
+            "description": "award-trip: destination"
+          },
+          "dateFrom": {
+            "type": "string",
+            "description": "award-trip: YYYY-MM-DD"
+          },
+          "dateTo": {
+            "type": "string",
+            "description": "award-trip: YYYY-MM-DD"
+          },
+          "cabin": {
+            "type": "string",
+            "description": "award-trip cabin"
+          },
+          "pointsNeeded": {
+            "type": "number",
+            "description": "award-trip: exact points if known"
+          },
           "amountDollars": {
             "type": "number",
             "description": "purchase-plan: amount in dollars"
@@ -9844,6 +10740,581 @@
             ]
           }
         }
+      },
+      "CreateAccountDto": {
+        "type": "object",
+        "properties": {
+          "profileId": {
+            "type": "string"
+          },
+          "programCode": {
+            "type": "string",
+            "description": "registry program code, e.g. AA_AADVANTAGE"
+          },
+          "currencyCode": {
+            "type": "string",
+            "description": "bank currency code, e.g. AMEX_MR"
+          },
+          "customName": {
+            "type": "string",
+            "description": "a program that is not in the registry"
+          },
+          "customKind": {
+            "type": "string",
+            "enum": [
+              "AIRLINE",
+              "HOTEL",
+              "OTHER",
+              "SHOPPING",
+              "DINING",
+              "CRUISE",
+              "RENTAL_CAR",
+              "CASINO",
+              "RETAIL"
+            ]
+          },
+          "customCentsPerPoint": {
+            "type": "number"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "accountNumber": {
+            "type": "string",
+            "description": "stored encrypted; only the last 4 characters are shown"
+          },
+          "memberSince": {
+            "type": "string"
+          },
+          "balance": {
+            "type": "number"
+          },
+          "pendingBalance": {
+            "type": "number"
+          },
+          "lifetimePoints": {
+            "type": "number"
+          },
+          "statusLevel": {
+            "type": "string"
+          },
+          "statusDeadline": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "expiry date you know from the program (overrides the prediction)"
+          },
+          "lastActivityAt": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "MANUAL",
+              "IMPORT",
+              "EMAIL"
+            ]
+          },
+          "transferable": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "profileId"
+        ]
+      },
+      "UpdateAccountDto": {
+        "type": "object",
+        "properties": {
+          "nickname": {
+            "type": "string"
+          },
+          "accountNumber": {
+            "type": "string"
+          },
+          "balance": {
+            "type": "number"
+          },
+          "pendingBalance": {
+            "type": "number"
+          },
+          "lifetimePoints": {
+            "type": "number"
+          },
+          "statusLevel": {
+            "type": "string"
+          },
+          "statusDeadline": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "object",
+            "description": "null clears the override"
+          },
+          "lastActivityAt": {
+            "type": "string"
+          },
+          "transferable": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "AccountEventDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "SNAPSHOT",
+              "EARN",
+              "BONUS",
+              "PURCHASE",
+              "REDEEM",
+              "EXPIRE",
+              "TRANSFER_OUT",
+              "TRANSFER_IN",
+              "ADJUST"
+            ]
+          },
+          "points": {
+            "type": "number",
+            "description": "points moved (positive); ignored for SNAPSHOT, where balance is the new balance"
+          },
+          "balance": {
+            "type": "number",
+            "description": "SNAPSHOT / ADJUST: the balance after this event"
+          },
+          "occurredAt": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "points"
+        ]
+      },
+      "CertificateDto": {
+        "type": "object",
+        "properties": {
+          "profileId": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "FREE_NIGHT",
+              "COMPANION",
+              "UPGRADE"
+            ]
+          },
+          "subtype": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "programCode": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "issuedAt": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "pointCap": {
+            "type": "number"
+          },
+          "restrictions": {
+            "type": "string"
+          },
+          "eligible": {
+            "description": "eligible hotels / brands or routes",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "blackout": {
+            "type": "string",
+            "description": "e.g. 2026-12-18..2027-01-02; 2027-03-01..2027-03-10"
+          },
+          "fareClasses": {
+            "type": "string"
+          },
+          "transferable": {
+            "type": "boolean"
+          },
+          "potentialValueCents": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "profileId",
+          "category",
+          "name"
+        ]
+      },
+      "UpdateCertificateDto": {
+        "type": "object",
+        "properties": {
+          "expiresAt": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "potentialValueCents": {
+            "type": "number"
+          },
+          "restrictions": {
+            "type": "string"
+          },
+          "blackout": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE",
+              "USED",
+              "EXPIRED",
+              "CANCELLED"
+            ]
+          },
+          "usageNote": {
+            "type": "string"
+          }
+        }
+      },
+      "StayDto": {
+        "type": "object",
+        "properties": {
+          "hotel": {
+            "type": "string"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "pointsPerNight": {
+            "type": "number"
+          },
+          "cashRateCents": {
+            "type": "number"
+          },
+          "checkIn": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "hotel",
+          "pointsPerNight",
+          "cashRateCents",
+          "checkIn"
+        ]
+      },
+      "RedemptionCheckDto": {
+        "type": "object",
+        "properties": {
+          "stays": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StayDto"
+            }
+          }
+        },
+        "required": [
+          "stays"
+        ]
+      },
+      "StatusDto": {
+        "type": "object",
+        "properties": {
+          "profileId": {
+            "type": "string"
+          },
+          "programName": {
+            "type": "string"
+          },
+          "programCode": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "AIRLINE",
+              "HOTEL",
+              "RENTAL_CAR",
+              "CRUISE",
+              "CARD"
+            ]
+          },
+          "level": {
+            "type": "string"
+          },
+          "periodStart": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "metric": {
+            "type": "string",
+            "description": "nights, segments, PQP, points, spend"
+          },
+          "progress": {
+            "type": "number"
+          },
+          "required": {
+            "type": "number"
+          },
+          "maintained": {
+            "type": "boolean"
+          },
+          "renewalRequirement": {
+            "type": "string"
+          },
+          "benefits": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "valueCents": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "profileId",
+          "programName",
+          "kind",
+          "level"
+        ]
+      },
+      "UpdateStatusDto": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "progress": {
+            "type": "number"
+          },
+          "required": {
+            "type": "number"
+          },
+          "maintained": {
+            "type": "boolean"
+          },
+          "valueCents": {
+            "type": "number"
+          }
+        }
+      },
+      "MembershipDto": {
+        "type": "object",
+        "properties": {
+          "profileId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "CLEAR",
+              "TSA_PRECHECK",
+              "GLOBAL_ENTRY",
+              "PRIORITY_PASS",
+              "DRAGONPASS",
+              "AIRLINE_CLUB",
+              "HOTEL",
+              "OTHER"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "joinedAt": {
+            "type": "string"
+          },
+          "renewalAt": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "memberNumber": {
+            "type": "string",
+            "description": "stored encrypted; only the last 4 characters are shown"
+          },
+          "benefits": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "renewalCostCents": {
+            "type": "number"
+          },
+          "renewalMethod": {
+            "type": "string"
+          },
+          "autoRenew": {
+            "type": "boolean"
+          },
+          "linkedWalletCardId": {
+            "type": "string"
+          },
+          "annualValueCents": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "profileId",
+          "kind",
+          "name"
+        ]
+      },
+      "UpdateMembershipDto": {
+        "type": "object",
+        "properties": {
+          "renewalAt": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "renewalCostCents": {
+            "type": "number"
+          },
+          "autoRenew": {
+            "type": "boolean"
+          },
+          "annualValueCents": {
+            "type": "number"
+          },
+          "linkedWalletCardId": {
+            "type": "string"
+          }
+        }
+      },
+      "AwardTripDto": {
+        "type": "object",
+        "properties": {
+          "destination": {
+            "type": "string"
+          },
+          "dateFrom": {
+            "type": "string"
+          },
+          "dateTo": {
+            "type": "string"
+          },
+          "cabin": {
+            "type": "string",
+            "enum": [
+              "ECONOMY",
+              "PREMIUM_ECONOMY",
+              "BUSINESS",
+              "FIRST"
+            ]
+          },
+          "region": {
+            "type": "string",
+            "enum": [
+              "DOMESTIC",
+              "SHORT_INTERNATIONAL",
+              "LONG_HAUL"
+            ]
+          },
+          "travelers": {
+            "type": "number"
+          },
+          "pointsNeeded": {
+            "type": "number",
+            "description": "exact points for the award if you know them (otherwise a coarse estimate is used)"
+          },
+          "airlinePrefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hotelPrefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bookerProfileId": {
+            "type": "string"
+          },
+          "save": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "destination",
+          "dateFrom",
+          "dateTo",
+          "cabin"
+        ]
+      },
+      "BonusRecordDto": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "program": {
+            "type": "string"
+          },
+          "bonusPercent": {
+            "type": "number"
+          },
+          "startsAt": {
+            "type": "string"
+          },
+          "endsAt": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "currency",
+          "program",
+          "bonusPercent",
+          "startsAt"
+        ]
       },
       "ConnectMailboxDto": {
         "type": "object",

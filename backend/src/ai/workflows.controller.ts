@@ -10,6 +10,11 @@ import { WORKFLOW_KEYS } from './workflows';
 export class RunWorkflowDto {
   @ApiPropertyOptional({ description: 'The question being answered (kept in the run log)' }) @IsOptional() @IsString() @MaxLength(500) question?: string;
   @ApiPropertyOptional({ description: 'purchase-plan: merchant name, e.g. Marriott' }) @IsOptional() @IsString() @MaxLength(120) merchantText?: string;
+  @ApiPropertyOptional({ description: 'award-trip: destination' }) @IsOptional() @IsString() @MaxLength(120) destination?: string;
+  @ApiPropertyOptional({ description: 'award-trip: YYYY-MM-DD' }) @IsOptional() @IsString() @MaxLength(10) dateFrom?: string;
+  @ApiPropertyOptional({ description: 'award-trip: YYYY-MM-DD' }) @IsOptional() @IsString() @MaxLength(10) dateTo?: string;
+  @ApiPropertyOptional({ description: 'award-trip cabin' }) @IsOptional() @IsIn(['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST']) cabin?: 'ECONOMY' | 'PREMIUM_ECONOMY' | 'BUSINESS' | 'FIRST';
+  @ApiPropertyOptional({ description: 'award-trip: exact points if known' }) @IsOptional() @IsNumber() @Min(1) @Max(5_000_000) pointsNeeded?: number;
   @ApiPropertyOptional({ description: 'purchase-plan: amount in dollars' }) @IsOptional() @IsNumber() @Min(0.01) @Max(1_000_000) amountDollars?: number;
   @ApiPropertyOptional({ description: 'Let a permitted model rewrite the answer. Your own data is only ever shown to a local model.' }) @IsOptional() @IsBoolean() narrate?: boolean;
 }
@@ -24,7 +29,7 @@ export class WorkflowsController {
     return this.orch.list();
   }
   @Post('workflows/:key') @HttpCode(200) run(@CurrentUser() u: AuthUser, @Param('key') key: string, @Body() dto: RunWorkflowDto) {
-    return this.orch.run(u.sub, key, { question: dto.question, narrate: dto.narrate, params: { merchantText: dto.merchantText, amountCents: dto.amountDollars ? Math.round(dto.amountDollars * 100) : undefined } });
+    return this.orch.run(u.sub, key, { question: dto.question, narrate: dto.narrate, params: { merchantText: dto.merchantText, amountCents: dto.amountDollars ? Math.round(dto.amountDollars * 100) : undefined, destination: dto.destination, dateFrom: dto.dateFrom, dateTo: dto.dateTo, cabin: dto.cabin, pointsNeeded: dto.pointsNeeded } });
   }
   @Get('runs') runs(@CurrentUser() u: AuthUser) {
     return this.orch.runs(u.sub);

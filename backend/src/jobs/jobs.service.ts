@@ -16,6 +16,7 @@ import { CardRefreshService } from "../catalog-refresh/card-refresh.service";
 import { MailboxService } from "../mailbox/mailbox.service";
 import { CardResearchService } from "../catalog-research/card-research.service";
 import { OfferJobsService } from "../offers/offer-jobs.service";
+import { LoyaltyJobsService } from "../loyalty/loyalty.module";
 
 export const JOB_QUEUE = "pointwise-jobs";
 export type JobName =
@@ -34,8 +35,12 @@ export type JobName =
   | "scan-transfer-bonuses"
   | "research-cards"
   | "scan-offer-opportunities"
-  | "verify-offer-activation";
+  | "verify-offer-activation"
+  | "scan-loyalty-expirations"
+  | "snapshot-loyalty-balances";
 export const JOB_NAMES: JobName[] = [
+  "scan-loyalty-expirations",
+  "snapshot-loyalty-balances",
   "scan-offer-opportunities",
   "verify-offer-activation",
   "research-cards",
@@ -77,6 +82,7 @@ export class JobsService {
     @Optional() private readonly mailboxes?: MailboxService,
     @Optional() private readonly cardResearch?: CardResearchService,
     @Optional() private readonly offerJobs?: OfferJobsService,
+    @Optional() private readonly loyaltyJobs?: LoyaltyJobsService,
   ) {}
 
   async run(
@@ -129,6 +135,12 @@ export class JobsService {
         break;
       case "scan-offer-opportunities":
         created = (await this.offerJobs?.scanOpportunities(now)) ?? 0;
+        break;
+      case "scan-loyalty-expirations":
+        created = (await this.loyaltyJobs?.scanExpirations(now)) ?? 0;
+        break;
+      case "snapshot-loyalty-balances":
+        created = (await this.loyaltyJobs?.snapshotBalances(now)) ?? 0;
         break;
       case "verify-offer-activation":
         created = (await this.offerJobs?.verifyActivations(now)) ?? 0;

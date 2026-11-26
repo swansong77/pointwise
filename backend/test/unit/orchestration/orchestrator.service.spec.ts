@@ -29,13 +29,21 @@ function build(models: Array<{ kind: string; name?: string }>, opts: { consent?:
     missed: jest.fn().mockResolvedValue({ totalLostCents: 10_000, items: [{ cause: "NOT_ACTIVATED", offer: { merchant: "Hilton" } }] }),
   };
   services.offers = offers as never;
+  const loyalty = {
+    valuation: jest.fn().mockResolvedValue({ currentCents: 500_000, potentialCents: 520_000, atRiskCents: 40_000, expiredCents: 8_000, recoveredCents: 30_000 }),
+    expirations: jest.fn().mockResolvedValue({ items: [{ program: "American Airlines", message: "120,000 miles at risk of expiration in American Airlines: 7 day(s) left.", prediction: { confidence: 50 } }] }),
+    certificateIntelligence: jest.fn().mockResolvedValue([{ message: "You have a IHG Free Night expiring in 45 days. Potential value: $300.", urgency: "MEDIUM" }]),
+    statuses: jest.fn().mockResolvedValue([{ current: true, member: "Me", view: { risk: "HIGH", headline: "Marriott Platinum: 76% there, needs 12 nights" } }]),
+    memberships: jest.fn().mockResolvedValue([{ member: "Me", view: { state: "EXPIRING", headline: "Global Entry expires in 46 day(s)." }, creditSuggestion: "Use the credit on Amex Platinum for renewal." }]),
+    evaluateTrip: jest.fn().mockResolvedValue({ pointsEstimated: true, estimateNote: "Estimated.", options: [{ programName: "United MileagePlus", pointsNeeded: 170_000, shortfall: 0, reasons: ["Your balances fully cover this award."], warnings: [] }], certificates: [{ usable: true, name: "IHG Free Night", member: "Me", note: "Valid for the stay." }] }),
+  };
   const chat = jest.fn().mockResolvedValue({ response: { text: "Narrated text" } });
   const router = {
     usableModels: jest.fn().mockResolvedValue(models.map((m, i) => ({ id: `m${i}`, displayName: m.name ?? m.kind, capabilities: [], inputPrice: null, outputPrice: null, provider: { kind: m.kind } }))),
     chat,
   };
-  const svc = new OrchestratorService(prisma as never, services.portfolio as never, services.strategy as never, services.smart as never, services.benefits as never, router as never, new PromptsService(prisma as never), offers as never);
-  return { svc, prisma, chat, created, services, offers };
+  const svc = new OrchestratorService(prisma as never, services.portfolio as never, services.strategy as never, services.smart as never, services.benefits as never, router as never, new PromptsService(prisma as never), offers as never, loyalty as never);
+  return { svc, prisma, chat, created, services, offers, loyalty };
 }
 
 describe("TC-ORC: orchestrator service", () => {
@@ -83,7 +91,7 @@ describe("TC-ORC: orchestrator service", () => {
   it("an unknown workflow is a 404 and lists the known ones", async () => {
     const { svc } = build([]);
     await expect(svc.run("u1", "nope")).rejects.toBeInstanceOf(NotFoundException);
-    expect(svc.list().map((w) => w.key)).toEqual(["next-card", "portfolio-review", "purchase-plan", "offer-review"]);
+    expect(svc.list().map((w) => w.key)).toEqual(["next-card", "portfolio-review", "purchase-plan", "offer-review", "loyalty-review", "award-trip"]);
     expect(svc.list()[0].steps.map((s) => s.privacy)).toEqual(["PUBLIC", "USER", "USER", "USER", "USER"]);
   });
   it("the portfolio-review workflow reports fees, benefit use and 5/24", async () => {
@@ -167,6 +175,45 @@ describe("TC-ORC: offer workflows", () => {
     expect(r.answer).toMatch(/Audit trail, last 30 days: 2 recommended/);
   });
   it("lists the four workflows", () => {
-    expect(build([]).svc.list().map((w) => w.key)).toEqual(["next-card", "portfolio-review", "purchase-plan", "offer-review"]);
+    expect(build([]).svc.list().map((w) => w.key)).toEqual(["next-card", "portfolio-review", "purchase-plan", "offer-review", "loyalty-review", "award-trip"]);
+  });
+});
+
+describe("TC-ORC: loyalty workflows", () => {
+  it("loyalty-review composes value, expirations, certificates, status and memberships from the engines", async () => {
+    const { svc } = build([]);
+    const r = await svc.run("u1", "loyalty-review", {});
+    expect(r.status).toBe("COMPLETED");
+    expect(r.privacy).toBe("USER");
+    expect(r.steps.map((s) => [s.id, s.agent])).toEqual([["valuation", "valuation"], ["expirations", "point-expiration"], ["certificates", "certificate"], ["status", "elite-status"], ["memberships", "membership"]]);
+    expect(r.answer).toMatch(/Loyalty assets: \$5000\.00 now, \$5200\.00 potential; \$400\.00 at risk, \$80\.00 expired, \$300\.00 recovered\./);
+    expect(r.answer).toMatch(/120,000 miles at risk of expiration in American Airlines.*confidence 50%/);
+    expect(r.answer).toMatch(/IHG Free Night expiring in 45 days/);
+    expect(r.answer).toMatch(/Marriott Platinum: 76% there, needs 12 nights/);
+    expect(r.answer).toMatch(/Global Entry expires in 46 day\(s\)\. Use the credit on Amex Platinum/);
+    expect(r.answer).toMatch(/confirm with the program/);
+  });
+  it("award-trip evaluates once, names the best program, notes the estimate and usable certificates", async () => {
+    const { svc, loyalty } = build([]);
+    const r = await svc.run("u1", "award-trip", { params: { destination: "Tokyo", dateFrom: "2027-03-10", dateTo: "2027-03-20", cabin: "BUSINESS" } });
+    expect(r.status).toBe("COMPLETED");
+    expect(loyalty.evaluateTrip).toHaveBeenCalledWith("u1", expect.objectContaining({ destination: "Tokyo", cabin: "BUSINESS" }), expect.any(Date));
+    expect(r.answer).toMatch(/Best: United MileagePlus — 170,000 points \(estimate\), fully covered\./);
+    expect(r.answer).toMatch(/Certificate: IHG Free Night \(Me\) — Valid for the stay\./);
+    expect(r.answer).toMatch(/Estimated\./);
+  });
+  it("award-trip without a destination and dates fails cleanly", async () => {
+    const { svc } = build([]);
+    const r = await svc.run("u1", "award-trip", {});
+    expect(r.status).toBe("FAILED");
+    expect(r.steps[0].error).toMatch(/destination, dateFrom and dateTo are required/);
+  });
+  it("a quiet household says nothing needs attention", async () => {
+    const { svc, loyalty } = build([]);
+    loyalty.expirations.mockResolvedValue({ items: [] });
+    loyalty.certificateIntelligence.mockResolvedValue([]);
+    loyalty.statuses.mockResolvedValue([]);
+    loyalty.memberships.mockResolvedValue([]);
+    expect((await svc.run("u1", "loyalty-review", {})).answer).toMatch(/Nothing needs attention right now/);
   });
 });
