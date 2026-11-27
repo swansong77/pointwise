@@ -1,15 +1,27 @@
-import { Body, Controller, Delete, Get, HttpCode, Module, Param, ParseUUIDPipe, Patch, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Module, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { ArrayMaxSize, IsArray, IsBoolean, IsInt, IsNumber, IsObject, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { AiCoreModule } from '../ai/ai.module';
 import { AuthUser, CurrentUser } from '../common/decorators';
+import { LoyaltyAutomationCoreModule } from '../loyalty/loyalty-automation.module';
 import { LoyaltyCoreModule } from '../loyalty/loyalty.module';
+import { NotificationsModule } from '../notifications/notifications.service';
 import { OffersModule } from '../offers/offers.module';
 import { PortfolioModule } from '../portfolio/portfolio';
 import { SearchModule } from '../search/search.controller';
 import { StrategyCoreModule } from '../strategy/strategy.module';
 import { WalletModule } from '../wallet/wallet.module';
+import { BRIEF_KINDS, BriefKind } from '../domain/copilot-brief';
+import { BoardService } from './board.service';
+import { BriefingService } from './briefing.service';
+import { ChiefController } from './chief.controller';
+import { ChiefService } from './chief.service';
 import { CopilotService } from './copilot.service';
+import { DashboardService } from './dashboard.service';
+import { HouseholdChiefService } from './household-chief.service';
+import { LifeEventsService } from './life-events.service';
+import { RoadmapService } from './roadmap.service';
+import { PortfolioSignalsService } from './portfolio-signals.service';
 import { GoalsService } from './goals.service';
 import { MemoryService } from './memory.service';
 import { WhatIfService } from './what-if.service';
@@ -28,6 +40,11 @@ export class CopilotSettingsBody {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(12) responseStyle?: string;
   @ApiPropertyOptional({ description: 'share a redacted, pseudonymized view with the cloud providers you allow' }) @IsOptional() @IsBoolean() cloudShare?: boolean;
   @ApiPropertyOptional({ type: [String] }) @IsOptional() @IsArray() @ArrayMaxSize(20) @IsString({ each: true }) @MaxLength(80, { each: true }) cloudProviders?: string[];
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() briefingDaily?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() briefingWeekly?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() briefingMonthly?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() copilotAlerts?: boolean;
+  @ApiPropertyOptional({ description: 'Chief of Staff: executive briefing, board report and critical alerts' }) @IsOptional() @IsBoolean() chiefOfStaff?: boolean;
 }
 
 export class GoalCreateBody {
@@ -68,10 +85,14 @@ export class CopilotController {
     private readonly svc: CopilotService,
     private readonly goals: GoalsService,
     private readonly memory: MemoryService,
+    private readonly briefings: BriefingService,
+    private readonly dash: DashboardService,
+    private readonly roadmap: RoadmapService,
   ) {}
 
-  @Post('ask') ask(@CurrentUser() u: AuthUser, @Body() dto: CopilotAskDto) {
-    return this.svc.ask(u.sub, dto.q, { mode: dto.mode, sessionId: dto.sessionId });
+  @Post('ask') async ask(@CurrentUser() u: AuthUser, @Body() dto: CopilotAskDto) {
+    // "the next 90 days", "this year", "maximize value from my cards": a roadmap, not a list for today
+    return (await this.roadmap.ask(u.sub, dto.q, dto.mode)) ?? this.svc.ask(u.sub, dto.q, { mode: dto.mode, sessionId: dto.sessionId });
   }
   @Get('agenda') agenda(@CurrentUser() u: AuthUser, @Query('mode') mode?: string, @Query('when') when?: string) {
     const q = when === 'month' ? 'What should I do this month?' : when === 'week' ? 'What should I do this week?' : 'What should I do today?';
@@ -88,6 +109,29 @@ export class CopilotController {
   }
   @Delete('disclosures') clear(@CurrentUser() u: AuthUser) {
     return this.svc.clearDisclosures(u.sub);
+  }
+
+  // dashboard, briefings and alerts
+  @Get('dashboard') dashboard(@CurrentUser() u: AuthUser) {
+    return this.dash.dashboard(u.sub);
+  }
+  @Get('briefings') listBriefings(@CurrentUser() u: AuthUser, @Query('kind') kind?: string) {
+    return this.briefings.list(u.sub, BRIEF_KINDS.find((k) => k === kind));
+  }
+  @Get('briefings/latest') latestBriefings(@CurrentUser() u: AuthUser) {
+    return this.briefings.latest(u.sub);
+  }
+  @Get('briefings/:id') getBriefing(@CurrentUser() u: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.briefings.get(u.sub, id);
+  }
+  /** write this period's briefing now (or a fresh one); it is never sent as a notification */
+  @Post('briefings/:kind') async makeBriefing(@CurrentUser() u: AuthUser, @Param('kind') kind: string, @Query('fresh') fresh?: string) {
+    const k = BRIEF_KINDS.find((x) => x === kind.toUpperCase()) as BriefKind | undefined;
+    if (!k) throw new NotFoundException('Unknown briefing: use daily, weekly or monthly');
+    return this.briefings.generate(u.sub, k, new Date(), { force: fresh === 'true' });
+  }
+  @Get('alerts') alerts(@CurrentUser() u: AuthUser) {
+    return this.briefings.alerts(u.sub, new Date());
   }
 
   // goals
@@ -126,9 +170,9 @@ export class CopilotController {
 }
 
 @Module({
-  imports: [AiCoreModule, SearchModule, StrategyCoreModule, PortfolioModule, WalletModule, OffersModule, LoyaltyCoreModule],
-  controllers: [CopilotController],
-  providers: [CopilotService, WhatIfService, GoalsService, MemoryService],
-  exports: [CopilotService],
+  imports: [AiCoreModule, SearchModule, StrategyCoreModule, PortfolioModule, WalletModule, OffersModule, LoyaltyCoreModule, LoyaltyAutomationCoreModule, NotificationsModule],
+  controllers: [CopilotController, ChiefController],
+  providers: [CopilotService, WhatIfService, GoalsService, MemoryService, BriefingService, DashboardService, ChiefService, PortfolioSignalsService, BoardService, HouseholdChiefService, RoadmapService, LifeEventsService],
+  exports: [CopilotService, BriefingService, ChiefService, GoalsService, MemoryService, WhatIfService, PortfolioSignalsService, BoardService, HouseholdChiefService, RoadmapService, LifeEventsService],
 })
 export class CopilotModule {}

@@ -26,7 +26,7 @@ export class InsightsService {
       }),
       this.recs.allCategories(userId),
       this.prisma.subscription.findUnique({ where: { userId } }),
-      this.prisma.notification.count({ where: { userId, readAt: null } }),
+      this.prisma.notification.count({ where: { userId, readAt: null, deferredAt: null } }),
     ]);
     const expiringDays = prefs?.expiringDays ?? 7;
     const expiring = userOffers

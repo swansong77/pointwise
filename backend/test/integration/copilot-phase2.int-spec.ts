@@ -172,6 +172,18 @@ describe('TC-GOALS: goals with progress from the household’s own data', () => 
     expect(list.every((g: any) => g.progress && typeof g.progress.state === 'string')).toBe(true);
   });
 
+  it('a goal with a due date can still be renamed, and only a changed date is checked against today', async () => {
+    const g = (await post('/copilot/goals', { kind: 'CUSTOM', title: 'Plan the trip', dueAt: new Date(Date.now() + 90 * DAY).toISOString() }).expect(201)).body;
+    const renamed = (await patch('/copilot/goals/' + g.id, { title: 'Plan the big trip' }).expect(200)).body;
+    expect(renamed.title).toBe('Plan the big trip');
+    expect(renamed.dueAt).toBe(g.dueAt);
+    await patch('/copilot/goals/' + g.id, { dueAt: '2020-01-01T00:00:00Z' }).expect(400);
+    const moved = (await patch('/copilot/goals/' + g.id, { dueAt: new Date(Date.now() + 120 * DAY).toISOString() }).expect(200)).body;
+    expect(new Date(moved.dueAt).getTime()).toBeGreaterThan(new Date(g.dueAt).getTime());
+    await patch('/copilot/goals/' + g.id, { dueAt: null }).expect(200);
+    await del('/copilot/goals/' + g.id).expect(204);
+  });
+
   it('rejects bad goals', async () => {
     await post('/copilot/goals', { kind: 'NOPE', title: 'x y' }).expect(400);
     await post('/copilot/goals', { kind: 'FIVE24', title: 'x y', target: { max: 99 } }).expect(400);

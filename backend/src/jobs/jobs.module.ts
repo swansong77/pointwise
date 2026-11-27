@@ -78,8 +78,15 @@ export const SCHEDULE: Record<JobName, string> = {
   "update-rotating-categories": ROTATING_SCHEDULE,
   /** hourly: turns reminders that have fallen due into notifications */
   "reminders-due": "10 * * * *",
-  /** deletes what AI Mode sent to a model after 90 days */
+  /** deletes what AI Mode sent to a model, and old briefings, after 90 days */
   "copilot-cleanup": "20 3 * * *",
+  /** AI Mode briefings for members who turned it on, ahead of the 14:00 e-mail digest that carries them */
+  "copilot-daily": "10 13 * * *",
+  "copilot-alerts": "20 13 * * *",
+  "copilot-weekly": "40 13 * * 1",
+  "copilot-monthly": "50 13 1 * *",
+  /** the Chief of Staff's monthly board report, after the monthly briefing */
+  "cos-board": "55 13 1 * *",
 };
 
 const JobNameEnum = Object.fromEntries(JOB_NAMES.map((n) => [n, n])) as Record<

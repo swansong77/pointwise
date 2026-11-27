@@ -88,11 +88,12 @@ export class GoalsService {
     if (!g) throw new NotFoundException('Goal not found');
     const data: Prisma.GoalUpdateInput = {};
     if (patch.title !== undefined || patch.target !== undefined || patch.dueAt !== undefined) {
-      const c = checkGoal({ kind: g.kind, title: patch.title ?? g.title, target: patch.target ?? g.target, dueAt: patch.dueAt === undefined ? g.dueAt : patch.dueAt, profileId: g.profileId }, new Date(0));
+      // only a due date that is being changed is checked against today; an existing one is kept as it is
+      const c = checkGoal({ kind: g.kind, title: patch.title ?? g.title, target: patch.target ?? g.target, dueAt: patch.dueAt, profileId: g.profileId }, now);
       if (!c.ok) throw new BadRequestException(c.error);
       data.title = c.value.title;
       data.target = c.value.target as Prisma.InputJsonValue;
-      data.dueAt = c.value.dueAt;
+      if (patch.dueAt !== undefined) data.dueAt = c.value.dueAt;
     }
     if (patch.manualProgress !== undefined) {
       if (g.kind !== 'CUSTOM') throw new BadRequestException('Progress is worked out for this goal; only custom goals are set by hand');

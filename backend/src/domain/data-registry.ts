@@ -142,6 +142,9 @@ export const DATA_RULES: Record<string, ModelRule> = {
   // goals and what Copilot remembers (preferences, decisions); part of the member's data
   Goal: { cls: 'USER', scope: U, natural: ['title', 'kind'] },
   CopilotMemory: { cls: 'USER', scope: U, natural: ['kind', 'key'] },
+  CopilotBriefing: { cls: 'USER', scope: U, natural: ['kind', 'periodKey'] },
+  // upcoming events the member plans around, with the estimate worked out for them
+  LifeEvent: { cls: 'USER', scope: U, natural: ['title', 'kind'] },
   AiUsage: { cls: 'EPHEMERAL' },
   AgentRun: { cls: 'EPHEMERAL' },
   AgentStep: { cls: 'EPHEMERAL' },

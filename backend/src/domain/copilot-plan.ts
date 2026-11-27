@@ -9,6 +9,7 @@ import { CallAction, reminderFor } from './search-actions';
 import { applyMemory, Decision, EMPTY_PREFS, MemoryEffect, Preferences } from './copilot-memory';
 import type { GoalProgress } from './goals';
 import type { WhatIfOutcome } from './what-if';
+import type { Roadmap } from './cos-roadmap';
 
 export const COPILOT_VERSION = 'copilot/1';
 
@@ -73,7 +74,7 @@ export interface LensRun {
 export interface CopilotPlan {
   version: string;
   mode: Mode;
-  kind: 'AGENDA' | 'ANSWER' | 'WHATIF';
+  kind: 'AGENDA' | 'ANSWER' | 'WHATIF' | 'ROADMAP';
   question: string;
   scope: Horizon;
   headline: string;
@@ -91,6 +92,8 @@ export interface CopilotPlan {
   memory: { hidden: MemoryEffect['hidden']; boosted: number };
   /** a what-if comparison, when the question was one */
   whatIf?: WhatIfOutcome;
+  /** a 90-day or yearly roadmap, when the question asked for one */
+  roadmap?: Roadmap;
 }
 
 /** a goal and how far along it is, for the plan */
@@ -103,6 +106,8 @@ export interface GoalView {
 }
 
 export interface AgendaExtra {
+  /** how many items to return (default: what the mode and the question allow) */
+  limit?: number;
   goals?: GoalView[];
   prefs?: Preferences;
   decisions?: Map<string, Decision>;
@@ -362,11 +367,14 @@ const credits: Reader = (data, now) =>
       };
     });
 
-const renewals: Reader = (data) =>
+/** annual fees that the card has not earned back, renewing within `maxDays`, as decisions to make */
+export const renewalsWithin =
+  (maxDays: number, limit = 3): Reader =>
+  (data) =>
   arr(data)
     .map(obj)
-    .filter((r) => r.coversFee === false && (num(r.daysUntil) ?? 999) <= 60)
-    .slice(0, 3)
+    .filter((r) => r.coversFee === false && (num(r.daysUntil) ?? 999) <= maxDays)
+    .slice(0, limit)
     .map((r) => {
       const d = num(r.daysUntil);
       const fee = centsOf(r.annualFee) ?? 0;
@@ -390,6 +398,8 @@ const renewals: Reader = (data) =>
         calls: [],
       };
     });
+
+const renewals: Reader = renewalsWithin(60);
 
 const five24: Reader = (data, now) =>
   arr(data)
@@ -568,7 +578,7 @@ export function composeAgenda(results: StepResult[], mode: Mode, q: string, now:
   all.sort((a, b) => RANK[a.horizon] - RANK[b.horizon] || b.priority - a.priority || a.id.localeCompare(b.id));
   // what the member put aside is hidden and what matches their preferences rises, before the list is cut to length
   const eff = applyMemory(all, extra.prefs ?? EMPTY_PREFS, extra.decisions ?? new Map(), now);
-  const limit = Math.min(spec.limit, SCOPE_LIMIT[scope]);
+  const limit = extra.limit ?? Math.min(spec.limit, SCOPE_LIMIT[scope]);
   // a goal that needs attention keeps a place (up to two) even when dollar-sized items would crowd it out of a short plan
   const reserved = eff.items.filter((i) => i.lens === 'GOAL').slice(0, 2);
   const items = [...eff.items.filter((i) => !reserved.includes(i)).slice(0, Math.max(0, limit - reserved.length)), ...reserved].sort((a, b) => RANK[a.horizon] - RANK[b.horizon] || b.priority - a.priority || a.id.localeCompare(b.id));
@@ -745,5 +755,46 @@ export function whatIfNeeds(q: string, mode: Mode, needs: string[]): CopilotPlan
     counts: { TODAY: 0, WEEK: 0, MONTH: 0, LATER: 0 },
     valueAtStakeCents: 0,
     memory: { hidden: [], boosted: 0 },
+  };
+}
+
+/** A roadmap as a plan: its three focus areas are the items, so it has the same explainable shape as every other reply. */
+export function fromRoadmap(r: Roadmap, mode: Mode, q: string): CopilotPlan {
+  const items: PlanItem[] = r.focus.map((f, n) => ({
+    id: 'roadmap:' + f.area.toLowerCase(),
+    lens: f.area === 'CARDS' || f.area === 'APPLICATIONS' ? 'CARD_STRATEGY' : f.area === 'POINTS' ? 'LOYALTY' : f.area === 'GOALS' || f.area === 'LIFE' ? 'GOAL' : 'OFFER',
+    horizon: 'LATER',
+    priority: 10 - n,
+    title: 'Focus ' + (n + 1) + ': ' + f.label,
+    recommendation: f.advice,
+    reason: f.events + ' thing' + (f.events === 1 ? '' : 's') + ' on the calendar, worth about $' + Math.round(f.valueCents / 100).toLocaleString('en-US') + '.',
+    evidence: ['Roadmap: dated expirations, renewals, 5/24 slots, goals and life events'],
+    expectedValueCents: f.valueCents || null,
+    assumptions: [],
+    risks: [],
+    confidence: 70,
+    factors: [],
+    href: '/chief-of-staff',
+    facts: { kind: 'ROADMAP', verdict: f.area.toLowerCase(), count: f.events },
+    calls: [],
+  }));
+  return {
+    version: COPILOT_VERSION,
+    mode,
+    kind: 'ROADMAP',
+    question: q,
+    scope: 'LATER',
+    headline: r.span === 90 ? 'Your next 90 days' : 'Your year ahead',
+    summary: r.headline,
+    items,
+    lenses: [{ lens: 'GOAL', label: 'Chief of Staff', engines: ['roadmap'], ok: true, found: r.eventCount, note: r.eventCount + ' dated events' }],
+    assumptions: ['Only dated items appear: expirations, renewals, 5/24 slot dates, goal dates and life events.'],
+    risks: [],
+    confidence: 70,
+    evidence: [],
+    counts: { TODAY: 0, WEEK: 0, MONTH: 0, LATER: items.length },
+    valueAtStakeCents: r.atRiskCents,
+    memory: { hidden: [], boosted: 0 },
+    roadmap: r,
   };
 }
