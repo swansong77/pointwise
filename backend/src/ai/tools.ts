@@ -30,6 +30,8 @@ import { JsonSchemaObject, ToolSpec } from './types';
 export interface ToolContext {
   userId: string;
   now?: Date;
+  /** a look-up, not a decision: engines that keep an audit trail of recommendations skip it (the universal search bar sets this) */
+  quiet?: boolean;
 }
 
 export interface ToolOutput {
@@ -578,7 +580,7 @@ export class ToolRegistry {
         name: 'plan_purchase',
         description: 'Best way to pay for a planned purchase: which household card and member (and whether to split), the offer to activate first, credits, certificates, welcome-bonus progress, portal rate, expected return, strategies (best, alternative, conservative, maximum rewards), what expires and the best day to buy, with the evidence behind it. Give a merchant, an item (e.g. "MacBook Pro"), or both.',
         inputSchema: obj(
-          { merchant: str('Merchant name, e.g. Marriott (optional when an item is given)'), item: str('What is being bought, e.g. MacBook Pro, Hilton stay, international flight'), amountDollars: num('Planned spend in dollars', { exclusiveMinimum: 0 }), date: str('Planned purchase date, YYYY-MM-DD (optional)') },
+          { merchant: str('Merchant name, e.g. Marriott (optional when an item is given)'), item: str('What is being bought, e.g. MacBook Pro, Hilton stay, international flight'), amountDollars: num('Planned spend in dollars', { exclusiveMinimum: 0 }), date: str('Planned purchase date, YYYY-MM-DD (optional)'), member: str('Household member who would rather pay (optional); the answer says what that costs') },
           ['amountDollars'],
         ),
         readOnly: true,
@@ -589,7 +591,9 @@ export class ToolRegistry {
           if ((!merchant && !item) || !amount || amount <= 0) throw new NotFoundException('amountDollars and a merchant or item are required');
           const date = S(input.date);
           const plannedFor = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined;
-          const res = await this.offerAnalysis.plan(ctx.userId, { merchantText: merchant || undefined, item: item || undefined, amountCents: Math.round(amount * 100), plannedFor }, ctx.now);
+          const memberName = S(input.member);
+          const preferMember = memberName ? (await this.prisma.profile.findFirst({ where: { userId: ctx.userId, nickname: { equals: memberName, mode: 'insensitive' } }, select: { id: true } }))?.id : undefined;
+          const res = await this.offerAnalysis.plan(ctx.userId, { merchantText: merchant || undefined, item: item || undefined, amountCents: Math.round(amount * 100), plannedFor, preferMember, record: !ctx.quiet }, ctx.now);
           const best = res.plans[0];
           if (!best) return { summary: 'No plan with evidence could be produced.', data: res };
           const legs = best.legs.map((l) => `${l.cardName}${l.member ? ` (${l.member})` : ''} for ${$(l.amountCents)}`).join(' + ');

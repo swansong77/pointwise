@@ -30,6 +30,8 @@ import { ConnectionsModule } from './portfolio/connections';
 import { CreditReportsModule } from './portfolio/credit-reports';
 import { DeliveryModule } from './notifications/delivery';
 import { AiModule } from './ai/ai.module';
+import { SearchModule } from './search/search.controller';
+import { RemindersModule } from './reminders/reminders.module';
 import { CardRefreshModule } from './catalog-refresh/card-refresh.module';
 import { StrategyModule } from './strategy/strategy.module';
 import { CardResearchModule } from './catalog-research/card-research.module';
@@ -76,6 +78,8 @@ const rateLimit = Number(process.env.RATE_LIMIT_PER_MIN ?? 100);
     CreditReportsModule,
     DeliveryModule,
     AiModule,
+    SearchModule,
+    RemindersModule,
     CardRefreshModule,
     StrategyModule,
     CardResearchModule,

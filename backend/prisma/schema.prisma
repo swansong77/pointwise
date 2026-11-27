@@ -58,6 +58,9 @@ model User {
   pushSubscriptions PushSubscription[]
   aiSettings      AiSettings?
   aiConversations AiConversation[]
+  searchEntries SearchEntry[]
+  searchSessions SearchSession[]
+  reminders Reminder[]
   aiUsage         AiUsage[]
   aiPendingActions AiPendingAction[]
   accessTokens    PersonalAccessToken[]
@@ -841,6 +844,7 @@ enum NotificationType {
   OFFER_SYNC_FAILED
   OFFER_SAVINGS_DIGEST
   BACKUP_FAILED
+  REMINDER
 }
 
 model Notification {
@@ -2661,4 +2665,71 @@ model SystemSetting {
   key       String   @id
   value     Json
   updatedAt DateTime @updatedAt
+}
+
+enum SearchEntryKind {
+  HISTORY
+  SAVED
+}
+
+/// A question the member asked the universal search bar (HISTORY, counted by how often) or chose to keep (SAVED).
+/// The text has card numbers and e-mail addresses removed before it is stored.
+model SearchEntry {
+  id         String          @id @default(uuid())
+  userId     String
+  query      String
+  normalized String
+  intent     String?
+  kind       SearchEntryKind @default(HISTORY)
+  /// a name the member gave a saved search
+  name       String?
+  uses       Int             @default(1)
+  /// the first line of the last answer, shown in recents
+  summary    String?
+  /// merchants, cards, programs and destination named in the question, for favourites and recents
+  entityRefs Json?
+  lastUsedAt DateTime        @default(now())
+  createdAt  DateTime        @default(now())
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, normalized, kind])
+  @@index([userId, kind, lastUsedAt])
+}
+
+/// What a search conversation remembers between questions ("it", "my spouse"). Short-lived; never exported.
+model SearchSession {
+  id        String   @id @default(uuid())
+  userId    String
+  slots     Json     @default("{}")
+  /// the last few questions and the first line of each answer
+  turns     Json     @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  DISMISSED
+}
+
+/// A reminder the member set (from a search answer or by hand). When it falls due they get a PointWise notification.
+model Reminder {
+  id        String         @id @default(uuid())
+  userId    String
+  title     String
+  dueAt     DateTime
+  /// a path inside the app, never another site
+  link      String?
+  source    String         @default("MANUAL")
+  status    ReminderStatus @default(PENDING)
+  sentAt    DateTime?
+  createdAt DateTime       @default(now())
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, dueAt])
+  @@index([status, dueAt])
 }
