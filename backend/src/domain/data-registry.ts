@@ -132,6 +132,11 @@ export const DATA_RULES: Record<string, ModelRule> = {
   AiConversation: { cls: 'USER', scope: U },
   AiMessage: { cls: 'USER', scope: 'conversation.userId' },
   AiPendingAction: { cls: 'EPHEMERAL' },
+  // what the member asked and saved in the universal search bar; a conversation's short-term memory is not exported
+  SearchEntry: { cls: 'USER', scope: U, natural: ['normalized', 'kind'] },
+  SearchSession: { cls: 'EPHEMERAL' },
+  // reminders the member set; pending ones are part of their data
+  Reminder: { cls: 'USER', scope: U, natural: ['title', 'dueAt'] },
   AiUsage: { cls: 'EPHEMERAL' },
   AgentRun: { cls: 'EPHEMERAL' },
   AgentStep: { cls: 'EPHEMERAL' },

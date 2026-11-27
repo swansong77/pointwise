@@ -113,7 +113,7 @@ test.describe('Streaming assistant and operations', () => {
     await page.goto('/assistant');
     const streamed = page.waitForResponse((r) => r.url().endsWith('/api/v1/ai/chat/stream') && r.status() === 200);
     await page.getByLabel('Your question').fill('Who should apply for Northwind ShopNow Card?');
-    await page.getByRole('button', { name: 'Ask' }).click();
+    await page.getByRole('button', { name: 'Ask', exact: true }).click();
     const res = await streamed;
     expect(res.headers()['content-type']).toContain('text/event-stream');
     const answer = page.getByTestId('ai-answer').last();

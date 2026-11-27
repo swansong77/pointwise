@@ -4,6 +4,7 @@
  * people think in, so no enum migration is needed. Also the merged inventory row, its filters and its sort.
  */
 import { confidenceCap, OfferSourceKind, VerificationKind } from './offer-import';
+import { expandNicknames as expand, norm } from './nicknames';
 
 export const OFFER_LIFECYCLE_VERSION = 'offer-lifecycle/1';
 
@@ -122,16 +123,6 @@ export interface InventoryQuery {
   page?: number;
   pageSize?: number;
 }
-
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9+&]+/g, ' ').trim();
-/** what people type for an issuer, read as the issuer's name */
-const NICKNAMES: Array<[RegExp, string]> = [
-  [/\bamex\b/g, 'american express'],
-  [/\bcap ?one\b|\bc1\b/g, 'capital one'],
-  [/\bb ?o ?f ?a\b|\bboa\b/g, 'bank of america'],
-  [/\bwf\b/g, 'wells fargo'],
-];
-const expand = (s: string) => NICKNAMES.reduce((t, [re, to]) => t.replace(re, to), norm(s));
 
 export function daysLeft(endsAt: Date | null, now: Date): number | null {
   if (!endsAt) return null;
