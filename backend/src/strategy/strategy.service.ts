@@ -140,7 +140,8 @@ export class StrategyService {
     });
   }
 
-  private async scoringContext(userId: string, q: ScoreQuery, now: Date) {
+  /** the cards, applicants, household and spend that scoring and what-if analysis read */
+  async scoringContext(userId: string, q: ScoreQuery, now: Date) {
     const [cards, applicants, household, valuations, spend, fallback] = await Promise.all([
       this.candidates(now),
       this.applicants(userId, now),

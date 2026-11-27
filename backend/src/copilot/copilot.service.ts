@@ -1,15 +1,21 @@
 import { createHash } from 'crypto';
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { isLocalProvider, mayReceiveRedacted, redactForModel } from '../ai/privacy';
 import { ModelRouter } from '../ai/router';
 import { selectModels } from '../ai/routing';
 import { PrismaService } from '../common/prisma.service';
 import { clampTemperature, effortFor, isDepth, isMode, isStyle, Mode, MODE_SPEC, MODES, STYLES, Style } from '../domain/copilot-modes';
-import { AGENDA_STEPS, CopilotPlan, COPILOT_VERSION, composeAgenda, fromSearchAnswer, isAgendaQuestion, TOOL_LENS } from '../domain/copilot-plan';
+import { AGENDA_STEPS, CopilotPlan, COPILOT_VERSION, composeAgenda, fromSearchAnswer, fromWhatIf, isAgendaQuestion, TOOL_LENS, whatIfNeeds } from '../domain/copilot-plan';
+import { understand } from '../domain/query-understanding';
+import { parseWhatIf } from '../domain/what-if';
 import { buildView, grounded, Household, leaks, narrationPrompt, PROMPT_VERSION, rehydrate } from '../domain/copilot-view';
 import type { StepResult } from '../domain/answer-compose';
 import { SearchAskService } from '../search/search-ask.service';
+import { SearchService } from '../search/search.service';
+import { GoalsService } from './goals.service';
+import { MemoryService } from './memory.service';
+import { WhatIfService } from './what-if.service';
 
 export interface CopilotNarration {
   text: string;
@@ -52,6 +58,10 @@ export class CopilotService {
     private readonly prisma: PrismaService,
     private readonly search: SearchAskService,
     private readonly router: ModelRouter,
+    private readonly searchData: SearchService,
+    private readonly whatIf: WhatIfService,
+    private readonly goals: GoalsService,
+    private readonly memory: MemoryService,
   ) {}
 
   /** The member's AI settings row, created on first use. Safe when two requests create it at once. */
@@ -151,10 +161,25 @@ export class CopilotService {
     let results: StepResult[] = [];
     let sessionId: string | null = null;
     let engines: string[];
-    if (isAgendaQuestion(q)) {
+    const parsed = parseWhatIf(q, understand(q, await this.searchData.dictionaries(userId), now));
+    if (parsed) {
+      engines = ['what-if'];
+      if (parsed.needs.length) plan = whatIfNeeds(q, mode, parsed.needs);
+      else {
+        try {
+          plan = fromWhatIf(await this.whatIf.run(userId, parsed.request, now), mode, q);
+        } catch (e) {
+          // a card or program that is not there is said plainly; nothing else is swallowed
+          if (e instanceof BadRequestException || e instanceof NotFoundException) plan = whatIfNeeds(q, mode, [e.message.replace(/\.$/, '').toLowerCase()]);
+          else throw e;
+        }
+      }
+    } else if (isAgendaQuestion(q)) {
+      const [prefs, decisions, goals] = await Promise.all([this.memory.preferences(userId), this.memory.decisions(userId, now), this.goals.views(userId, now)]);
       results = await Promise.all(AGENDA_STEPS.map((st) => this.search.runStep(userId, st, now)));
-      plan = composeAgenda(results, mode, q, now);
-      engines = AGENDA_STEPS.map((st) => st.tool);
+      plan = composeAgenda(results, mode, q, now, { prefs, decisions, goals });
+      engines = [...AGENDA_STEPS.map((st) => st.tool), 'goals'];
+      await this.memory.recordRecommended(userId, plan.items.map((i) => ({ id: i.id, title: i.title })), now);
     } else {
       const r = await this.search.ask(userId, q, undefined, opts.sessionId, now);
       sessionId = r.sessionId;

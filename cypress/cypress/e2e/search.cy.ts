@@ -110,4 +110,30 @@ describe('Universal search API', () => {
       cy.request({ method: 'POST', url: '/api/v1/copilot/ask', body: { q: 'hi' }, failOnStatusCode: false }).its('status').should('eq', 401);
     });
   });
+
+  it('CY-COP-02 what-if, goals and memory over the API', () => {
+    const email = 'cy.cop2.' + Date.now() + '@e2e.test';
+    cy.request('POST', '/api/v1/auth/register', { email, password: 'e2e-password-1', name: 'Phase Two' }).then((reg) => {
+      const token = reg.body.accessToken as string;
+      cy.request({ method: 'POST', url: '/api/v1/copilot/ask', headers: auth(token), body: { q: 'What if I wait 3 months?' } }).then((r) => {
+        expect(r.body.plan.kind).to.eq('WHATIF');
+        expect(r.body.plan.whatIf).to.include({ scenario: 'WAIT', version: 'what-if/1' });
+        expect(r.body.plan.whatIf.deltas.length).to.be.greaterThan(0);
+        expect(r.body.plan.whatIf.assumptions.length).to.be.greaterThan(0);
+      });
+      cy.request({ method: 'POST', url: '/api/v1/copilot/ask', headers: auth(token), body: { q: 'What if I cancel it?' } }).its('body.plan.summary').should('match', /which card/);
+      cy.request({ method: 'POST', url: '/api/v1/copilot/goals', headers: auth(token), body: { kind: 'FIVE24', title: 'Stay under 5/24', target: { max: 4 } } }).then((g) => {
+        expect(g.body.progress.state).to.be.oneOf(['ON_TRACK', 'UNKNOWN']);
+        cy.request({ method: 'PATCH', url: '/api/v1/copilot/goals/' + g.body.id, headers: auth(token), body: { status: 'DONE' } }).its('body.status').should('eq', 'DONE');
+        cy.request({ method: 'DELETE', url: '/api/v1/copilot/goals/' + g.body.id, headers: auth(token) }).its('status').should('eq', 204);
+      });
+      cy.request({ method: 'POST', url: '/api/v1/copilot/goals', headers: auth(token), body: { kind: 'NOPE', title: 'x y' }, failOnStatusCode: false }).its('status').should('eq', 400);
+      cy.request({ method: 'PUT', url: '/api/v1/copilot/memory/preferences', headers: auth(token), body: { airlines: ['Delta'], priorities: ['TRAVEL'] } }).its('body.airlines').should('deep.equal', ['Delta']);
+      cy.request({ method: 'PUT', url: '/api/v1/copilot/memory/preferences', headers: auth(token), body: { priorities: ['FUN'] }, failOnStatusCode: false }).its('status').should('eq', 400);
+      cy.request({ method: 'POST', url: '/api/v1/copilot/memory/decisions', headers: auth(token), body: { itemId: 'offer-exp:1', action: 'SNOOZE', days: 3 } }).its('status').should('eq', 201);
+      cy.request({ method: 'POST', url: '/api/v1/copilot/memory/decisions', headers: auth(token), body: { itemId: 'offer-exp:1', action: 'SNOOZE', days: 0 }, failOnStatusCode: false }).its('status').should('eq', 400);
+      cy.request({ url: '/api/v1/copilot/memory', headers: auth(token) }).its('body').should('have.length.greaterThan', 1);
+      cy.request({ method: 'DELETE', url: '/api/v1/copilot/memory', headers: auth(token) }).its('body.removed').should('be.greaterThan', 1);
+    });
+  });
 });
