@@ -25,7 +25,7 @@ import {
 import { SkipThrottle } from "@nestjs/throttler";
 import { IsBoolean, IsOptional, IsUUID } from "class-validator";
 import type { Request } from "express";
-import { AuthUser, CurrentUser, Public } from "../common/decorators";
+import { AuthUser, CurrentUser, MemberSafe, Public } from "../common/decorators";
 import { SpendCoreModule } from "../spend/spend.module";
 import { LoyaltyIngestModule } from "../loyalty/loyalty-ingest.service";
 import { CaptureService } from "./capture.service";
@@ -78,6 +78,7 @@ export class CaptureController {
   }
 
   @ApiBearerAuth()
+  @MemberSafe()
   @Get("capture/status")
   @ApiOperation({
     summary:
@@ -86,13 +87,14 @@ export class CaptureController {
   status(@CurrentUser() u: AuthUser) {
     return this.capture.status(u.sub);
   }
-  @ApiBearerAuth() @Patch("capture/inbox") inbox(
+  @ApiBearerAuth() @MemberSafe() @Patch("capture/inbox") inbox(
     @CurrentUser() u: AuthUser,
     @Body() dto: InboxDto,
   ) {
     return this.capture.setEnabled(u.sub, dto.enabled);
   }
   @ApiBearerAuth()
+  @MemberSafe()
   @Post("capture/inbox/rotate")
   @HttpCode(200)
   @ApiOperation({
@@ -101,14 +103,14 @@ export class CaptureController {
   rotate(@CurrentUser() u: AuthUser) {
     return this.capture.rotate(u.sub);
   }
-  @ApiBearerAuth() @Post("capture/items/:id/assign") @HttpCode(200) assign(
+  @ApiBearerAuth() @MemberSafe() @Post("capture/items/:id/assign") @HttpCode(200) assign(
     @CurrentUser() u: AuthUser,
     @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: AssignDto,
   ) {
     return this.capture.assign(u.sub, id, dto.walletCardId, !!dto.remember);
   }
-  @ApiBearerAuth() @Delete("capture/items/:id") @HttpCode(204) discard(
+  @ApiBearerAuth() @MemberSafe() @Delete("capture/items/:id") @HttpCode(204) discard(
     @CurrentUser() u: AuthUser,
     @Param("id", ParseUUIDPipe) id: string,
   ) {

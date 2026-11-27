@@ -16,6 +16,8 @@ export interface Member {
   hasBusiness?: boolean;
   cardCount?: number;
   visibility?: 'OWN' | 'HOUSEHOLD';
+  /** this member's mailboxes and alert address, as health only (never the addresses) */
+  channels?: { mailboxes: number; needsAttention: number; lastSyncAt: string | null; alertAddress: boolean | null };
   /** The member's own sign-in, as the owner sees it */
   login?: { status: 'NONE' | 'INVITED' | 'ACTIVE'; canHaveLogin: boolean; email: string | null; since: string | null; inviteExpiresAt: string | null };
 }

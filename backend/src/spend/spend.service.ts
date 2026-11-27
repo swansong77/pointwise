@@ -1014,11 +1014,13 @@ export class SpendService {
   async cardForDigits(
     userId: string,
     digits: string | null,
+    profileId: string | null = null,
   ): Promise<string | null> {
     if (!digits) return null;
     const cards = await this.prisma.walletCard.findMany({
       where: {
         wallet: { userId },
+        ...(profileId && { profileId }),
         status: { not: "CLOSED" },
         lastFour: { not: null },
       },

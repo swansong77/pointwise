@@ -182,6 +182,7 @@ model Profile {
   household            Household?               @relation(fields: [householdId], references: [id], onDelete: SetNull)
   loginUser            User?                    @relation("ProfileLogin", fields: [loginUserId], references: [id], onDelete: SetNull)
   invites              MemberInvite[]
+  mailboxes            Mailbox[]
   cards                WalletCard[]
   creditReportAccounts CreditReportAccount[]
   five24Snapshots      FiveTwentyFourSnapshot[]
@@ -1896,10 +1897,14 @@ model Mailbox {
   lastError  String?
   processed  Int         @default(0)
   createdAt  DateTime    @default(now())
+  /// Which household member's data this mailbox feeds. Null = the whole household of the owner. A member's own mailbox always feeds that member.
+  profileId  String?
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile    Profile?    @relation(fields: [profileId], references: [id], onDelete: SetNull)
 
   @@unique([userId, kind, username])
   @@index([active, lastSyncAt])
+  @@index([profileId])
 }
 
 // ───────────── merchant offer intelligence ─────────────

@@ -67,15 +67,27 @@ export class HouseholdsService {
 
   private async shape<T extends Profile>(rows: T[]) {
     const now = new Date();
-    const [users, invites] = await Promise.all([
+    const loginIds = rows.map((r) => r.loginUserId).filter((x): x is string => !!x);
+    const [users, invites, boxes, inboxes] = await Promise.all([
       this.prisma.user.findMany({ where: { id: { in: rows.map((r) => r.loginUserId).filter((x): x is string => !!x) } }, select: { id: true, email: true } }),
       this.prisma.memberInvite.findMany({ where: { profileId: { in: rows.map((r) => r.id) }, usedAt: null, revokedAt: null, expiresAt: { gt: now } } }),
+      // a member's mailboxes (their own, or ones the owner assigned to them): counts and health only, never the addresses
+      this.prisma.mailbox.findMany({ where: { OR: [{ profileId: { in: rows.map((r) => r.id) } }, { userId: { in: loginIds } }] }, select: { userId: true, profileId: true, lastSyncAt: true, lastStatus: true } }),
+      this.prisma.emailInbox.findMany({ where: { userId: { in: loginIds } }, select: { userId: true, enabled: true } }),
     ]);
     return rows.map((r) => {
       const { loginUserId, loginSince, ...rest } = r;
       const open = invites.filter((i) => i.profileId === r.id);
+      const mine = boxes.filter((b) => b.profileId === r.id || (loginUserId !== null && b.userId === loginUserId));
+      const lastSync = mine.map((b) => b.lastSyncAt).filter((d): d is Date => !!d).sort((a, b) => b.getTime() - a.getTime())[0] ?? null;
       return {
         ...rest,
+        channels: {
+          mailboxes: mine.length,
+          needsAttention: mine.filter((b) => b.lastStatus === 'ERROR' || b.lastStatus === 'RECONNECT').length,
+          lastSyncAt: lastSync,
+          alertAddress: loginUserId ? (inboxes.find((i) => i.userId === loginUserId)?.enabled ?? false) : null,
+        },
         login: {
           status: loginStatus({ loginUserId }, open, now),
           canHaveLogin: canHaveLogin(r),

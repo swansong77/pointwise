@@ -6,11 +6,19 @@ import { Badge, Button, ErrorText, Field, Input, Panel, Select } from '@/compone
 import { shortDate } from '@/lib/format';
 import { KIND_LABEL, MAILBOX_PRESETS, MailboxProviders, MailboxView, oauthBanner, syncLabel } from '@/lib/mailbox';
 import { useApi } from '@/lib/api';
+import type { Member } from '@/lib/portfolio-types';
 import { useApiMutation, useAuthedQuery } from '@/lib/queries';
 
-/** Connect a mailbox (read-only IMAP) so card alert and statement emails are picked up automatically. */
-export function MailboxPanel() {
+/**
+ * Connect a mailbox (read-only IMAP) so card alert and statement emails are picked up automatically.
+ * `assignable` (the household owner): choose whose cards a mailbox feeds, so each person can have their own mailboxes.
+ * A member with their own sign-in leaves it off: their mailboxes always feed themselves.
+ */
+export function MailboxPanel({ assignable = false }: { assignable?: boolean }) {
   const list = useAuthedQuery<MailboxView[]>(['mailboxes'], '/mailboxes');
+  const household = useAuthedQuery<{ members: Member[] }>(['household', 'members', 'mailbox'], '/household', { enabled: assignable });
+  const members = household.data?.members ?? [];
+  const [feeds, setFeeds] = useState('');
   const providers = useAuthedQuery<MailboxProviders>(['mailboxes', 'providers'], '/mailboxes/providers');
   const api = useApi();
   const [banner, setBanner] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
@@ -19,7 +27,7 @@ export function MailboxPanel() {
   const signIn = async (path: 'google' | 'microsoft') => {
     setOauthError(null);
     try {
-      const r = await api<{ url: string }>(`/mailboxes/oauth/${path}/start`);
+      const r = await api<{ url: string }>(`/mailboxes/oauth/${path}/start${feeds ? `?profileId=${encodeURIComponent(feeds)}` : ''}`);
       window.location.assign(r.url);
     } catch (e) {
       setOauthError((e as Error).message);
@@ -28,7 +36,7 @@ export function MailboxPanel() {
   const [preset, setPreset] = useState('gmail');
   const [f, setF] = useState({ label: '', host: 'imap.gmail.com', username: '', password: '', folder: 'INBOX' });
   const hint = MAILBOX_PRESETS.find((p) => p.id === preset)?.hint ?? '';
-  const connect = useApiMutation<typeof f>((body) => ({ path: '/mailboxes', method: 'POST', body: { ...body, label: body.label || 'My mailbox' } }), [['mailboxes']]);
+  const connect = useApiMutation<typeof f>((body) => ({ path: '/mailboxes', method: 'POST', body: { ...body, label: body.label || 'My mailbox', ...(feeds ? { profileId: feeds } : {}) } }), [['mailboxes'], ['household']]);
   const sync = useApiMutation<string>((id) => ({ path: `/mailboxes/${id}/sync`, method: 'POST' }), [['mailboxes'], ['capture'], ['spending']]);
   const remove = useApiMutation<string>((id) => ({ path: `/mailboxes/${id}`, method: 'DELETE' }), [['mailboxes']]);
   return (
@@ -41,6 +49,20 @@ export function MailboxPanel() {
         <p role="status" className={banner.tone === 'ok' ? 'mb-3 rounded-lg bg-emerald-50 p-2 text-sm text-emerald-900' : 'mb-3 rounded-lg bg-red-50 p-2 text-sm text-red-800'} data-testid="mailbox-banner">
           {banner.text}
         </p>
+      )}
+      {assignable && members.length > 1 && (
+        <div className="mb-4 max-w-sm" data-testid="mailbox-feeds">
+          <Field label="Whose cards and points does this mailbox feed?" htmlFor="mb-feeds" hint="Choose a person to keep their mail separate. The household option matches mail to any card in the household.">
+            <Select id="mb-feeds" value={feeds} onChange={(e) => setFeeds(e.target.value)}>
+              <option value="">The whole household</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nickname}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
       )}
       <div className="mb-4 flex flex-wrap items-center gap-2" data-testid="mailbox-oauth">
         <Button variant="secondary" onClick={() => signIn('google')} disabled={!providers.data?.gmail} data-testid="connect-gmail">
@@ -63,6 +85,7 @@ export function MailboxPanel() {
             <span className="font-medium">{m.label}</span>
             <span className="text-slate-600">{m.username}</span>
             <Badge tone="slate">{KIND_LABEL[m.kind]}</Badge>
+            {m.profile && <Badge tone="brand">Feeds {m.profile.nickname}</Badge>}
             <Badge tone={m.lastStatus === 'ERROR' || m.lastStatus === 'RECONNECT' ? 'red' : m.lastSyncAt ? 'green' : 'slate'}>{syncLabel(m)}</Badge>
             <span className="text-xs text-slate-500">
               {m.processed} message{m.processed === 1 ? '' : 's'} read{m.lastSyncAt ? ` · last ${shortDate(m.lastSyncAt)}` : ''}
