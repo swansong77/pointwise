@@ -1,9 +1,9 @@
-import { Body, Controller, Headers, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Get, Headers, HttpCode, Param, Post } from '@nestjs/common';
 import { ApiHeader, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../common/decorators';
 import { AuthService } from './auth.service';
-import { ForgotPasswordDto, LoginDto, OAuthExchangeDto, RefreshDto, RegisterDto, ResetPasswordDto, TokenPairDto } from './dto/auth.dto';
+import { AcceptInviteDto, ForgotPasswordDto, LoginDto, OAuthExchangeDto, RefreshDto, RegisterDto, ResetPasswordDto, TokenPairDto } from './dto/auth.dto';
 
 @ApiTags('auth')
 @Public()
@@ -44,6 +44,18 @@ export class AuthController {
   @ApiOkResponse({ type: TokenPairDto })
   oauth(@Body() dto: OAuthExchangeDto, @Headers('x-internal-secret') secret?: string) {
     return this.auth.oauthExchange(dto, secret);
+  }
+
+  @Get('invite/:token')
+  inviteInfo(@Param('token') token: string) {
+    return this.auth.inviteInfo(token);
+  }
+
+  @Post('accept-invite')
+  @HttpCode(200)
+  @ApiOkResponse({ type: TokenPairDto })
+  acceptInvite(@Body() dto: AcceptInviteDto) {
+    return this.auth.acceptInvite(dto);
   }
 
   @Post('forgot-password')

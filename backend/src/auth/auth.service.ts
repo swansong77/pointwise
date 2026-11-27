@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
@@ -7,7 +7,8 @@ import { User } from '@prisma/client';
 import { PrismaService } from '../common/prisma.service';
 import { MailService } from '../jobs/mail.service';
 import { isTrustedInternal } from '../common/throttler.guard';
-import { OAuthExchangeDto, RegisterDto } from './dto/auth.dto';
+import { hashInviteToken, inviteState } from '../domain/member-access';
+import { AcceptInviteDto, OAuthExchangeDto, RegisterDto } from './dto/auth.dto';
 
 export const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -15,7 +16,14 @@ export interface TokenPair {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
-  user: { id: string; email: string; name: string | null; role: string };
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    role: string;
+    /** Present for a household member's own sign-in */
+    member?: { profileId: string; nickname: string; visibility: string; household: string };
+  };
 }
 
 @Injectable()
@@ -159,8 +167,13 @@ export class AuthService {
   }
 
   async issueTokens(user: Pick<User, 'id' | 'email' | 'role' | 'name'>, familyId: string = randomUUID()): Promise<TokenPair> {
+    // a household member's own sign-in carries a marker; the guard then resolves the live link on every request
+    const link = await this.prisma.profile.findUnique({
+      where: { loginUserId: user.id },
+      select: { id: true, nickname: true, visibility: true, household: { select: { name: true } } },
+    });
     const accessToken = await this.jwt.signAsync(
-      { sub: user.id, email: user.email, role: user.role, typ: 'access' },
+      { sub: user.id, email: user.email, role: user.role, typ: 'access', ...(link && { mem: true }) },
       { secret: this.config.getOrThrow<string>('JWT_ACCESS_SECRET'), expiresIn: this.accessTtl },
     );
     const refreshToken = randomBytes(48).toString('base64url');
@@ -176,8 +189,51 @@ export class AuthService {
       accessToken,
       refreshToken,
       expiresIn: this.accessTtl,
-      user: { id: user.id, email: user.email, name: user.name ?? null, role: user.role },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name ?? null,
+        role: user.role,
+        ...(link && { member: { profileId: link.id, nickname: link.nickname, visibility: link.visibility, household: link.household?.name ?? 'Household' } }),
+      },
     };
+  }
+
+  /** What the invitation page shows before the person chooses a password. Reveals nothing about the owner's account. */
+  async inviteInfo(token: string): Promise<{ nickname: string; household: string; expiresAt: Date }> {
+    const invite = await this.prisma.memberInvite.findUnique({
+      where: { tokenHash: hashInviteToken(token) },
+      include: { profile: { include: { household: true } } },
+    });
+    if (!invite || inviteState(invite) !== 'ACTIVE' || invite.profile.loginUserId) throw new NotFoundException('This invitation is not valid. Ask for a new one.');
+    return { nickname: invite.profile.nickname, household: invite.profile.household?.name ?? 'Household', expiresAt: invite.expiresAt };
+  }
+
+  /** Turns an invitation into the member's own sign-in. The token is single-use; two people racing for it cannot both win. */
+  async acceptInvite(dto: AcceptInviteDto): Promise<TokenPair> {
+    const hash = hashInviteToken(dto.token);
+    const now = new Date();
+    const passwordHash = await argon2.hash(dto.password, { type: argon2.argon2id });
+    const user = await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.memberInvite.updateMany({
+        where: { tokenHash: hash, usedAt: null, revokedAt: null, expiresAt: { gt: now } },
+        data: { usedAt: now },
+      });
+      if (claimed.count !== 1) throw new NotFoundException('This invitation is not valid. Ask for a new one.');
+      const invite = await tx.memberInvite.findUniqueOrThrow({ where: { tokenHash: hash }, include: { profile: true } });
+      if (invite.profile.loginUserId || invite.profile.isPrimary) throw new NotFoundException('This invitation is not valid. Ask for a new one.');
+      if (await tx.user.findUnique({ where: { email: dto.email } })) throw new ConflictException('An account with this email already exists');
+      // only the member's own channels are created here: no wallet, plan or household (their data lives with the owner)
+      const created = await tx.user.create({
+        data: { email: dto.email, name: dto.name?.trim() || invite.profile.nickname, passwordHash, notificationPrefs: { create: {} } },
+      });
+      await tx.profile.update({ where: { id: invite.profileId }, data: { loginUserId: created.id, loginSince: now } });
+      await tx.memberInvite.updateMany({ where: { profileId: invite.profileId, usedAt: null, revokedAt: null }, data: { revokedAt: now } });
+      await tx.auditLog.create({ data: { actorId: created.id, action: 'member.login.created', entity: 'Profile', entityId: invite.profileId } });
+      return created;
+    });
+    await this.track(user.id, 'member_login_created', {});
+    return this.issueTokens(user);
   }
 
   private async track(userId: string, name: string, properties: Record<string, unknown>): Promise<void> {

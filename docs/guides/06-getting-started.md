@@ -33,11 +33,12 @@ Start with **cards, then statements, then loyalty**. That alone gives you most o
 1. Open the address the server owner gave you and **sign up** (a password of at least 10 characters, with a letter and a non-letter), or sign in if they already made your account.
 2. Open **Household**.
 
-**How a household works.** One person, the *account owner*, holds the household. Everyone else in the family is a **member inside that account**: a spouse, a partner, children, parents. Members have a name and a role, but **no separate sign-in**. The account owner enters and looks at everything, per person or combined.
+**How a household works.** One person, the *account owner*, holds the household. Everyone else in the family is a **member inside that account**: a spouse, a partner, children, parents. Every member has a name and a role. By default the account owner enters and looks at everything, per person or combined. A member can also be given **their own sign-in** (below).
 
 - **Add members.** In **Household**, add each person with their name and relationship (spouse, partner, child, parent, other). Households with more than one person need the **Pro** plan; on your own server Pro costs nothing (Settings, Subscription, choose Pro).
 - **Children** can only be *authorized users* on a card, never the main cardholder.
-- **Two adults who each want their own private account?** They can each sign up separately, but accounts do not share data. Choose one account owner for the household's shared view, or keep two separate accounts and accept two separate views.
+- **Give a member their own sign-in.** In **Household**, open the member's panel, **Own sign-in**, **Invite … to sign in**. PointWise shows a one-time link (valid 7 days, works once; it is also e-mailed if mail is set up and the member has an address on file). Send it to them by any channel. They open it, choose their own e-mail and password, and land on **My view**: their own cards, credits and benefits, points and recent spending. They cannot see anyone else's data unless you choose **Their own, plus the household overview** for them, which is read only. You can change that, or **Remove sign-in**, at any time; a removed member is signed out at once and their cards and data stay. The account owner cannot invite themselves.
+- **Their own sign-in is not a separate account.** The cards, points and spending still belong to the household, so household totals, 5/24 and best-card advice keep working. A person who signs up on their own gets a completely separate account that shares nothing.
 - **5/24 is personal.** Chase's 5/24 rule counts each person's own applications, so PointWise tracks it per member, never as a household total.
 
 ## Step 2: Add the cards
@@ -172,7 +173,7 @@ If you track card-linked offers, the **offers extension** (`docs/offer-automatio
 | A card still says **Not automated** | no alert has arrived yet (forwarding takes the next purchase), or the forwarding rule is not active |
 | "Forward card alerts isn't set up on this server" | ask the server owner; meanwhile use statement drops or a connected mailbox |
 | A loyalty value changed by itself | a better source (an e-mail or statement) corrected a hand-typed number. The history under **Imports & conflicts** shows what changed and why. |
-| Your member can't sign in | household members do not have their own sign-in; the account owner signs in and switches the view to that person |
+| A member's link says it is not valid | it expired (7 days), was already used, or was replaced by a newer one. Make a new invitation in Household. |
 
 ## Your data and privacy
 

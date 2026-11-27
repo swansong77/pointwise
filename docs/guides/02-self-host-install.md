@@ -182,7 +182,7 @@ Give each person the address. They choose **Sign up**, then use a password of at
 bash deploy/make-admin.sh other@example.com
 ```
 
-For **a spouse, children and authorized users in one household**, one person (the account owner) holds the household and adds the others as members inside that account (Guide 6, Step 1). Members do not get their own sign-in. A person who signs up separately gets a separate account, and accounts do not share data.
+For **a spouse, children and authorized users in one household**, one person (the account owner) holds the household and adds the others as members inside that account (Guide 6, Step 1). A member can be given their own sign-in by an invitation link (Household, Own sign-in); that is not a separate account, it is a restricted view of the household. A person who signs up separately gets a separate account, and accounts do not share data.
 
 ## Part 5: First-time setup for a member
 

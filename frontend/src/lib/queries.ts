@@ -142,12 +142,12 @@ export function useNotifications() {
   });
 }
 
-export function useUnreadCount() {
+export function useUnreadCount(enabled = true) {
   const api = useApi();
   return useQuery({
     queryKey: qk.unread,
     queryFn: () => api<{ count: number }>('/notifications/unread-count'),
-    enabled: useAuthed(),
+    enabled: useAuthed() && enabled,
     refetchInterval: 60_000,
   });
 }

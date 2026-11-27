@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { StatTiles } from '@/components/charts';
 import { WalletCardArt } from '@/components/card-bits';
+import { MemberLogin } from '@/components/member-login';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, PageHeader, Panel, Select, Spinner } from '@/components/ui';
 import { money } from '@/lib/format';
 import { RELATIONSHIP_LABEL } from '@/lib/portfolio';
@@ -73,6 +74,7 @@ export default function HouseholdPage() {
             </p>
             <EditMember member={m.profile} />
             {!m.profile.isPrimary && <MemberActions id={m.profile.id} nickname={m.profile.nickname} relationship={m.profile.relationship} />}
+            <MemberLogin member={m.profile} />
           </Panel>
         ))}
       </div>

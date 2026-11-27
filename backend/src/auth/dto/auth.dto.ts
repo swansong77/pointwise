@@ -64,5 +64,22 @@ export class TokenPairDto {
   @ApiProperty() accessToken: string;
   @ApiProperty() refreshToken: string;
   @ApiProperty() expiresIn: number;
-  @ApiProperty() user: { id: string; email: string; name: string | null; role: string };
+  @ApiProperty() user: { id: string; email: string; name: string | null; role: string; member?: { profileId: string; nickname: string; visibility: string; household: string } };
+}
+
+export class AcceptInviteDto {
+  @ApiProperty() @IsString() @MinLength(20) @MaxLength(256)
+  token: string;
+
+  @ApiProperty({ example: 'sam@example.com' })
+  @Transform(lower) @IsEmail() @MaxLength(254)
+  email: string;
+
+  @ApiProperty({ minLength: 10 })
+  @IsString() @MinLength(10) @MaxLength(128)
+  @Matches(/^(?=.*[A-Za-z])(?=.*[^A-Za-z]).+$/, { message: 'password must contain a letter and a non-letter' })
+  password: string;
+
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(80)
+  name?: string;
 }
