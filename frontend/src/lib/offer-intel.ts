@@ -1,3 +1,4 @@
+import type { CashbackRec } from './cashback';
 import type { Tone } from './offer-market';
 
 export type OfferSource = 'ISSUER_OFFICIAL' | 'ACCOUNT_DATA' | 'EMAIL' | 'PUBLIC_PAGE' | 'AI_INFERRED' | 'USER_ENTERED' | 'ADMIN' | 'PORTAL';
@@ -227,6 +228,8 @@ export interface PlanResponse {
   expiryImpact?: ExpiryImpact[];
   bestTimeToBuy?: BestTime | null;
   household?: HouseholdAdvice;
+  /** which cash-back site to use for this purchase */
+  cashback?: CashbackRec | null;
 }
 
 export type PlannedStatus = 'PLANNED' | 'DONE' | 'CANCELLED';

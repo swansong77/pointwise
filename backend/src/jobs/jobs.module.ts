@@ -34,6 +34,7 @@ import { ROTATING_SCHEDULE } from "./rotating.job";
 import { RemindersCoreModule } from "../reminders/reminders.module";
 import { CopilotModule } from "../copilot/copilot.controller";
 import { MemberModule } from "../member/member.module";
+import { CashbackCoreModule } from "../cashback/cashback.module";
 
 /** Cron schedule (UTC). */
 export const SCHEDULE: Record<JobName, string> = {
@@ -91,6 +92,8 @@ export const SCHEDULE: Record<JobName, string> = {
   /** each household member with their own sign-in: their own daily briefing (only when something is due) and a weekly summary */
   "member-daily": "5 13 * * *",
   "member-weekly": "35 13 * * 1",
+  /** one light request to each cash-back site's public home page, to tell whether it answers */
+  "cashback-status": "40 11 * * *",
 };
 
 const JobNameEnum = Object.fromEntries(JOB_NAMES.map((n) => [n, n])) as Record<
@@ -205,6 +208,7 @@ const jobDeps = () => [
   RemindersCoreModule,
   CopilotModule,
   MemberModule,
+  CashbackCoreModule,
 ];
 
 @Module({

@@ -1,3 +1,5 @@
+import { CashbackService } from '../cashback/cashback.service';
+import { cashbackSteps, monitorUrl, plannerRates } from '../domain/cashback';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../common/prisma.service';
@@ -45,6 +47,7 @@ export class OfferAnalysisService {
     private readonly intel: OfferIntelService,
     private readonly core: OfferCoreService,
     private readonly benefits: BenefitsService,
+    private readonly cashback: CashbackService,
   ) {}
 
   missed(userId: string, now = new Date()) {
@@ -125,7 +128,8 @@ export class OfferAnalysisService {
     // offers, portal rates
     const holdings = merchant ? (await this.core.holdings(userId, at)).filter((x) => x.row.merchantId === merchant!.id) : [];
     const offers: PlanOffer[] = holdings.map((x) => ({ terms: x.offer, title: offerLabel(name, { valueCents: x.offer.valueCents, percent: x.offer.percent, points: x.offer.points, minSpendCents: x.offer.minSpendCents }), eligibleWalletCardIds: x.eligibleWalletCardIds.filter((i) => cardIds.has(i)), userOffers: x.userOffers, offersUrl: x.row.issuer?.offersUrl ?? null }));
-    const rates = merchant ? await this.prisma.portalRate.findMany({ where: { merchantId: merchant.id, OR: [{ expiresAt: null }, { expiresAt: { gte: at } }], ratePercent: { not: null } } }) : [];
+    // cash-back sites: which one to use, from the sites this household has accounts on, the rates on file and each site's status
+    const cashbackRec = merchant ? await this.cashback.recommend(userId, { id: merchant.id, name }, dto.amountCents, null, at) : null;
 
     // credits the household has not used that cover this purchase
     const credits: PlanCredit[] = (await this.benefits.list(userId, {}, now))
@@ -185,7 +189,7 @@ export class OfferAnalysisService {
       now: at,
       cards,
       offers,
-      portalRates: rates.map((r) => ({ portal: r.portal, ratePercent: Number(r.ratePercent), source: r.source, reliability: 50 })),
+      portalRates: cashbackRec ? plannerRates(cashbackRec) : [],
       merchantConfidence,
       credits,
       certificates,
@@ -249,6 +253,8 @@ export class OfferAnalysisService {
       itemHint,
       category: chosen ? { slug: chosen.slug } : null,
       plans: supported.slice(0, 5),
+      // the steps name the card the best plan pays with
+      cashback: cashbackRec ? { ...cashbackRec, monitorUrl: monitorUrl(name), steps: cashbackSteps(cashbackRec, name, best?.legs[0]?.cardName ?? null) } : null,
       strategies,
       expiryImpact: expiry,
       bestTimeToBuy: bestTime,

@@ -5,6 +5,7 @@ import { BrandLogo } from '@/components/brand-logo';
 import { StatTiles } from '@/components/charts';
 import Link from 'next/link';
 import { useState } from 'react';
+import { CashbackCard } from '@/components/cashback-card';
 import { Badge, Button, EmptyState, ErrorText, Field, Input, PageHeader, Panel, Select } from '@/components/ui';
 import { money, shortDate } from '@/lib/format';
 import type { Member } from '@/lib/portfolio-types';
@@ -366,6 +367,7 @@ export default function PlanPurchasePage() {
             <>
               <Strategies res={res} />
               <Insights res={res} />
+              {res.cashback && <div className="mb-4"><CashbackCard rec={res.cashback} merchant={res.merchant.name} /></div>}
               <ol className="space-y-3" data-testid="plans">
                 {res.plans.map((p, i) => (
                   <PlanCard key={`${p.kind}-${p.legs.map((l) => l.walletCardId).join('-')}`} plan={p} rank={i} amountCents={res.amountCents} tags={tagsFor(i)} />

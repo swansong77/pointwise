@@ -47,6 +47,7 @@ model User {
   wallet               Wallet?
   profiles             Profile[]
   memberProfile        Profile?                @relation("ProfileLogin")
+  cashbackAccounts UserCashbackAccount[]
   household            Household?
   bankConnections      BankConnection[]
   emailInbox           EmailInbox?
@@ -186,6 +187,7 @@ model Profile {
   household            Household?               @relation(fields: [householdId], references: [id], onDelete: SetNull)
   loginUser            User?                    @relation("ProfileLogin", fields: [loginUserId], references: [id], onDelete: SetNull)
   invites              MemberInvite[]
+  cashbackAccounts     UserCashbackAccount[]
   mailboxes            Mailbox[]
   cards                WalletCard[]
   creditReportAccounts CreditReportAccount[]
@@ -2010,6 +2012,14 @@ model PortalRate {
   expiresAt       DateTime?
   updatedBy       String?
   updatedAt       DateTime  @updatedAt
+  /// when the rate was last seen or confirmed (a rate that nobody has looked at for weeks is shown as stale)
+  observedAt      DateTime  @default(now())
+  /// MANUAL, CSV, PASTE or AUTO (read from the site's public page)
+  method          String    @default("MANUAL")
+  /// "up to" rates are the best case: they are counted at a haircut
+  upTo            Boolean   @default(false)
+  /// a condition the site states (new members only, selected categories, ...)
+  conditions      String?
   merchant        Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
   @@unique([portal, merchantId])
@@ -2943,4 +2953,54 @@ model MemberInvite {
   profile   Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([profileId])
+}
+
+enum CashbackKind {
+  CASHBACK
+  POINTS
+}
+
+/// A cash-back or points shopping site (Rakuten, TopCashback, an airline portal, ...). One shared list for the server, kept by the administrator.
+model CashbackSite {
+  id            String       @id @default(uuid())
+  /// the value PortalRate.portal holds
+  code          String       @unique
+  name          String
+  kind          CashbackKind @default(CASHBACK)
+  homeUrl       String
+  /// where a store page lives, with {slug} (the merchant's short name) or {host} (its web address); used only to read public rates
+  storeUrlTemplate String?
+  /// what one point is worth, in cents (points sites only)
+  pointCents    Decimal?     @db.Decimal(6, 3)
+  notes         String?
+  isActive      Boolean      @default(true)
+  /// the administrator lets PointWise read this site's public store pages for rates
+  autoRead      Boolean      @default(false)
+  // status: a light check of the public home page, and how the last rate read went
+  lastCheckedAt DateTime?
+  reachable     Boolean?
+  httpStatus    Int?
+  lastError     String?
+  lastOkAt      DateTime?
+  failures      Int          @default(0)
+  lastReadAt    DateTime?
+  lastReadNote  String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  accounts      UserCashbackAccount[]
+}
+
+/// A cash-back site a household member has an account on. No credentials are ever stored.
+model UserCashbackAccount {
+  id        String       @id @default(uuid())
+  userId    String
+  profileId String
+  siteId    String
+  createdAt DateTime     @default(now())
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile   Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  site      CashbackSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, siteId])
+  @@index([userId])
 }
