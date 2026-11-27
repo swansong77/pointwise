@@ -37,7 +37,7 @@ test.describe('AI assistant', () => {
     await expect(answer.getByTestId('ai-trace')).toContainText('5/24 status');
     // follow-up in the same conversation
     await page.getByLabel('Your question').fill('Which card should I use at Costco?');
-    await page.getByRole('button', { name: 'Ask' }).click();
+    await page.getByRole('button', { name: 'Ask', exact: true }).click();
     await expect(page.getByTestId('ai-answer').last()).toContainText('Best for');
   });
 
@@ -50,7 +50,7 @@ test.describe('AI assistant', () => {
     await page.goto('/assistant');
     await page.getByLabel('Assistant').selectOption('benefit-utilization');
     await page.getByLabel('Your question').fill('Log $5 of my Dining credit');
-    await page.getByRole('button', { name: 'Ask' }).click();
+    await page.getByRole('button', { name: 'Ask', exact: true }).click();
     await expect(page.getByTestId('ai-answer').last()).toContainText('nothing was changed yet');
     const actions = page.getByTestId('ai-actions');
     await expect(actions).toContainText('Log $5 used on "Dining credit"');

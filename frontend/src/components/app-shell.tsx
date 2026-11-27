@@ -6,62 +6,52 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { useEffect, useState, type ReactNode } from 'react';
+import { CommandBar } from '@/components/command-bar';
+import { ADMIN_NAV, NAV } from '@/lib/nav';
+import { ASK_EVENT, isOpenShortcut } from '@/lib/search';
 import { useUnreadCount } from '@/lib/queries';
 import { initials } from '@/lib/format';
-
-const NAV = [
-  { href: '/dashboard', label: 'Dashboard', icon: '🏠' },
-  { href: '/assistant', label: 'Assistant', icon: '✨' },
-  { href: '/wallet', label: 'Wallet', icon: '💳' },
-  { href: '/portfolio', label: 'Portfolio', icon: '📊' },
-  { href: '/benefits', label: 'Benefits', icon: '🎁' },
-  { href: '/benefits/audit', label: 'Benefit Audit', icon: '🔎' },
-  { href: '/benefits/reconciliation', label: 'Reconcile', icon: '⚖️' },
-  { href: '/spending', label: 'Spending', icon: '🧾' },
-  { href: '/five24', label: '5/24', icon: '⏳' },
-  { href: '/next-card', label: 'Next Card', icon: '🧭' },
-  { href: '/travel', label: 'Travel', icon: '✈️' },
-  { href: '/household', label: 'Household', icon: '👪' },
-  { href: '/import', label: 'Import', icon: '📥' },
-  { href: '/offers', label: 'Offers', icon: '🏷️' },
-  { href: '/offers/inventory', label: 'Offer Inventory', icon: '🗂️' },
-  { href: '/offers/expirations', label: 'Expirations', icon: '⏰' },
-  { href: '/offers/savings', label: 'Savings', icon: '💰' },
-  { href: '/offers/household', label: 'Household Offers', icon: '👪' },
-  { href: '/offers/automation', label: 'Offer Automation', icon: '🤖' },
-  { href: '/offers/market', label: 'Offer Market', icon: '📈' },
-  { href: '/offers/intel', label: 'Offer Intelligence', icon: '🎯' },
-  { href: '/offers/plan', label: 'Plan a Purchase', icon: '🧭' },
-  { href: '/loyalty', label: 'Loyalty Assets', icon: '✈️' },
-  { href: '/nearby', label: 'Nearby', icon: '📍' },
-  { href: '/merchants', label: 'Merchants', icon: '🏪' },
-  { href: '/brands', label: 'Brand Logos', icon: '🖼️' },
-  { href: '/calculator', label: 'Calculator', icon: '🧮' },
-  { href: '/settings', label: 'Settings', icon: '⚙️' },
-];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const unread = useUnreadCount();
   const [open, setOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [seed, setSeed] = useState<{ q: string; nonce: number } | null>(null);
+  const [mac, setMac] = useState(false);
   const isAdmin = session?.user?.role === 'ADMIN';
 
   useEffect(() => {
     if (session?.error === 'RefreshAccessTokenError') void signOut({ callbackUrl: '/login' });
   }, [session?.error]);
   useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => setSearchOpen(false), [pathname]);
+  // Ctrl+K or Cmd+K opens the search bar from any page; the platform decides which key the hint shows
+  useEffect(() => {
+    setMac(/mac|iphone|ipad/i.test(navigator.platform || navigator.userAgent));
+    const onKey = (e: KeyboardEvent) => {
+      if (!isOpenShortcut(e)) return;
+      e.preventDefault();
+      setSearchOpen((v) => !v);
+    };
+    // any page can ask the bar a question (the search history page's "run again")
+    const onAsk = (e: Event) => {
+      const q = (e as CustomEvent<string>).detail;
+      if (typeof q === 'string' && q.trim()) {
+        setSeed({ q, nonce: Date.now() });
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener(ASK_EVENT, onAsk);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener(ASK_EVENT, onAsk);
+    };
+  }, []);
 
-  const links = isAdmin
-    ? [
-        ...NAV,
-        { href: '/admin', label: 'Admin', icon: '🛠️' },
-        { href: '/admin/ai', label: 'AI & MCP', icon: '🤖' },
-        { href: '/admin/catalog', label: 'Card Data', icon: '🗂️' },
-        { href: '/admin/ops', label: 'Operations', icon: '🩺' },
-        { href: '/admin/backup', label: 'Backup & Migration', icon: '💾' },
-      ]
-    : NAV;
+  const links = isAdmin ? [...NAV, ...ADMIN_NAV] : NAV;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -77,6 +67,27 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Logo size="sm" />
           </Link>
           <div className="ml-auto flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              data-testid="search-trigger"
+              aria-label="Search or ask a question"
+              aria-keyshortcuts="Control+K Meta+K"
+              className="hidden items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-brand-500 md:flex"
+            >
+              <span aria-hidden>🔍</span>
+              <span>Search or ask…</span>
+              <kbd className="rounded border border-slate-300 px-1.5 text-xs text-slate-600">{mac ? '⌘K' : 'Ctrl K'}</kbd>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label="Search or ask a question"
+              data-testid="search-trigger-mobile"
+              className="rounded-full p-2 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-brand-500 md:hidden"
+            >
+              <span aria-hidden>🔍</span>
+            </button>
             <Link
               href="/notifications"
               className="relative rounded-full p-2 hover:bg-slate-100"
@@ -125,6 +136,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+      <button
+        type="button"
+        onClick={() => setSearchOpen(true)}
+        aria-label="Search or ask a question"
+        data-testid="search-fab"
+        className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-40 grid h-12 w-12 place-items-center rounded-full bg-brand-600 text-xl text-white shadow-lg hover:bg-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 md:hidden"
+      >
+        <span aria-hidden>🔍</span>
+      </button>
+      <CommandBar open={searchOpen} onClose={() => setSearchOpen(false)} isAdmin={isAdmin} seed={seed} />
     </div>
   );
 }

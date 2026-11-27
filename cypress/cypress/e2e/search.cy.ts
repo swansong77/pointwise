@@ -1,0 +1,89 @@
+/** Universal search API checks (synthetic data). */
+const auth = (t: string) => ({ Authorization: `Bearer ${t}` });
+const us = (days: number) => {
+  const d = new Date(Date.now() + days * 86_400_000);
+  return String(d.getUTCMonth() + 1).padStart(2, '0') + '/' + String(d.getUTCDate()).padStart(2, '0') + '/' + d.getUTCFullYear();
+};
+
+describe('Universal search API', () => {
+  it('CY-SRCH-01 suggest and ask: understood, answered, follow-up, private to the caller', () => {
+    const email = 'cy.search.' + Date.now() + '@e2e.test';
+    cy.request('POST', '/api/v1/auth/register', { email, password: 'e2e-password-1', name: 'Search Tester' }).then((reg) => {
+      const token = reg.body.accessToken as string;
+      cy.request('/api/v1/cards/contoso-gold').then((card) => {
+        cy.request({ method: 'POST', url: '/api/v1/wallet/cards', headers: auth(token), body: { cardId: card.body.id } }).then((w) => {
+          cy.request({ method: 'POST', url: '/api/v1/offers/intel/import', headers: auth(token), body: { walletCardId: w.body.id, text: 'Hilton: Spend $500, get $100 back, expires ' + us(10) } });
+          cy.request({ url: '/api/v1/search/suggest?q=', headers: auth(token) }).its('body.suggestions').should('have.length.greaterThan', 5);
+          cy.request({ url: '/api/v1/search/suggest?q=' + encodeURIComponent('Costco $1500'), headers: auth(token) }).then((r) => {
+            expect(r.body.understood.intent).to.eq('SHOPPING');
+            expect(r.body.suggestions[0].type).to.eq('QUERY');
+          });
+          cy.request({ method: 'POST', url: '/api/v1/search/ask', headers: auth(token), body: { q: 'What card should I use at Costco for $1,500?' } }).then((r) => {
+            expect(r.body.answer.intent).to.eq('SHOPPING');
+            expect(r.body.answer.summary).to.match(/Best:/);
+            expect(r.body.answer.confidence).to.be.greaterThan(0);
+            cy.request({ method: 'POST', url: '/api/v1/search/ask', headers: auth(token), body: { q: 'It will cost $2,000', slots: r.body.slots } }).then((f) => {
+              expect(f.body.usedFollowUp).to.eq(true);
+              expect(f.body.answer.understood).to.deep.include({ type: 'amount', label: '$2,000' });
+            });
+          });
+          cy.request({ method: 'POST', url: '/api/v1/search/ask', headers: auth(token), body: { q: 'purple monkey' } }).its('body.answer.unanswered').should('eq', true);
+          cy.request({ method: 'POST', url: '/api/v1/search/ask', headers: auth(token), body: { q: '' }, failOnStatusCode: false }).its('status').should('eq', 400);
+        });
+      });
+    });
+    const other = 'cy.search2.' + Date.now() + '@e2e.test';
+    cy.request('POST', '/api/v1/auth/register', { email: other, password: 'e2e-password-1', name: 'Other' }).then((reg) => {
+      cy.request({ method: 'POST', url: '/api/v1/search/ask', headers: auth(reg.body.accessToken), body: { q: 'Show all Hilton offers' } }).then((r) => {
+        expect(r.body.answer.related.filter((x: { type: string }) => x.type === 'OFFER')).to.have.length(0);
+      });
+    });
+    cy.request({ method: 'POST', url: '/api/v1/search/ask', body: { q: 'hello' }, failOnStatusCode: false }).its('status').should('eq', 401);
+  });
+
+  it('CY-SRCH-02 conversation memory, history, saved searches and the dashboard', () => {
+    const email = 'cy.search3.' + Date.now() + '@e2e.test';
+    cy.request('POST', '/api/v1/auth/register', { email, password: 'e2e-password-1', name: 'Memory Tester' }).then((reg) => {
+      const token = reg.body.accessToken as string;
+      cy.request({ method: 'POST', url: '/api/v1/search/ask', headers: auth(token), body: { q: 'What card should I use for a Hilton stay?' } }).then((first) => {
+        expect(first.body.sessionId).to.match(/^[0-9a-f-]{36}$/);
+        cy.request({ method: 'POST', url: '/api/v1/search/ask', headers: auth(token), body: { q: 'It will cost $2,500', sessionId: first.body.sessionId } }).then((second) => {
+          expect(second.body.usedFollowUp).to.eq(true);
+          expect(second.body.sessionId).to.eq(first.body.sessionId);
+        });
+      });
+      cy.request({ method: 'POST', url: '/api/v1/search/ask', headers: auth(token), body: { q: 'Flight to Hawaii next month' } }).its('body.answer.warnings').should('satisfy', (w: string[]) => w.some((x) => /Assumed economy/.test(x)));
+      cy.request({ method: 'POST', url: '/api/v1/search/saved', headers: auth(token), body: { query: 'Show all Hilton offers', name: 'Hilton' } }).then((saved) => {
+        expect(saved.body).to.include({ kind: 'SAVED', name: 'Hilton' });
+        cy.request({ url: '/api/v1/search/dashboard', headers: auth(token) }).then((d) => {
+          expect(d.body.saved.map((x: { id: string }) => x.id)).to.include(saved.body.id);
+          expect(d.body.recent.length).to.be.greaterThan(1);
+          expect(d.body.totals.questions).to.be.greaterThan(1);
+        });
+        cy.request({ method: 'DELETE', url: '/api/v1/search/history', headers: auth(token) }).its('body.removed').should('be.greaterThan', 1);
+        cy.request({ url: '/api/v1/search/saved', headers: auth(token) }).its('body').should('have.length', 1);
+        cy.request({ method: 'DELETE', url: '/api/v1/search/entries/' + saved.body.id, headers: auth(token) }).its('status').should('eq', 204);
+      });
+    });
+  });
+
+  it('CY-SRCH-03 reminders: set, list, private, validated; answers offer only allow-listed actions', () => {
+    const email = 'cy.search4.' + Date.now() + '@e2e.test';
+    cy.request('POST', '/api/v1/auth/register', { email, password: 'e2e-password-1', name: 'Reminder Tester' }).then((reg) => {
+      const token = reg.body.accessToken as string;
+      const due = new Date(Date.now() + 5 * 86_400_000).toISOString();
+      cy.request({ method: 'POST', url: '/api/v1/reminders', headers: auth(token), body: { title: 'Use the Hilton credit', dueAt: due, link: '/offers/expirations' } }).then((r) => {
+        expect(r.body.status).to.eq('PENDING');
+        cy.request({ url: '/api/v1/reminders', headers: auth(token) }).its('body').should('have.length', 1);
+        cy.request('POST', '/api/v1/auth/register', { email: 'cy.search5.' + Date.now() + '@e2e.test', password: 'e2e-password-1', name: 'Other' }).then((o) => {
+          cy.request({ url: '/api/v1/reminders', headers: auth(o.body.accessToken) }).its('body').should('have.length', 0);
+          cy.request({ method: 'DELETE', url: '/api/v1/reminders/' + r.body.id, headers: auth(o.body.accessToken), failOnStatusCode: false }).its('status').should('eq', 404);
+        });
+        cy.request({ method: 'DELETE', url: '/api/v1/reminders/' + r.body.id, headers: auth(token) }).its('status').should('eq', 204);
+      });
+      cy.request({ method: 'POST', url: '/api/v1/reminders', headers: auth(token), body: { title: 'x', dueAt: due, link: 'https://evil.test' }, failOnStatusCode: false }).its('status').should('eq', 400);
+      cy.request({ method: 'POST', url: '/api/v1/reminders', headers: auth(token), body: { title: 'x', dueAt: '2020-01-01T00:00:00Z' }, failOnStatusCode: false }).its('status').should('eq', 400);
+      cy.request({ method: 'POST', url: '/api/v1/search/ask', headers: auth(token), body: { q: 'Sync offers' } }).its('body.answer.calls').should('have.length', 0);
+    });
+  });
+});

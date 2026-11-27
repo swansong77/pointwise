@@ -38,10 +38,10 @@ test.describe('Offer inventory and card detail', () => {
     await expect(rows.first()).toContainText('Hilton');
 
     await page.getByRole('button', { name: 'All offers' }).click();
-    await page.getByLabel('Search').fill('uber');
+    await page.getByLabel('Search', { exact: true }).fill('uber');
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText('Uber Eats');
-    await page.getByLabel('Search').fill('no such merchant');
+    await page.getByLabel('Search', { exact: true }).fill('no such merchant');
     await expect(page.getByText('No offers match')).toBeVisible();
     await noSeriousA11y(page);
   });

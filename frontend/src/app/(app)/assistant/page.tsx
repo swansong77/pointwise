@@ -95,6 +95,11 @@ function Chat({ models, agents, settings }: { models: AiModelOption[]; agents: A
   );
 
   useEffect(() => endRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'end' }), [turns.length]);
+  // the search bar's "Ask the assistant" opens this page with the question in the box; the person still presses Ask
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) setInput(q.slice(0, 500));
+  }, []);
 
   const ask = async (question: string) => {
     const q = question.trim();
