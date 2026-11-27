@@ -44,3 +44,7 @@ extension/dist/
 /backups/
 /deploy.log
 /.deploy.lock
+/deploy-launchd.log
+/backup-launchd.log
+/deploy-task.log
+/backup-task.log
