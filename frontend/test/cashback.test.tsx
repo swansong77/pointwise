@@ -26,6 +26,7 @@ const REC: CashbackRec = {
   steps: ['Sign in to Rakuten (Riley has the account) and open Target from there.', 'Pay with Gold Card in the same session.'],
   warnings: ['One of the sites is not answering.'],
   monitorUrl: 'https://www.cashbackmonitor.com/cashback-store/target/',
+  benchmark: { source: 'Cashback Monitor', bestPercent: 5, observedAt: '2026-12-01T00:00:00Z', url: 'https://www.cashbackmonitor.com/cashback-store/target/' },
 };
 
 beforeEach(() => {
@@ -64,6 +65,7 @@ describe('TC-CB-UI: the recommendation card', () => {
     expect(link.href).toBe('https://www.cashbackmonitor.com/cashback-store/target/');
     expect(link.textContent).toBe('Compare every site for Target on Cashback Monitor');
     expect(link.rel).toContain('noreferrer');
+    expect(screen.getByTestId('cashback-benchmark').textContent).toContain('Cashback Monitor lists a best rate of 5% for Target across all sites');
   });
 
   it('says plainly when there is nothing to recommend, and never claims it signs in anywhere', () => {
@@ -200,5 +202,62 @@ describe('TC-CB-UI: the administrator page', () => {
     expect(JSON.parse(sent('POST', '/rates/compare')!.body as string).save).toBe(false);
     fireEvent.click(screen.getByTestId('admin-compare-save'));
     await waitFor(() => expect(screen.getByTestId('admin-compare-result').textContent).toContain('Saved 2 new and 0 updated for Target'));
+  });
+
+  describe('automatic reading', () => {
+    const withTemplate = ADMIN_SITES.map((x) => (x.code === 'rakuten' ? { ...x, storeUrlTemplate: 'https://www.rakuten.com/{host}', autoRead: false } : { ...x, storeUrlTemplate: null }));
+    const handler = (u: string) => (u.endsWith('/admin/cashback/sites') ? ok(withTemplate) : u.endsWith('/admin/cashback/rates') ? ok(RATES) : u.endsWith('/admin/cashback/settings') ? ok({ benchmark: false }) : null);
+
+    it('is off by default, needs an address pattern before it can be allowed, and asks before allowing', async () => {
+      stub(handler);
+      wrap(<AdminCashbackPage />);
+      await screen.findAllByTestId('admin-site');
+      const rakuten = within(document.querySelector('[data-testid="admin-site"][data-site="rakuten"]') as HTMLElement);
+      const box = rakuten.getByLabelText("Read Rakuten's public store pages automatically") as HTMLInputElement;
+      expect(box.checked).toBe(false);
+      expect((screen.getByLabelText("Read TopCashback's public store pages automatically") as HTMLInputElement).disabled).toBe(true);
+      const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false);
+      fireEvent.click(box);
+      expect(confirm.mock.calls[0][0]).toContain('Many sites');
+      expect(confirm.mock.calls[0][0]).toContain('robots.txt');
+      expect(sent('PUT', '/admin/cashback/sites/rakuten')).toBeUndefined();
+      confirm.mockReturnValueOnce(true);
+      fireEvent.click(box);
+      await waitFor(() => expect(sent('PUT', '/admin/cashback/sites/rakuten')).toBeTruthy());
+      expect(JSON.parse(sent('PUT', '/admin/cashback/sites/rakuten')!.body as string)).toEqual({ autoRead: true });
+    });
+
+    it('saves the store page address, and shows how the last read went', async () => {
+      stub((u) => (u.endsWith('/admin/cashback/sites') ? ok(withTemplate.map((x) => (x.code === 'rakuten' ? { ...x, autoRead: true, lastReadAt: '2026-12-01T00:00:00Z', lastReadNote: '3 stores tried: 2 rates saved, 1 not found on the page' } : x))) : handler(u)));
+      wrap(<AdminCashbackPage />);
+      await screen.findAllByTestId('admin-site');
+      expect(screen.getByTestId('admin-read-note').textContent).toContain('2 rates saved');
+      const field = screen.getByLabelText(/Store page address/, { selector: '#tpl-rakuten' });
+      fireEvent.change(field, { target: { value: 'https://www.rakuten.com/{slug}/' } });
+      fireEvent.click(within(document.querySelector('[data-testid="admin-autoread"][data-site="rakuten"]') as HTMLElement).getByRole('button', { name: 'Save address' }));
+      await waitFor(() => expect(sent('PUT', '/admin/cashback/sites/rakuten')).toBeTruthy());
+      expect(JSON.parse(sent('PUT', '/admin/cashback/sites/rakuten')!.body as string)).toEqual({ storeUrlTemplate: 'https://www.rakuten.com/{slug}/' });
+    });
+
+    it('turns the comparison cross-check on, and reads one store now from a site that is allowed', async () => {
+      stub((u, init) => {
+        if (u.endsWith('/admin/cashback/sites')) return ok(withTemplate.map((x) => (x.code === 'rakuten' ? { ...x, autoRead: true } : x)));
+        if (u.endsWith('/admin/cashback/read')) return ok({ url: 'https://www.rakuten.com/target.com', saved: true, read: { ratePercent: 1, pointsPerDollar: null, upTo: false, where: 'title', evidence: '1% Cash Back' }, reason: null });
+        return handler(u);
+      });
+      wrap(<AdminCashbackPage />);
+      await screen.findAllByTestId('admin-site');
+      const panel = within(screen.getByTestId('admin-reading'));
+      fireEvent.click(panel.getByTestId('admin-benchmark'));
+      await waitFor(() => expect(sent('PUT', '/admin/cashback/settings')).toBeTruthy());
+      expect(JSON.parse(sent('PUT', '/admin/cashback/settings')!.body as string)).toEqual({ benchmark: true });
+      const select = panel.getByLabelText('Read one store now: site') as HTMLSelectElement;
+      expect(within(select).getAllByRole('option').map((o) => o.textContent)).toEqual(['Choose…', 'Rakuten']);
+      fireEvent.change(select, { target: { value: 'rakuten' } });
+      fireEvent.change(panel.getByLabelText('Store'), { target: { value: 'Target' } });
+      fireEvent.click(panel.getByTestId('admin-read-now'));
+      expect((await screen.findByTestId('admin-read-result')).textContent).toContain('Saved 1% (from the page title: “1% Cash Back”)');
+      expect(JSON.parse(sent('POST', '/admin/cashback/read')!.body as string)).toEqual({ site: 'rakuten', merchant: 'Target' });
+    });
   });
 });

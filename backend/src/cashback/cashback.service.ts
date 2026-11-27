@@ -228,10 +228,11 @@ export class CashbackService {
 
   /** Which site to use for a purchase at a merchant, from the household's accounts, the rates on file and each site's status. */
   async recommend(userId: string, merchant: { id: string; name: string }, amountCents: number, payWith: string | null = null, now = new Date()): Promise<CashbackRecommendation> {
-    const [rates, sites, accounts] = await Promise.all([
+    const [rates, sites, accounts, bench] = await Promise.all([
       this.prisma.portalRate.findMany({ where: { merchantId: merchant.id, OR: [{ expiresAt: null }, { expiresAt: { gte: now } }] } }),
       this.prisma.cashbackSite.findMany(),
       this.prisma.userCashbackAccount.findMany({ where: { userId }, include: { site: { select: { code: true } }, profile: { select: { nickname: true } } } }),
+      this.prisma.merchantBenchmark.findUnique({ where: { merchantId: merchant.id } }),
     ]);
     const known = new Map(sites.map((s) => [s.code, this.info(s)]));
     // a rate entered for a site that is not in the list (older data, or a one-off) still counts, as an unchecked site
@@ -249,7 +250,7 @@ export class CashbackService {
       source: r.source,
       conditions: r.conditions,
     }));
-    return recommendCashback({ amountCents, merchantName: merchant.name, rates: rows, sites: [...known.values()], accounts: held, payWith, now });
+    return recommendCashback({ amountCents, merchantName: merchant.name, rates: rows, sites: [...known.values()], accounts: held, payWith, now, benchmark: bench ? { source: bench.source, bestPercent: Number(bench.bestPercent), observedAt: bench.observedAt, url: bench.url } : null });
   }
 
   /** For the endpoint: resolve the merchant by id, slug or name. */
@@ -257,6 +258,21 @@ export class CashbackService {
     const m = await this.merchantFor(merchantRef);
     if (!m) throw new NotFoundException('Merchant not found');
     return { merchant: m, amountCents, monitorUrl: monitorUrl(m.name), ...(await this.recommend(userId, m, amountCents, payWith, now)) };
+  }
+
+  // ───────────── settings (administrator) ─────────────
+
+  /** Server-wide switches. The comparison-site cross-check is off until the administrator turns it on. */
+  async getSettings(): Promise<{ benchmark: boolean }> {
+    const row = await this.prisma.systemSetting.findUnique({ where: { key: 'cashback' } });
+    const v = (row?.value ?? {}) as { benchmark?: boolean };
+    return { benchmark: !!v.benchmark };
+  }
+
+  async setSettings(patch: { benchmark?: boolean }) {
+    const next = { ...(await this.getSettings()), ...patch };
+    await this.prisma.systemSetting.upsert({ where: { key: 'cashback' }, update: { value: next }, create: { key: 'cashback', value: next } });
+    return next;
   }
 
   // ───────────── the list of sites (administrator) ─────────────
@@ -276,7 +292,22 @@ export class CashbackService {
     }
     const existing = await this.prisma.cashbackSite.findUnique({ where: { code } });
     if (!existing && !(data.name && data.homeUrl)) throw new BadRequestException('A new site needs a name and a home page address.');
-    if (existing) return this.prisma.cashbackSite.update({ where: { code }, data });
+    // the address pattern of store pages must stay on the site's own domain and say where the store goes
+    const template = data.storeUrlTemplate !== undefined ? data.storeUrlTemplate : existing?.storeUrlTemplate ?? null;
+    const home = data.homeUrl ?? existing?.homeUrl;
+    if (template) {
+      let ok = false;
+      try {
+        const t = new URL(template.replace('{host}', 'example.test').replace('{slug}', 'example'));
+        const h = new URL(home as string).hostname.replace(/^www\./, '');
+        ok = t.protocol === 'https:' && (t.hostname === h || t.hostname.endsWith(`.${h}`)) && /\{host\}|\{slug\}/.test(template);
+      } catch {
+        ok = false;
+      }
+      if (!ok) throw new BadRequestException('The store page address must be https, on the site\'s own domain, and contain {host} or {slug} where the store goes.');
+    }
+    if (data.autoRead === true && !template) throw new BadRequestException('Give the address pattern of the site\'s store pages before allowing automatic reading.');
+    if (existing) return this.prisma.cashbackSite.update({ where: { code }, data: { ...data, ...(data.autoRead === true ? { readFailures: 0 } : {}) } });
     return this.prisma.cashbackSite.create({
       data: { code, name: data.name as string, homeUrl: data.homeUrl as string, kind: data.kind ?? 'CASHBACK', storeUrlTemplate: data.storeUrlTemplate ?? null, pointCents: data.pointCents ?? null, notes: data.notes ?? null, isActive: data.isActive ?? true, autoRead: data.autoRead ?? false },
     });

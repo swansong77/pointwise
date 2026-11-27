@@ -190,6 +190,9 @@ export class PageFetcher {
     private readonly env: NodeJS.ProcessEnv = process.env,
     private readonly sleep: (ms: number) => Promise<void> = (ms) =>
       new Promise((r) => setTimeout(r, ms)),
+    /** which addresses may be read (and followed to): issuer domains by default; the cash-back reader gives its own list */
+    private readonly validate: (raw: string, env: NodeJS.ProcessEnv) => URL = validateSourceUrl,
+    private readonly userAgent: string = USER_AGENT,
   ) {}
 
   private async politeWait(host: string) {
@@ -207,7 +210,7 @@ export class PageFetcher {
     try {
       await this.politeWait(u.host);
       const res = await this.fetchFn(`${u.origin}/robots.txt`, {
-        headers: { "User-Agent": USER_AGENT },
+        headers: { "User-Agent": this.userAgent },
         redirect: "manual",
         signal: AbortSignal.timeout(10_000),
       });
@@ -226,7 +229,7 @@ export class PageFetcher {
     rawUrl: string,
     cond: { etag?: string | null; lastModified?: string | null } = {},
   ): Promise<FetchResult> {
-    let url = validateSourceUrl(rawUrl, this.env);
+    let url = this.validate(rawUrl, this.env);
     for (let hop = 0; hop < 4; hop++) {
       if (!robotsAllows(await this.robots(url), url.pathname + url.search)) {
         return {
@@ -238,7 +241,7 @@ export class PageFetcher {
       await this.politeWait(url.host);
       const res = await this.fetchFn(url.href, {
         headers: {
-          "User-Agent": USER_AGENT,
+          "User-Agent": this.userAgent,
           Accept: "text/html,text/plain;q=0.9",
           ...(hop === 0 && cond.etag && { "If-None-Match": cond.etag }),
           ...(hop === 0 &&
@@ -250,7 +253,7 @@ export class PageFetcher {
       if (res.status >= 300 && res.status < 400 && res.status !== 304) {
         const loc = res.headers.get("location");
         if (!loc) throw new Error(`Redirect without location (${res.status})`);
-        url = validateSourceUrl(new URL(loc, url).href, this.env); // every hop must stay on an allowed domain
+        url = this.validate(new URL(loc, url).href, this.env); // every hop must stay on an allowed domain
         continue;
       }
       if (res.status === 304) return { status: "NOT_MODIFIED", url: url.href };

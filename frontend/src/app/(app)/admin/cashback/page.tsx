@@ -42,12 +42,14 @@ export default function AdminCashbackPage() {
                 <Button variant="ghost" onClick={() => check.mutate(s.code)} loading={check.isPending && check.variables === s.code} aria-label={`Check ${s.name} now`}>
                   Check now
                 </Button>
+                <AutoRead site={s} />
               </li>
             );
           })}
         </ul>
         <p className="mt-2 text-xs text-slate-600">A site is checked once a day with a single request to its public home page. It is called not answering only after two failed checks in a row.</p>
       </Panel>
+      <ReadSettings sites={sites.data ?? []} />
       <AddRate sites={sites.data ?? []} />
       <Panel title={`Rates on file (${rates.data?.length ?? 0})`} data-testid="admin-rates">
         {rates.data?.length === 0 ? (
@@ -271,6 +273,97 @@ function PasteComparison() {
         </div>
       )}
       <ErrorText error={read.error} />
+    </Panel>
+  );
+}
+
+/** Per site: let PointWise read this site's public store pages (off by default), and where those pages live. */
+function AutoRead({ site }: { site: AdminSite }) {
+  const [template, setTemplate] = useState(site.storeUrlTemplate ?? '');
+  const save = useApiMutation<Partial<{ autoRead: boolean; storeUrlTemplate: string | null }>>((body) => ({ path: `/admin/cashback/sites/${site.code}`, method: 'PUT', body }), KEYS);
+  return (
+    <div className="w-full basis-full rounded-lg bg-slate-50 p-3" data-testid="admin-autoread" data-site={site.code}>
+      <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
+        <input
+          type="checkbox"
+          checked={site.autoRead}
+          disabled={!site.storeUrlTemplate && !site.autoRead}
+          aria-label={`Read ${site.name}'s public store pages automatically`}
+          onChange={(e) => {
+            if (!e.target.checked) return save.mutate({ autoRead: false });
+            if (window.confirm(`Let PointWise read ${site.name}'s public store pages for rates?\n\nIt reads only a few stores a day, honours the site's robots.txt, never signs in and sends no cookies. Many sites' terms of use forbid automated access, so you are responsible for allowing it. It switches itself off after repeated failures.`)) save.mutate({ autoRead: true });
+          }}
+        />
+        Read this site&apos;s public store pages automatically
+      </label>
+      {site.lastReadNote && (
+        <p className="mt-1 text-xs text-slate-600" data-testid="admin-read-note">
+          Last read {site.lastReadAt ? shortDate(site.lastReadAt) : ''}: {site.lastReadNote}
+        </p>
+      )}
+      <form
+        className="mt-2 flex flex-wrap items-end gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          save.mutate({ storeUrlTemplate: template.trim() || null });
+        }}
+      >
+        <div className="min-w-0 flex-1">
+          <label htmlFor={`tpl-${site.code}`} className="block text-xs font-medium text-slate-700">
+            Store page address ({'{host}'} = the store&apos;s web address, {'{slug}'} = its dashed name)
+          </label>
+          <Input id={`tpl-${site.code}`} value={template} onChange={(e) => setTemplate(e.target.value)} placeholder={`https://www.example.com/${'{host}'}`} />
+        </div>
+        <Button type="submit" variant="secondary" loading={save.isPending}>
+          Save address
+        </Button>
+      </form>
+      <ErrorText error={save.error} />
+    </div>
+  );
+}
+
+/** Server-wide: the comparison-site cross-check, and reading one store now to see what a site returns. */
+function ReadSettings({ sites }: { sites: AdminSite[] }) {
+  const settings = useAuthedQuery<{ benchmark: boolean }>(['admin', 'cashback', 'settings'], '/admin/cashback/settings');
+  const save = useApiMutation<boolean>((benchmark) => ({ path: '/admin/cashback/settings', method: 'PUT', body: { benchmark } }), KEYS);
+  const [f, setF] = useState({ site: '', merchant: '' });
+  const readNow = useApiMutation<void, { url: string; saved: boolean; read: { ratePercent: number | null; pointsPerDollar: number | null; upTo: boolean; where: string; evidence: string } | null; reason: string | null }>(() => ({ path: '/admin/cashback/read', method: 'POST', body: f }), KEYS);
+  const allowed = sites.filter((s) => s.autoRead);
+  const r = readNow.data;
+  return (
+    <Panel title="Automatic reading" data-testid="admin-reading">
+      <p className="mb-2 text-sm text-slate-700">
+        Off by default. Allow it per site above; PointWise then reads that site&apos;s public store pages for a few stores a day (those where a purchase is planned or that already have a rate), and a site that keeps failing is switched off by itself.
+      </p>
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={!!settings.data?.benchmark} onChange={(e) => save.mutate(e.target.checked)} data-testid="admin-benchmark" />
+        Also compare with Cashback Monitor&apos;s best rate for each store (one public page per store), to warn when a rate on file looks out of date
+      </label>
+      <div className="mt-3 flex flex-wrap items-end gap-3">
+        <Field label="Read one store now: site" htmlFor="rn-site">
+          <Select id="rn-site" value={f.site} onChange={(e) => setF({ ...f, site: e.target.value })}>
+            <option value="">{allowed.length ? 'Choose…' : 'No site allowed yet'}</option>
+            {allowed.map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Store" htmlFor="rn-merchant">
+          <Input id="rn-merchant" value={f.merchant} onChange={(e) => setF({ ...f, merchant: e.target.value })} placeholder="Target" />
+        </Field>
+        <Button variant="secondary" onClick={() => readNow.mutate(undefined)} loading={readNow.isPending} disabled={!f.site || !f.merchant} data-testid="admin-read-now">
+          Read it now
+        </Button>
+      </div>
+      {r && (
+        <p role="status" className="mt-2 text-sm" data-testid="admin-read-result">
+          {r.saved && r.read ? `Saved ${r.read.ratePercent != null ? `${r.read.upTo ? 'up to ' : ''}${r.read.ratePercent}%` : `${r.read.pointsPerDollar} points per $1`} (from the page ${r.read.where}: “${r.read.evidence}”).` : r.reason}
+        </p>
+      )}
+      <ErrorText error={save.error ?? readNow.error ?? settings.error} />
     </Panel>
   );
 }

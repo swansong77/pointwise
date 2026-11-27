@@ -94,6 +94,8 @@ export const SCHEDULE: Record<JobName, string> = {
   "member-weekly": "35 13 * * 1",
   /** one light request to each cash-back site's public home page, to tell whether it answers */
   "cashback-status": "40 11 * * *",
+  /** reads the public store pages of the cash-back sites the administrator allowed (none by default), a few stores a day */
+  "cashback-rates": "10 12 * * *",
 };
 
 const JobNameEnum = Object.fromEntries(JOB_NAMES.map((n) => [n, n])) as Record<

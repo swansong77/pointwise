@@ -98,6 +98,64 @@ export function monitorUrl(merchantName: string): string {
   return `https://www.cashbackmonitor.com/cashback-store/${slug}/`;
 }
 
+// ───────────── reading a public store page ─────────────
+
+/** The store's name as the sites write it in addresses: lower-case, with dashes ("Best Buy" is best-buy). */
+export const slugOf = (name: string): string => name.toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+/** A site's public page for a store, from the site's address pattern: {host} is the store's web address, {slug} its dashed name. */
+export function storeUrl(template: string | null, m: { name: string; hosts: string[] }): string | null {
+  if (!template) return null;
+  const host = [...m.hosts].sort((a, b) => a.length - b.length)[0];
+  if (template.includes('{host}') && !host) return null;
+  return template.replace('{host}', host ?? '').replace('{slug}', slugOf(m.name));
+}
+
+const stripTags = (h: string) => h.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&#0?39;|&apos;/g, "'").replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+
+function between(html: string, re: RegExp): string | null {
+  const m = re.exec(html);
+  return m ? stripTags(m[1]) : null;
+}
+
+export interface StoreRead extends ReadRate {
+  /** which part of the page it was read from */
+  where: 'title' | 'heading' | 'description' | 'text';
+}
+
+/**
+ * The store-wide rate on a site's public store page. The page's title, then its main heading and description, are tried first because they
+ * state the store's own rate; only then the text around the store's name. A banner far from the store's name (such as "up to 40% at hundreds of
+ * stores") is never read as the store's rate.
+ */
+export function readStorePage(html: string, merchantName: string): StoreRead | null {
+  const parts: Array<[StoreRead['where'], string | null]> = [
+    ['title', between(html, /<title[^>]*>([\s\S]*?)<\/title>/i)],
+    ['heading', between(html, /<h1[^>]*>([\s\S]*?)<\/h1>/i)],
+    ['description', (/<meta[^>]+(?:name|property)=["'](?:og:)?description["'][^>]*content=["']([^"']*)["']/i.exec(html) ?? /<meta[^>]+content=["']([^"']*)["'][^>]*(?:name|property)=["'](?:og:)?description["']/i.exec(html))?.[1] ?? null],
+  ];
+  for (const [where, text] of parts) {
+    if (!text || !text.toLowerCase().includes(merchantName.toLowerCase().split(/\s+/)[0])) continue;
+    const r = readRateText(text);
+    if (r) return { ...r, where };
+  }
+  // loose text is the weakest evidence: the page body only (not its head), a short way after the store's name, and never an "up to" claim,
+  // because a site-wide banner ("up to 40% at over 3,500 stores") looks exactly like that
+  const bodyHtml = html.replace(/<head[\s\S]*?<\/head>/i, ' ').replace(/<(script|style|noscript|svg|template|iframe)\b[\s\S]*?<\/\1>/gi, ' ').replace(/<!--[\s\S]*?-->/g, ' ');
+  const body = stripTags(bodyHtml);
+  const at = body.toLowerCase().indexOf(merchantName.toLowerCase());
+  if (at < 0) return null;
+  const r = readRateText(body.slice(at, at + 300));
+  return r && !r.upTo ? { ...r, where: 'text' } : null;
+}
+
+/** The best rate a comparison page headlines across all sites: the first percentage in its title ("Target ... 5% ($10**)"). */
+export function readMonitorBest(html: string): number | null {
+  const title = between(html, /<title[^>]*>([\s\S]*?)<\/title>/i);
+  const m = title ? /(?<![\d.])(\d{1,2}(?:\.\d{1,2})?)\s*%/.exec(title) : null;
+  return m ? Number(m[1]) : null;
+}
+
 export interface ComparisonRate {
   site: string;
   siteName: string;
@@ -348,6 +406,8 @@ export interface CashbackInput {
   accounts: Map<string, string[]>;
   /** the card the plan pays with, for the steps */
   payWith?: string | null;
+  /** the best rate a comparison site headlines for this store across all sites */
+  benchmark?: { source: string; bestPercent: number; observedAt: Date; url: string } | null;
   now: Date;
 }
 
@@ -361,6 +421,8 @@ export interface CashbackRecommendation {
   ranked: RankedSite[];
   steps: string[];
   warnings: string[];
+  /** what a comparison site headlines as the best rate for this store, when it was read recently */
+  benchmark: { source: string; bestPercent: number; observedAt: string; url: string } | null;
 }
 
 const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
@@ -440,7 +502,17 @@ export function recommendCashback(i: CashbackInput): CashbackRecommendation {
   else if (haveAccounts && !pick) warnings.push(`None of the sites you use has a rate for ${i.merchantName}.`);
   if (!haveAccounts && usable.length) warnings.push('PointWise does not know which of these sites you use. Mark them under Cash-back sites so it recommends only yours.');
   const steps = cashbackSteps({ pick }, i.merchantName, i.payWith ?? null);
-  return { haveAccounts, pick, consider, ranked, steps, warnings };
+  // a comparison site's best rate across ALL sites, as a check that the rates on file have not gone stale
+  let benchmark: CashbackRecommendation['benchmark'] = null;
+  const b = i.benchmark;
+  if (b && (i.now.getTime() - b.observedAt.getTime()) / DAY <= 14) {
+    benchmark = { source: b.source, bestPercent: b.bestPercent, observedAt: b.observedAt.toISOString(), url: b.url };
+    const bestOnFile = Math.max(0, ...usable.map((r) => r.percent));
+    if (b.bestPercent >= bestOnFile + 2 && (i.amountCents * (b.bestPercent - bestOnFile)) / 100 >= 100) {
+      warnings.push(`${b.source} lists a best rate of ${pct(b.bestPercent)} at ${i.merchantName} across all sites; the best on file here is ${pct(bestOnFile)}. A rate here may be out of date, or a site PointWise does not track pays more.`);
+    }
+  }
+  return { haveAccounts, pick, consider, ranked, steps, warnings, benchmark };
 }
 
 /** What the shopping planner counts: the sites the household uses (or all usable ones if none are recorded), with the expected, not the headline, rate. */

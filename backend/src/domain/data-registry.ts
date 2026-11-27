@@ -59,6 +59,7 @@ export const DATA_RULES: Record<string, ModelRule> = {
   PortalRate: { cls: 'SYSTEM' },
   // the shared list of shopping sites and their status (administrator); each member's accounts on them belong to the member
   CashbackSite: { cls: 'SYSTEM' },
+  MerchantBenchmark: { cls: 'SYSTEM' },
   UserCashbackAccount: { cls: 'USER', scope: U, natural: ['profileId', 'siteId'] },
   BenefitCategory: { cls: 'SYSTEM' },
   Benefit: { cls: 'SYSTEM' },

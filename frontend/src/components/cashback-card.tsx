@@ -2,7 +2,7 @@
 
 import { Badge, Panel } from '@/components/ui';
 import { CashbackRec, FRESH_LABEL, HEALTH_LABEL, HEALTH_TONE, RankedSite } from '@/lib/cashback';
-import { money } from '@/lib/format';
+import { money, shortDate } from '@/lib/format';
 
 function Row({ s }: { s: RankedSite }) {
   return (
@@ -68,6 +68,11 @@ export function CashbackCard({ rec, merchant }: { rec: CashbackRec; merchant: st
             ))}
           </ul>
         </details>
+      )}
+      {rec.benchmark && (
+        <p className="mt-2 text-xs text-slate-600" data-testid="cashback-benchmark">
+          {rec.benchmark.source} lists a best rate of {rec.benchmark.bestPercent}% for {merchant} across all sites (read {shortDate(rec.benchmark.observedAt)}).
+        </p>
       )}
       {rec.monitorUrl && (
         <p className="mt-3 text-sm">

@@ -17,6 +17,36 @@ test('the administrator adds, imports and reads rates; a household picks its sit
   await expect(page.getByTestId('admin-sites')).toContainText('Rakuten');
   await axe(page);
 
+  // automatic reading is off until the administrator allows it, and asks first
+  const rk = page.locator('[data-testid="admin-autoread"][data-site="rakuten"]');
+  await expect(rk.getByRole('checkbox')).not.toBeChecked();
+  let asked = '';
+  page.once('dialog', (d) => {
+    asked = d.message();
+    void d.accept();
+  });
+  const on = page.waitForResponse((r) => r.url().includes('/admin/cashback/sites/rakuten') && r.request().method() === 'PUT');
+  await rk.getByRole('checkbox').click();
+  await on;
+  expect(asked).toContain('robots.txt');
+  await expect(rk.getByRole('checkbox')).toBeChecked();
+  await expect(page.getByTestId('admin-reading').getByLabel('Read one store now: site').locator('option')).toHaveText(['Choose…', 'Rakuten']);
+  const bench = page.getByTestId('admin-benchmark');
+  const benchSaved = page.waitForResponse((r) => r.url().includes('/admin/cashback/settings') && r.request().method() === 'PUT');
+  await bench.click();
+  await benchSaved;
+  await expect(bench).toBeChecked();
+  await axe(page);
+  // put both back as they were
+  const off = page.waitForResponse((r) => r.url().includes('/admin/cashback/sites/rakuten') && r.request().method() === 'PUT');
+  await rk.getByRole('checkbox').click();
+  await off;
+  await expect(rk.getByRole('checkbox')).not.toBeChecked();
+  const benchOff = page.waitForResponse((r) => r.url().includes('/admin/cashback/settings') && r.request().method() === 'PUT');
+  await bench.click();
+  await benchOff;
+  await expect(bench).not.toBeChecked();
+
   const add = page.getByTestId('admin-add-rate');
   await add.getByLabel('Site').selectOption('rakuten');
   await add.getByLabel('Store').fill('Hilton');

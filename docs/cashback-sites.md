@@ -47,6 +47,19 @@ A rate is replaced (not duplicated) for the same site and store. A rate entered 
 | `GET /admin/cashback/sites`, `PUT /admin/cashback/sites/:code`, `POST /admin/cashback/status` | administrator |
 | `GET /admin/cashback/rates`, `POST …/rates`, `DELETE …/rates/:id`, `POST …/rates/import`, `POST …/rates/paste` | administrator |
 
+## Automatic reading (phase 2)
+**Off for every site until the administrator allows it.** Admin, Cash-back sites: tick "Read this site's public store pages automatically" (a confirmation says what it does and that many sites' terms of use forbid automated access, so allowing it is the administrator's responsibility) and give the pattern of the site's store pages (`{host}` = the store's web address, `{slug}` = its dashed name). The pattern must be https, on the site's own domain, and say where the store goes. Rakuten (`https://www.rakuten.com/{host}`) and TopCashback (`https://www.topcashback.com/{slug}/`) come with a pattern whose pages were seen to carry the rate in plain text; every other site needs one entered, and BeFrugal's and Swagbucks's pages did not return a rate when checked.
+
+What the daily job (`cashback-rates`, 12:10 UTC) does for an allowed site:
+- picks a few stores (25 at most per site per run): those where a purchase is planned in the last 90 days and those that already have a rate from that site, the stalest first, none read in the last 20 hours;
+- fetches each store page with the polite fetcher the card catalog already uses: https only, only the site's own domain (every redirect hop is checked, so it cannot be sent elsewhere), `robots.txt` honoured (a refused page is counted, not read), one request per host every 5 seconds, a 2 MB cap, an agent that says what it is (`PointwiseBot/1.0 (...)`), **no cookies, no sign-in, nothing about any member**;
+- reads the store-wide rate from the page's title, then its main heading and description, and only then from text a short way after the store's name (never an "up to" claim from loose text, since a site-wide banner looks exactly like one);
+- saves it as an automatic read (the address and the words it was read from are kept as the source), unless a rate was entered by hand in the last 3 days, which is newer knowledge and is kept;
+- stops for the day when most requests fail, and **switches the site's reading off by itself after 5 failed runs in a row**, with a note.
+The administrator can read one store now (Admin, "Read one store now") to see exactly what a site returns before relying on it.
+
+**Cashback Monitor cross-check** (a separate switch, off by default): for the same stores, one public page each is read for the headline best rate shown in its title. It is never used as a rate. When it is at least 2 points and $1 higher than the best rate on file, the recommendation warns that a rate here may be out of date or a site PointWise does not track pays more. A reading older than two weeks is ignored.
+
 ## Cashback Monitor
 Every recommendation links to the store's page on Cashback Monitor (`https://www.cashbackmonitor.com/cashback-store/<store-name>/`) so the household can see every site's rate, including sites PointWise does not track. What was checked on its public pages (27 Nov 2026):
 - the store pages answer without a login, list the sites that carry the store, and show a headline best rate in the page title;
@@ -59,4 +72,4 @@ The paste reader's layout rules were written for a copied table and have **not**
 - Rates are only as good as what was entered; the plan shows how old each is and says so when it is stale. Check the rate on the site before you buy.
 - Rates reflect one moment; a site's rate for a store can change daily and can differ by account, category or promotion.
 - Household members with their own sign-in do not edit sites or accounts yet; the owner does.
-- Automatic reading of public store pages is the next step (Phase 2): Rakuten's and TopCashback's own public pages (verified to carry the rate in plain text), plus Cashback Monitor's headline best rate as a cross-check that a rate on file has not gone stale.
+- Page layouts change. A read that finds nothing is counted and ignored, never guessed; the live pages' wording was checked on 27 Nov 2026 only.
