@@ -171,7 +171,7 @@ export function underLimitAgainAt(f: ApplicantFive24, now: Date): Date | null {
   return drops[Math.min(needed, drops.length) - 1];
 }
 
-function asWalletCard(card: DomainCard): DomainWalletCard {
+export function asWalletCard(card: DomainCard): DomainWalletCard {
   return {
     id: `candidate:${card.id}`,
     nickname: null,

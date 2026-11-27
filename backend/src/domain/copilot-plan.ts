@@ -6,6 +6,10 @@
 import type { SearchAnswer, StepResult } from './answer-compose';
 import { Lens, LENS_LABEL, Mode, MODE_SPEC } from './copilot-modes';
 import { CallAction, reminderFor } from './search-actions';
+import { applyMemory, Decision, EMPTY_PREFS, MemoryEffect, Preferences } from './copilot-memory';
+import type { GoalProgress } from './goals';
+import type { WhatIfOutcome } from './what-if';
+import type { Roadmap } from './cos-roadmap';
 
 export const COPILOT_VERSION = 'copilot/1';
 
@@ -70,7 +74,7 @@ export interface LensRun {
 export interface CopilotPlan {
   version: string;
   mode: Mode;
-  kind: 'AGENDA' | 'ANSWER';
+  kind: 'AGENDA' | 'ANSWER' | 'WHATIF' | 'ROADMAP';
   question: string;
   scope: Horizon;
   headline: string;
@@ -84,6 +88,29 @@ export interface CopilotPlan {
   /** counts by horizon, for the dashboard */
   counts: Record<Horizon, number>;
   valueAtStakeCents: number;
+  /** items the member put aside (snoozed, dismissed, done), and how many were raised by their preferences */
+  memory: { hidden: MemoryEffect['hidden']; boosted: number };
+  /** a what-if comparison, when the question was one */
+  whatIf?: WhatIfOutcome;
+  /** a 90-day or yearly roadmap, when the question asked for one */
+  roadmap?: Roadmap;
+}
+
+/** a goal and how far along it is, for the plan */
+export interface GoalView {
+  id: string;
+  title: string;
+  kind: string;
+  dueAt: Date | null;
+  progress: GoalProgress;
+}
+
+export interface AgendaExtra {
+  /** how many items to return (default: what the mode and the question allow) */
+  limit?: number;
+  goals?: GoalView[];
+  prefs?: Preferences;
+  decisions?: Map<string, Decision>;
 }
 
 // ───────────── reading engine output defensively ─────────────
@@ -137,6 +164,8 @@ export const TOOL_LENS: Record<string, Lens> = {
   get_renewals: 'CARD_STRATEGY',
   get_five24_status: 'PORTFOLIO',
   get_stale_accounts: 'AUDIT',
+  goals: 'GOAL',
+  'what-if': 'PORTFOLIO',
 };
 
 /** the engine calls an agenda needs, in the order the specialists work */
@@ -338,11 +367,14 @@ const credits: Reader = (data, now) =>
       };
     });
 
-const renewals: Reader = (data) =>
+/** annual fees that the card has not earned back, renewing within `maxDays`, as decisions to make */
+export const renewalsWithin =
+  (maxDays: number, limit = 3): Reader =>
+  (data) =>
   arr(data)
     .map(obj)
-    .filter((r) => r.coversFee === false && (num(r.daysUntil) ?? 999) <= 60)
-    .slice(0, 3)
+    .filter((r) => r.coversFee === false && (num(r.daysUntil) ?? 999) <= maxDays)
+    .slice(0, limit)
     .map((r) => {
       const d = num(r.daysUntil);
       const fee = centsOf(r.annualFee) ?? 0;
@@ -366,6 +398,8 @@ const renewals: Reader = (data) =>
         calls: [],
       };
     });
+
+const renewals: Reader = renewalsWithin(60);
 
 const five24: Reader = (data, now) =>
   arr(data)
@@ -475,13 +509,45 @@ export function isAgendaQuestion(q: string): boolean {
 const RANK: Record<Horizon, number> = HORIZON_ORDER;
 const SCOPE_LIMIT: Record<Horizon, number> = { TODAY: 6, WEEK: 10, MONTH: 15, LATER: 20 };
 
-export function composeAgenda(results: StepResult[], mode: Mode, q: string, now: Date): CopilotPlan {
+const GOAL_PRIORITY = { AT_RISK: 8, BEHIND: 7, UNKNOWN: 1, ON_TRACK: 0, ACHIEVED: 0 } as const;
+
+/** goals that need something from the member: behind, at risk, or not yet tracked */
+export function goalItems(goals: GoalView[], now: Date): PlanItem[] {
+  const out: PlanItem[] = [];
+  for (const g of goals) {
+    const p = g.progress;
+    if (p.state === 'ON_TRACK' || p.state === 'ACHIEVED') continue;
+    const d = g.dueAt ? daysUntil(g.dueAt, now) : null;
+    out.push({
+      id: 'goal:' + g.id,
+      lens: 'GOAL',
+      horizon: p.state === 'UNKNOWN' ? 'LATER' : d != null ? horizonFor(d) : 'MONTH',
+      priority: GOAL_PRIORITY[p.state] + (d != null && d <= 30 ? 3 : 0),
+      title: `Goal: ${g.title}${p.pct != null ? ` (${p.pct}%)` : ''}`,
+      recommendation: p.next[0] ?? p.detail,
+      reason: p.detail,
+      evidence: [`Goal progress: ${p.current} toward ${p.target}`],
+      expectedValueCents: null,
+      assumptions: [],
+      risks: p.state === 'AT_RISK' || p.state === 'BEHIND' ? ['At the current pace the goal may be missed.'] : [],
+      confidence: p.confidence,
+      factors: [factor('State', p.state === 'AT_RISK' || p.state === 'BEHIND' ? 'DOWN' : 'NEUTRAL', p.state.toLowerCase().replace('_', ' ')), ...(p.pct != null ? [factor('Progress', 'NEUTRAL', `${p.pct}%`)] : [])],
+      href: '/copilot#goals',
+      // the goal's own title is the member's text, so only its kind, state and progress go into a redacted view
+      facts: { kind: 'GOAL', verdict: p.state.toLowerCase().replace('_', ' '), count: p.pct ?? undefined, daysLeft: d ?? undefined },
+      calls: [],
+    });
+  }
+  return out;
+}
+
+export function composeAgenda(results: StepResult[], mode: Mode, q: string, now: Date, extra: AgendaExtra = {}): CopilotPlan {
   const spec = MODE_SPEC[mode];
   const scope = scopeOf(q);
   const byTool = new Map(results.map((r) => [r.tool, r]));
   const all: PlanItem[] = [];
   const lensRuns = new Map<Lens, LensRun>();
-  const order: Lens[] = ['OFFER', 'LOYALTY', 'TRAVEL', 'BENEFIT', 'CARD_STRATEGY', 'PORTFOLIO', 'AUDIT'];
+  const order: Lens[] = ['OFFER', 'LOYALTY', 'TRAVEL', 'BENEFIT', 'CARD_STRATEGY', 'PORTFOLIO', 'AUDIT', 'GOAL'];
   for (const l of order) lensRuns.set(l, { lens: l, label: LENS_LABEL[l], engines: [], ok: true, found: 0, note: '' });
   const failures: string[] = [];
 
@@ -501,9 +567,21 @@ export function composeAgenda(results: StepResult[], mode: Mode, q: string, now:
     all.push(...found);
   }
 
+  if (spec.lenses.includes('GOAL') && extra.goals) {
+    const run = lensRuns.get('GOAL')!;
+    run.engines.push('goals');
+    const found = goalItems(extra.goals, now);
+    run.found = found.length;
+    all.push(...found);
+  }
+
   all.sort((a, b) => RANK[a.horizon] - RANK[b.horizon] || b.priority - a.priority || a.id.localeCompare(b.id));
-  const limit = Math.min(spec.limit, SCOPE_LIMIT[scope]);
-  const items = all.slice(0, limit);
+  // what the member put aside is hidden and what matches their preferences rises, before the list is cut to length
+  const eff = applyMemory(all, extra.prefs ?? EMPTY_PREFS, extra.decisions ?? new Map(), now);
+  const limit = extra.limit ?? Math.min(spec.limit, SCOPE_LIMIT[scope]);
+  // a goal that needs attention keeps a place (up to two) even when dollar-sized items would crowd it out of a short plan
+  const reserved = eff.items.filter((i) => i.lens === 'GOAL').slice(0, 2);
+  const items = [...eff.items.filter((i) => !reserved.includes(i)).slice(0, Math.max(0, limit - reserved.length)), ...reserved].sort((a, b) => RANK[a.horizon] - RANK[b.horizon] || b.priority - a.priority || a.id.localeCompare(b.id));
   const counts: Record<Horizon, number> = { TODAY: 0, WEEK: 0, MONTH: 0, LATER: 0 };
   for (const i of items) counts[i.horizon]++;
   const valueAtStake = items.reduce((s, i) => s + Math.max(0, i.expectedValueCents ?? 0), 0);
@@ -518,9 +596,11 @@ export function composeAgenda(results: StepResult[], mode: Mode, q: string, now:
       : counts.WEEK
         ? `${plural(counts.WEEK, 'thing')} to do this week${counts.MONTH ? `, ${counts.MONTH} more this month` : ''}.`
         : `${plural(items.length, 'thing')} to plan for.`;
-  const summary = items.length
-    ? `${headline} ${valueAtStake > 0 ? `About ${usd(valueAtStake)} is at stake. ` : ''}Start with: ${items[0].title}.`
-    : 'No offers, credits, certificates or balances are close to expiring, and no card needs a decision. Check back tomorrow.';
+  const put = eff.hidden.length ? ` ${plural(eff.hidden.length, 'item')} you snoozed or dismissed ${eff.hidden.length === 1 ? 'is' : 'are'} hidden.` : '';
+  const summary =
+    (items.length
+      ? `${headline} ${valueAtStake > 0 ? `About ${usd(valueAtStake)} is at stake. ` : ''}Start with: ${items[0].title}.`
+      : 'No offers, credits, certificates or balances are close to expiring, and no card needs a decision. Check back tomorrow.') + put;
 
   const assumptions = [...new Set(items.flatMap((i) => i.assumptions))].slice(0, 6);
   const risks = [...new Set(items.flatMap((i) => i.risks))].slice(0, 6);
@@ -545,6 +625,7 @@ export function composeAgenda(results: StepResult[], mode: Mode, q: string, now:
     evidence: [...new Set(items.flatMap((i) => i.evidence))].slice(0, 12),
     counts,
     valueAtStakeCents: valueAtStake,
+    memory: { hidden: eff.hidden, boosted: eff.boosted },
   };
 }
 
@@ -606,5 +687,114 @@ export function fromSearchAnswer(a: SearchAnswer, mode: Mode, q: string, stepToo
     evidence: a.evidence,
     counts: { TODAY: unanswered ? 0 : 1, WEEK: 0, MONTH: 0, LATER: 0 },
     valueAtStakeCents: 0,
+    memory: { hidden: [], boosted: 0 },
+  };
+}
+
+const WHATIF_LENS: Record<WhatIfOutcome['scenario'], Lens> = { APPLY: 'CARD_STRATEGY', WAIT: 'PORTFOLIO', TRANSFER: 'TRAVEL', CANCEL: 'CARD_STRATEGY', CHANGE: 'CARD_STRATEGY' };
+
+/** A what-if comparison in the same explainable shape as every other reply. */
+export function fromWhatIf(o: WhatIfOutcome, mode: Mode, q: string): CopilotPlan {
+  const lens = WHATIF_LENS[o.scenario];
+  const item: PlanItem = {
+    id: 'whatif:' + o.scenario.toLowerCase(),
+    lens,
+    horizon: 'TODAY',
+    priority: 1,
+    title: o.title,
+    recommendation: o.recommendation,
+    reason: o.summary,
+    evidence: o.evidence,
+    expectedValueCents: o.netCents,
+    assumptions: o.assumptions,
+    risks: o.risks,
+    confidence: o.confidence,
+    factors: o.deltas.slice(0, 6).map((d) => factor(d.label, d.direction === 'BETTER' ? 'UP' : d.direction === 'WORSE' ? 'DOWN' : 'NEUTRAL', `${d.before} → ${d.after}`)),
+    href: '/copilot',
+    facts: { kind: 'WHATIF', verdict: o.verdict.toLowerCase() },
+    calls: [],
+  };
+  return {
+    version: COPILOT_VERSION,
+    mode,
+    kind: 'WHATIF',
+    question: q,
+    scope: 'TODAY',
+    headline: o.title,
+    summary: o.summary,
+    items: [item],
+    lenses: [{ lens, label: LENS_LABEL[lens], engines: ['what-if'], ok: true, found: 1, note: 'Compared' }],
+    assumptions: o.assumptions,
+    risks: o.risks,
+    confidence: o.confidence,
+    evidence: o.evidence,
+    counts: { TODAY: 1, WEEK: 0, MONTH: 0, LATER: 0 },
+    valueAtStakeCents: 0,
+    memory: { hidden: [], boosted: 0 },
+    whatIf: o,
+  };
+}
+
+/** The question was a what-if but left something out: say what is missing instead of guessing. */
+export function whatIfNeeds(q: string, mode: Mode, needs: string[]): CopilotPlan {
+  const summary = `To compare that I need ${needs.join(' and ')}.`;
+  return {
+    version: COPILOT_VERSION,
+    mode,
+    kind: 'ANSWER',
+    question: q,
+    scope: 'TODAY',
+    headline: 'I need a little more to compare that',
+    summary,
+    items: [],
+    lenses: [],
+    assumptions: [],
+    risks: [],
+    confidence: 0,
+    evidence: [],
+    counts: { TODAY: 0, WEEK: 0, MONTH: 0, LATER: 0 },
+    valueAtStakeCents: 0,
+    memory: { hidden: [], boosted: 0 },
+  };
+}
+
+/** A roadmap as a plan: its three focus areas are the items, so it has the same explainable shape as every other reply. */
+export function fromRoadmap(r: Roadmap, mode: Mode, q: string): CopilotPlan {
+  const items: PlanItem[] = r.focus.map((f, n) => ({
+    id: 'roadmap:' + f.area.toLowerCase(),
+    lens: f.area === 'CARDS' || f.area === 'APPLICATIONS' ? 'CARD_STRATEGY' : f.area === 'POINTS' ? 'LOYALTY' : f.area === 'GOALS' || f.area === 'LIFE' ? 'GOAL' : 'OFFER',
+    horizon: 'LATER',
+    priority: 10 - n,
+    title: 'Focus ' + (n + 1) + ': ' + f.label,
+    recommendation: f.advice,
+    reason: f.events + ' thing' + (f.events === 1 ? '' : 's') + ' on the calendar, worth about $' + Math.round(f.valueCents / 100).toLocaleString('en-US') + '.',
+    evidence: ['Roadmap: dated expirations, renewals, 5/24 slots, goals and life events'],
+    expectedValueCents: f.valueCents || null,
+    assumptions: [],
+    risks: [],
+    confidence: 70,
+    factors: [],
+    href: '/chief-of-staff',
+    facts: { kind: 'ROADMAP', verdict: f.area.toLowerCase(), count: f.events },
+    calls: [],
+  }));
+  return {
+    version: COPILOT_VERSION,
+    mode,
+    kind: 'ROADMAP',
+    question: q,
+    scope: 'LATER',
+    headline: r.span === 90 ? 'Your next 90 days' : 'Your year ahead',
+    summary: r.headline,
+    items,
+    lenses: [{ lens: 'GOAL', label: 'Chief of Staff', engines: ['roadmap'], ok: true, found: r.eventCount, note: r.eventCount + ' dated events' }],
+    assumptions: ['Only dated items appear: expirations, renewals, 5/24 slot dates, goal dates and life events.'],
+    risks: [],
+    confidence: 70,
+    evidence: [],
+    counts: { TODAY: 0, WEEK: 0, MONTH: 0, LATER: items.length },
+    valueAtStakeCents: r.atRiskCents,
+    memory: { hidden: [], boosted: 0 },
+    roadmap: r,
   };
 }

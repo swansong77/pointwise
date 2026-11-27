@@ -14,6 +14,11 @@ type Patch = Partial<{
   responseStyle: string;
   cloudShare: boolean;
   cloudProviders: string[];
+  briefingDaily: boolean;
+  briefingWeekly: boolean;
+  briefingMonthly: boolean;
+  copilotAlerts: boolean;
+  chiefOfStaff: boolean;
 }>;
 
 /** AI Mode: on/off, mode, style, temperature, and the separate consent to share a redacted summary with cloud models. */
@@ -22,6 +27,7 @@ export function CopilotSettingsSection() {
   const log = useAuthedQuery<Disclosure[]>(['copilot', 'disclosures'], '/copilot/disclosures');
   const save = useApiMutation<Patch>((body) => ({ path: '/copilot/settings', method: 'PUT', body }), [['copilot']]);
   const clear = useApiMutation<void>(() => ({ path: '/copilot/disclosures', method: 'DELETE' }), [['copilot']]);
+  const quiet = useApiMutation<{ quietMode: boolean }>((body) => ({ path: '/notifications/preferences', method: 'PUT', body }), [['copilot'], ['notifications']]);
   const [temp, setTemp] = useState<number | null>(null);
   if (!s.data) return <Spinner />;
   const d = s.data;
@@ -82,6 +88,45 @@ export function CopilotSettingsSection() {
             className="w-full"
           />
         </Field>
+      </div>
+
+      <div className="mt-6 rounded-lg border border-slate-200 p-3" data-testid="chief-settings">
+        <h3 className="text-sm font-semibold text-slate-900">Chief of Staff</h3>
+        <p className="mt-1 text-sm text-slate-700">
+          Ranks everything into one short list. With it on, your daily briefing opens with a greeting and your numbers, and each new Critical item is announced once. It only
+          recommends; nothing is done for you.
+        </p>
+        <label className="mt-2 flex items-center gap-3 text-sm">
+          <input type="checkbox" checked={!!d.chief?.enabled} onChange={(e) => save.mutate({ chiefOfStaff: e.target.checked })} data-testid="chief-enabled" />
+          Turn on the Chief of Staff
+        </label>
+        <label className="mt-2 flex items-center gap-3 text-sm">
+          <input type="checkbox" checked={!!d.chief?.quietMode} onChange={(e) => quiet.mutate({ quietMode: e.target.checked })} data-testid="chief-quiet" />
+          Quiet Mode: hold routine notifications (offers, transfer bonuses, stale balances) for the briefing. Deadlines, renewals, failures and your reminders still arrive at once.
+        </label>
+      </div>
+
+      <div className="mt-6 rounded-lg border border-slate-200 p-3" data-testid="copilot-briefing-settings">
+        <h3 className="text-sm font-semibold text-slate-900">Briefings and alerts</h3>
+        <p className="mt-1 text-sm text-slate-700">
+          With AI Mode on, Copilot writes reviews from your own data and tells you in your notifications (and in your e-mail digest, if you use it). They are built on this server;
+          a model only words them if you allowed it below.
+        </p>
+        <div className="mt-2 grid gap-1 sm:grid-cols-2">
+          {(
+            [
+              ['briefingDaily', 'Daily briefing every morning', d.briefings?.daily],
+              ['briefingWeekly', 'Weekly review on Mondays', d.briefings?.weekly],
+              ['briefingMonthly', 'Monthly portfolio review on the 1st', d.briefings?.monthly],
+              ['copilotAlerts', 'Alerts for opportunities worth a look', d.briefings?.alerts],
+            ] as const
+          ).map(([k, label, on]) => (
+            <label key={k} className="flex items-center gap-3 text-sm">
+              <input type="checkbox" checked={!!on} onChange={(e) => save.mutate({ [k]: e.target.checked } as Patch)} data-testid={`copilot-${k}`} />
+              {label}
+            </label>
+          ))}
+        </div>
       </div>
 
       <div className="mt-6 rounded-lg border border-slate-200 p-3" data-testid="copilot-cloud">
@@ -147,7 +192,7 @@ export function CopilotSettingsSection() {
           </ul>
         )}
       </div>
-      <ErrorText error={save.error || clear.error} />
+      <ErrorText error={save.error || clear.error || quiet.error} />
     </Panel>
   );
 }

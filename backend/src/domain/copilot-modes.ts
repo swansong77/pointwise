@@ -6,7 +6,7 @@ export type Style = (typeof STYLES)[number];
 export const DEPTHS = ['LOW', 'MEDIUM', 'HIGH'] as const;
 export type Depth = (typeof DEPTHS)[number];
 
-export type Lens = 'CARD_STRATEGY' | 'OFFER' | 'LOYALTY' | 'TRAVEL' | 'BENEFIT' | 'PORTFOLIO' | 'AUDIT';
+export type Lens = 'CARD_STRATEGY' | 'OFFER' | 'LOYALTY' | 'TRAVEL' | 'BENEFIT' | 'PORTFOLIO' | 'AUDIT' | 'GOAL';
 
 export const LENS_LABEL: Record<Lens, string> = {
   CARD_STRATEGY: 'Card Strategy',
@@ -16,6 +16,7 @@ export const LENS_LABEL: Record<Lens, string> = {
   BENEFIT: 'Benefits',
   PORTFOLIO: 'Family Portfolio',
   AUDIT: 'Audit',
+  GOAL: 'Goals',
 };
 
 export interface ModeSpec {
@@ -29,14 +30,14 @@ export interface ModeSpec {
   maxTokens: number;
 }
 
-const ALL: Lens[] = ['OFFER', 'LOYALTY', 'TRAVEL', 'BENEFIT', 'CARD_STRATEGY', 'PORTFOLIO', 'AUDIT'];
+const ALL: Lens[] = ['OFFER', 'LOYALTY', 'TRAVEL', 'BENEFIT', 'CARD_STRATEGY', 'PORTFOLIO', 'AUDIT', 'GOAL'];
 
 export const MODE_SPEC: Record<Mode, ModeSpec> = {
   QUICK: { label: 'Quick', blurb: 'The few things that matter most right now.', lenses: ALL, limit: 5, effort: 'low', maxTokens: 400 },
   PLANNING: { label: 'Planning', blurb: 'A fuller plan across offers, credits, points and cards.', lenses: ALL, limit: 12, effort: 'medium', maxTokens: 700 },
   RESEARCH: { label: 'Research', blurb: 'Everything found, with the reasoning and the evidence.', lenses: ALL, limit: 20, effort: 'high', maxTokens: 900 },
-  TRAVEL: { label: 'Travel', blurb: 'Points, certificates, transfer bonuses and credits for trips.', lenses: ['TRAVEL', 'LOYALTY', 'OFFER', 'BENEFIT'], limit: 10, effort: 'medium', maxTokens: 700 },
-  CARD_STRATEGY: { label: 'Card strategy', blurb: 'Annual fees, 5/24, the next card and the household.', lenses: ['CARD_STRATEGY', 'PORTFOLIO', 'BENEFIT'], limit: 10, effort: 'medium', maxTokens: 700 },
+  TRAVEL: { label: 'Travel', blurb: 'Points, certificates, transfer bonuses and credits for trips.', lenses: ['TRAVEL', 'LOYALTY', 'OFFER', 'BENEFIT', 'GOAL'], limit: 10, effort: 'medium', maxTokens: 700 },
+  CARD_STRATEGY: { label: 'Card strategy', blurb: 'Annual fees, 5/24, the next card and the household.', lenses: ['CARD_STRATEGY', 'PORTFOLIO', 'BENEFIT', 'GOAL'], limit: 10, effort: 'medium', maxTokens: 700 },
   AUDIT: { label: 'Audit', blurb: 'Stale data, missed offers and credits that went unused.', lenses: ['AUDIT', 'BENEFIT', 'OFFER', 'LOYALTY'], limit: 12, effort: 'medium', maxTokens: 700 },
 };
 

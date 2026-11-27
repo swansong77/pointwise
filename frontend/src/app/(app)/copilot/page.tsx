@@ -2,10 +2,14 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { BriefingsPanel } from '@/components/briefings-panel';
+import { CopilotDashboard } from '@/components/copilot-dashboard';
+import { GoalsPanel } from '@/components/goals-panel';
+import { MemoryPanel } from '@/components/memory-panel';
 import { PlanView } from '@/components/plan-view';
 import { Button, ErrorText, Field, PageHeader, Panel, Select, Spinner } from '@/components/ui';
 import { useApi, json } from '@/lib/api';
-import { CopilotResponse, CopilotSettings } from '@/lib/copilot';
+import { CopilotResponse, CopilotSettings, WHATIF_EXAMPLES } from '@/lib/copilot';
 import { useAuthedQuery } from '@/lib/queries';
 import { useMutation } from '@tanstack/react-query';
 
@@ -47,6 +51,7 @@ export default function CopilotPage() {
           </Link>
         }
       />
+      <CopilotDashboard />
       <Panel title="What should I do?">
         <div className="flex flex-wrap gap-2" data-testid="copilot-quick">
           {QUICK.map(([label, question]) => (
@@ -86,14 +91,35 @@ export default function CopilotPage() {
             Ask
           </Button>
         </form>
+        <div className="mt-4" data-testid="whatif-examples">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-600">What if…</p>
+          <div className="mt-1 flex flex-wrap gap-2">
+            {WHATIF_EXAMPLES.map((x) => (
+              <button
+                key={x}
+                type="button"
+                onClick={() => go(x)}
+                disabled={ask.isPending}
+                className="rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-800 hover:bg-brand-100 focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-50"
+              >
+                {x}
+              </button>
+            ))}
+          </div>
+        </div>
       </Panel>
       {ask.isPending && <Spinner label="Working on it" />}
       <ErrorText error={ask.error} />
       {res && !ask.isPending && (
-        <Panel title={res.plan.kind === 'AGENDA' ? 'Your plan' : 'Answer'}>
+        <Panel title={res.plan.kind === 'AGENDA' ? 'Your plan' : res.plan.kind === 'WHATIF' ? 'What if' : 'Answer'}>
           <PlanView r={res} />
         </Panel>
       )}
+      <BriefingsPanel />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <GoalsPanel />
+        <MemoryPanel />
+      </div>
     </div>
   );
 }

@@ -1,15 +1,21 @@
 import { createHash } from 'crypto';
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { isLocalProvider, mayReceiveRedacted, redactForModel } from '../ai/privacy';
 import { ModelRouter } from '../ai/router';
 import { selectModels } from '../ai/routing';
 import { PrismaService } from '../common/prisma.service';
 import { clampTemperature, effortFor, isDepth, isMode, isStyle, Mode, MODE_SPEC, MODES, STYLES, Style } from '../domain/copilot-modes';
-import { AGENDA_STEPS, CopilotPlan, COPILOT_VERSION, composeAgenda, fromSearchAnswer, isAgendaQuestion, TOOL_LENS } from '../domain/copilot-plan';
+import { AGENDA_STEPS, CopilotPlan, COPILOT_VERSION, composeAgenda, fromSearchAnswer, fromWhatIf, isAgendaQuestion, TOOL_LENS, whatIfNeeds } from '../domain/copilot-plan';
+import { understand } from '../domain/query-understanding';
+import { parseWhatIf } from '../domain/what-if';
 import { buildView, grounded, Household, leaks, narrationPrompt, PROMPT_VERSION, rehydrate } from '../domain/copilot-view';
 import type { StepResult } from '../domain/answer-compose';
 import { SearchAskService } from '../search/search-ask.service';
+import { SearchService } from '../search/search.service';
+import { GoalsService } from './goals.service';
+import { MemoryService } from './memory.service';
+import { WhatIfService } from './what-if.service';
 
 export interface CopilotNarration {
   text: string;
@@ -40,6 +46,11 @@ export interface CopilotSettingsDto {
   /** the separate consent to share a redacted view with cloud models */
   cloudShare?: boolean;
   cloudProviders?: string[];
+  briefingDaily?: boolean;
+  briefingWeekly?: boolean;
+  briefingMonthly?: boolean;
+  copilotAlerts?: boolean;
+  chiefOfStaff?: boolean;
 }
 
 const DISCLOSURE_DAYS = 90;
@@ -52,6 +63,10 @@ export class CopilotService {
     private readonly prisma: PrismaService,
     private readonly search: SearchAskService,
     private readonly router: ModelRouter,
+    private readonly searchData: SearchService,
+    private readonly whatIf: WhatIfService,
+    private readonly goals: GoalsService,
+    private readonly memory: MemoryService,
   ) {}
 
   /** The member's AI settings row, created on first use. Safe when two requests create it at once. */
@@ -78,6 +93,8 @@ export class CopilotService {
       reasoningDepth: s.reasoningDepth,
       responseStyle: isStyle(s.responseStyle) ? s.responseStyle : 'BALANCED',
       cloudShare: { consented: !!s.cloudShareConsentAt, consentedAt: s.cloudShareConsentAt, providers: s.cloudProviders },
+      briefings: { daily: s.briefingDaily, weekly: s.briefingWeekly, monthly: s.briefingMonthly, alerts: s.copilotAlerts },
+      chief: { enabled: s.chiefOfStaff, quietMode: !!(await this.prisma.notificationPreference.findUnique({ where: { userId }, select: { quietMode: true } }))?.quietMode },
       // local providers need no permission; the rest can be allowed one by one
       providers: providers.map((p) => ({ name: p.name, kind: p.kind, local: isLocalProvider(p.kind), enabled: p.status === 'ACTIVE' })),
       modes: MODES.map((m) => ({ key: m, label: MODE_SPEC[m].label, blurb: MODE_SPEC[m].blurb })),
@@ -106,6 +123,11 @@ export class CopilotService {
       ...(dto.responseStyle !== undefined && { responseStyle: dto.responseStyle }),
       ...(dto.cloudShare !== undefined && { cloudShareConsentAt: dto.cloudShare ? new Date() : null }),
       ...(providers !== undefined && { cloudProviders: providers }),
+      ...(dto.briefingDaily !== undefined && { briefingDaily: dto.briefingDaily }),
+      ...(dto.briefingWeekly !== undefined && { briefingWeekly: dto.briefingWeekly }),
+      ...(dto.briefingMonthly !== undefined && { briefingMonthly: dto.briefingMonthly }),
+      ...(dto.copilotAlerts !== undefined && { copilotAlerts: dto.copilotAlerts }),
+      ...(dto.chiefOfStaff !== undefined && { chiefOfStaff: dto.chiefOfStaff }),
     };
     await this.ensureSettings(userId);
     await this.prisma.aiSettings.update({ where: { userId }, data });
@@ -122,10 +144,26 @@ export class CopilotService {
     return { removed: (await this.prisma.aiDisclosure.deleteMany({ where: { userId } })).count };
   }
 
-  /** retention: nothing is kept longer than DISCLOSURE_DAYS */
+  /** retention: what was sent to a model, and briefings, are not kept longer than 90 days */
   async purgeDisclosures(now: Date): Promise<number> {
-    const r = await this.prisma.aiDisclosure.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - DISCLOSURE_DAYS * 86_400_000) } } });
-    return r.count;
+    const cut = new Date(now.getTime() - DISCLOSURE_DAYS * 86_400_000);
+    const [d, b] = await Promise.all([this.prisma.aiDisclosure.deleteMany({ where: { createdAt: { lt: cut } } }), this.prisma.copilotBriefing.deleteMany({ where: { createdAt: { lt: cut } } })]);
+    return d.count + b.count;
+  }
+
+  /** The plan for "what should I do": the specialists read the engines, then goals and what the member put aside shape it. */
+  async agenda(userId: string, mode: Mode, q: string, now: Date, opts: { limit?: number } = {}) {
+    const [prefs, decisions, goals] = await Promise.all([this.memory.preferences(userId), this.memory.decisions(userId, now), this.goals.views(userId, now)]);
+    const results = await Promise.all(AGENDA_STEPS.map((st) => this.search.runStep(userId, st, now)));
+    const plan = composeAgenda(results, mode, q, now, { prefs, decisions, goals, limit: opts.limit });
+    return { plan, results, decisions, engines: [...AGENDA_STEPS.map((st) => st.tool), 'goals'] };
+  }
+
+  /** A model's wording of a plan, only as the member's consent and allow-list permit; null when none may. */
+  async narratePlan(userId: string, plan: CopilotPlan, runId: string | null) {
+    const s = await this.ensureSettings(userId);
+    const style: Style = isStyle(s.responseStyle) ? s.responseStyle : 'BALANCED';
+    return this.narrate(userId, plan, { mode: plan.mode, style, settings: s, runId });
   }
 
   // ───────────── ask ─────────────
@@ -151,10 +189,25 @@ export class CopilotService {
     let results: StepResult[] = [];
     let sessionId: string | null = null;
     let engines: string[];
-    if (isAgendaQuestion(q)) {
-      results = await Promise.all(AGENDA_STEPS.map((st) => this.search.runStep(userId, st, now)));
-      plan = composeAgenda(results, mode, q, now);
-      engines = AGENDA_STEPS.map((st) => st.tool);
+    const parsed = parseWhatIf(q, understand(q, await this.searchData.dictionaries(userId), now));
+    if (parsed) {
+      engines = ['what-if'];
+      if (parsed.needs.length) plan = whatIfNeeds(q, mode, parsed.needs);
+      else {
+        try {
+          plan = fromWhatIf(await this.whatIf.run(userId, parsed.request, now), mode, q);
+        } catch (e) {
+          // a card or program that is not there is said plainly; nothing else is swallowed
+          if (e instanceof BadRequestException || e instanceof NotFoundException) plan = whatIfNeeds(q, mode, [e.message.replace(/\.$/, '').toLowerCase()]);
+          else throw e;
+        }
+      }
+    } else if (isAgendaQuestion(q)) {
+      const a = await this.agenda(userId, mode, q, now);
+      plan = a.plan;
+      results = a.results;
+      engines = a.engines;
+      await this.memory.recordRecommended(userId, plan.items.map((i) => ({ id: i.id, title: i.title })), now);
     } else {
       const r = await this.search.ask(userId, q, undefined, opts.sessionId, now);
       sessionId = r.sessionId;
@@ -215,7 +268,7 @@ export class CopilotService {
   private async narrate(
     userId: string,
     plan: CopilotPlan,
-    ctx: { mode: Mode; style: Style; settings: { preferredModelId?: string | null; cloudShareConsentAt: Date | null; cloudProviders: string[]; temperature: number | null; reasoningDepth: string | null }; runId: string },
+    ctx: { mode: Mode; style: Style; settings: { preferredModelId?: string | null; cloudShareConsentAt: Date | null; cloudProviders: string[]; temperature: number | null; reasoningDepth: string | null }; runId: string | null },
   ): Promise<{ narration: CopilotNarration | null; skipped: string | null }> {
     const share = { consentedAt: ctx.settings.cloudShareConsentAt, providers: ctx.settings.cloudProviders };
     const usable = await this.router.usableModels();
@@ -243,7 +296,7 @@ export class CopilotService {
     const local = isLocalProvider(model.provider.kind);
     // stored before the call: it was sent whether or not the model answers
     const disclosure = await this.prisma.aiDisclosure.create({
-      data: { userId, runId: ctx.runId, provider: model.provider.name, model: model.displayName, local, purpose: 'narration', payload: { promptVersion: PROMPT_VERSION, system, view } as unknown as Prisma.InputJsonValue },
+      data: { userId, runId: ctx.runId ?? undefined, provider: model.provider.name, model: model.displayName, local, purpose: 'narration', payload: { promptVersion: PROMPT_VERSION, system, view } as unknown as Prisma.InputJsonValue },
     });
     try {
       const { response } = await this.router.chat(

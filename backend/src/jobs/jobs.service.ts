@@ -25,6 +25,8 @@ import { OfferAutomationJobs } from "../offer-automation/offer-automation.jobs";
 import { BackupJobs } from "../data/data.module";
 import { RemindersService } from "../reminders/reminders.module";
 import { CopilotService } from "../copilot/copilot.service";
+import { BriefingService } from "../copilot/briefing.service";
+import { BoardService } from "../copilot/board.service";
 
 export const JOB_QUEUE = "pointwise-jobs";
 export type JobName =
@@ -55,8 +57,18 @@ export type JobName =
   | "backup-nightly"
   | "update-rotating-categories"
   | "reminders-due"
-  | "copilot-cleanup";
+  | "copilot-cleanup"
+  | "copilot-daily"
+  | "copilot-weekly"
+  | "copilot-monthly"
+  | "copilot-alerts"
+  | "cos-board";
 export const JOB_NAMES: JobName[] = [
+  "cos-board",
+  "copilot-daily",
+  "copilot-weekly",
+  "copilot-monthly",
+  "copilot-alerts",
   "copilot-cleanup",
   "reminders-due",
   "update-rotating-categories",
@@ -118,6 +130,8 @@ export class JobsService {
     @Optional() private readonly backupJobs?: BackupJobs,
     @Optional() private readonly reminders?: RemindersService,
     @Optional() private readonly copilot?: CopilotService,
+    @Optional() private readonly briefings?: BriefingService,
+    @Optional() private readonly board?: BoardService,
   ) {}
 
   async run(
@@ -200,6 +214,21 @@ export class JobsService {
         break;
       case "offer-digest":
         created = (await this.offerAutomation?.digest(now)) ?? 0;
+        break;
+      case "copilot-daily":
+        created = (await this.briefings?.runDue("DAILY", now)) ?? 0;
+        break;
+      case "copilot-weekly":
+        created = (await this.briefings?.runDue("WEEKLY", now)) ?? 0;
+        break;
+      case "copilot-monthly":
+        created = (await this.briefings?.runDue("MONTHLY", now)) ?? 0;
+        break;
+      case "cos-board":
+        created = (await this.board?.runDue(now)) ?? 0;
+        break;
+      case "copilot-alerts":
+        created = (await this.briefings?.runAlerts(now)) ?? 0;
         break;
       case "copilot-cleanup":
         created = (await this.copilot?.purgeDisclosures(now)) ?? 0;
@@ -418,6 +447,7 @@ export class JobsService {
       where: {
         readAt: null,
         emailedAt: null,
+        deferredAt: null,
         user: { notificationPrefs: { emailDigest: true } },
       },
       include: { user: { select: { email: true } } },
