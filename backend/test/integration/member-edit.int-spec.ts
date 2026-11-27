@@ -52,6 +52,7 @@ async function household() {
 }
 const post = (t: string, path: string, body: object = {}) => api(app).post(V + path).set(bearer(t)).send(body);
 const patch = (t: string, path: string, body: object = {}) => api(app).patch(V + path).set(bearer(t)).send(body);
+const put = (t: string, path: string, body: object = {}) => api(app).put(V + path).set(bearer(t)).send(body);
 const del = (t: string, path: string) => api(app).delete(V + path).set(bearer(t));
 const get = (t: string, path: string) => api(app).get(V + path).set(bearer(t));
 const list = async (t: string) => (await get(t, '/notifications').expect(200)).body as Array<{ type: string; title: string }>;
@@ -201,5 +202,45 @@ describe('TC-MMUTE: the owner stops hearing about a member', () => {
     await patch(h.member, `/household/members/${h.riley.id}`, { canEdit: true }).expect(403);
     await patch(h.member, `/household/members/${h.riley.id}`, { notifyOwner: false }).expect(403);
     expect(await prisma.profile.findUniqueOrThrow({ where: { id: h.riley.id } })).toMatchObject({ canEdit: false, notifyOwner: true });
+  });
+});
+
+describe('TC-MCB: a member records their own cash-back site accounts', () => {
+  it('sees the sites and only their own accounts; may change them only when the owner allows it', async () => {
+    const h = await household();
+    const sites = (await get(h.member, '/member/cashback').expect(200)).body;
+    expect(sites.map((s: any) => s.code)).toEqual(expect.arrayContaining(['rakuten', 'topcashback']));
+    expect(sites.every((s: any) => s.has === false)).toBe(true);
+    expect(Object.keys(sites[0]).sort()).toEqual(['code', 'has', 'health', 'healthNote', 'homeUrl', 'kind', 'lastCheckedAt', 'name', 'notes', 'rates', 'ratesSeenAt', 'autoRead', 'lastReadAt'].sort());
+    await put(h.member, '/member/cashback/accounts/rakuten', { has: true }).expect(403);
+    await h.allow(h.riley.id, { canEdit: true }).expect(200);
+    await put(h.member, '/member/cashback/accounts/rakuten', { has: true }).expect(204);
+    expect((await get(h.member, '/member/cashback').expect(200)).body.filter((s: any) => s.has).map((s: any) => s.code)).toEqual(['rakuten']);
+    // on the profile of this member, in the owner's household, and recorded under the member
+    const row = await prisma.userCashbackAccount.findFirstOrThrow({ where: { userId: h.owner.userId, site: { code: 'rakuten' } } });
+    expect(row.profileId).toBe(h.riley.id);
+    const owners = (await get(h.owner.token, '/cashback/sites').expect(200)).body.find((s: any) => s.code === 'rakuten');
+    expect(owners.accounts).toEqual([{ profileId: h.riley.id, member: 'Riley' }]);
+    expect((await prisma.auditLog.findMany({ where: { actorId: h.memberUserId, entity: 'CashbackSite' } })).map((a) => a.action)).toEqual(['member.cashback.added']);
+    // and removed again
+    await put(h.member, '/member/cashback/accounts/rakuten', { has: false }).expect(204);
+    expect(await prisma.userCashbackAccount.count({ where: { userId: h.owner.userId } })).toBe(0);
+  });
+
+  it('never shows another person\'s accounts, cannot reach the owner\'s cash-back routes, and refuses an unknown site', async () => {
+    const h = await household();
+    await put(h.owner.token, '/cashback/accounts/topcashback', { has: true, profileId: h.primary.id }).expect(204);
+    await put(h.owner.token, '/cashback/accounts/topcashback', { has: true, profileId: h.sam.id }).expect(204);
+    const mine = (await get(h.member, '/member/cashback').expect(200)).body;
+    expect(mine.every((s: any) => s.has === false)).toBe(true);
+    expect(JSON.stringify(mine)).not.toContain('Sam');
+    await h.allow(h.riley.id, { canEdit: true }).expect(200);
+    await put(h.member, '/member/cashback/accounts/no-such-site', { has: true }).expect(404);
+    await put(h.member, '/member/cashback/accounts/rakuten', { has: 'yes' } as never).expect(400);
+    await put(h.member, '/member/cashback/accounts/rakuten', { has: true, profileId: h.sam.id } as never).expect(400);
+    for (const r of [get(h.member, '/cashback/sites'), put(h.member, '/cashback/accounts/rakuten', { has: true }), get(h.member, '/cashback/recommend?merchant=hilton')]) expect((await r).status).toBe(403);
+    // the owner's own record of the others is untouched
+    expect(await prisma.userCashbackAccount.count({ where: { userId: h.owner.userId } })).toBe(2);
+    await get(h.owner.token, '/member/cashback').expect(403);
   });
 });

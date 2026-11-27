@@ -152,7 +152,7 @@ If you track card-linked offers, the **offers extension** (`docs/offer-automatio
 
 ## Step 5b: Cash-back sites (optional)
 
-If you shop through a cash-back or points site (Rakuten, TopCashback, an airline's shopping portal), open **Cash-back sites** and tick the ones you have an account on, for each person. In **Plan a purchase**, PointWise then recommends the best of *your* sites for that store, with the steps to follow, tells you if a site you do not use would pay noticeably more, and warns you when a site is not answering or its rate is old. It never signs in to those sites and never stores a password. The server administrator keeps the rates up to date (Admin, Cash-back sites).
+If you shop through a cash-back or points site (Rakuten, TopCashback, an airline's shopping portal), open **Cash-back sites** and tick the ones you have an account on, for each person. In **Plan a purchase**, PointWise then recommends the best of *your* sites for that store, with the steps to follow, tells you if a site you do not use would pay noticeably more, and warns you when a site is not answering or its rate is old. It never signs in to those sites and never stores a password. The server administrator keeps the rates up to date (Admin, Cash-back sites). If you have your own sign-in and the owner has allowed you to edit your cards and points, you tick your own sites on **My view**; otherwise the owner does it for you.
 
 ## Step 6: Choose how PointWise talks to you
 

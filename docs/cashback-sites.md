@@ -44,6 +44,7 @@ A rate is replaced (not duplicated) for the same site and store. A rate entered 
 | `GET /cashback/sites` | any signed-in owner: sites with status and who has an account |
 | `PUT /cashback/accounts/:site` `{ has, profileId? }` | the household owner (default: themselves) |
 | `GET /cashback/recommend?merchant=&amount=&payWith=` | any signed-in owner |
+| `GET /member/cashback`, `PUT /member/cashback/accounts/:site` `{ has }` | a household member with their own sign-in (the PUT needs the owner's permission to edit); acts only on that member's own profile |
 | `GET /admin/cashback/sites`, `PUT /admin/cashback/sites/:code`, `POST /admin/cashback/status` | administrator |
 | `GET /admin/cashback/rates`, `POST …/rates`, `DELETE …/rates/:id`, `POST …/rates/import`, `POST …/rates/paste` | administrator |
 
@@ -71,5 +72,5 @@ The paste reader's layout rules were written for a copied table and have **not**
 ## Limits
 - Rates are only as good as what was entered; the plan shows how old each is and says so when it is stale. Check the rate on the site before you buy.
 - Rates reflect one moment; a site's rate for a store can change daily and can differ by account, category or promotion.
-- Household members with their own sign-in do not edit sites or accounts yet; the owner does.
+- A household member with their own sign-in sees the sites and which ones they have an account on (never other members' accounts) on their own page, and can tick or untick them when the owner has allowed editing (the same permission as their cards and points). Otherwise the owner keeps the list.
 - Page layouts change. A read that finds nothing is counted and ignored, never guessed; the live pages' wording was checked on 27 Nov 2026 only.

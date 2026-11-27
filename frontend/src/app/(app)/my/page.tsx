@@ -5,7 +5,7 @@ import { StatTiles } from '@/components/charts';
 import { Badge, EmptyState, ErrorText, PageHeader, Panel, Spinner } from '@/components/ui';
 import { daysLeftLabel, money, shortDate } from '@/lib/format';
 import type { MemberMe, MemberOverview } from '@/lib/member';
-import { MemberAccountActions, MemberAddAccount, MemberAddCard, MemberCardActions, MemberUseCredit } from '@/components/member-edit';
+import { MemberAccountActions, MemberAddAccount, MemberAddCard, MemberCardActions, MemberCashbackSites, MemberUseCredit } from '@/components/member-edit';
 import { useAuthedQuery } from '@/lib/queries';
 
 const STATUS_TONE: Record<string, 'green' | 'amber' | 'red' | 'slate' | 'brand'> = {
@@ -128,6 +128,8 @@ export default function MyViewPage() {
           <MemberAddAccount />
         </>
       )}
+
+      <MemberCashbackSites canEdit={canEdit} />
 
       <Panel title="Recent spending on my cards" data-testid="my-transactions">
         {d.transactions.length === 0 ? (

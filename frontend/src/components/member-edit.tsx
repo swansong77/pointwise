@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, ErrorText, Field, Input, Panel, Select } from '@/components/ui';
+import { Badge, Button, ErrorText, Field, Input, Panel, Select } from '@/components/ui';
+import { HEALTH_LABEL, HEALTH_TONE, type Health } from '@/lib/cashback';
 import { money } from '@/lib/format';
 import type { Registry } from '@/lib/loyalty';
 import type { MemberBenefit, MemberCard, MemberLoyalty } from '@/lib/member';
@@ -225,5 +226,46 @@ export function MemberUseCredit({ benefit }: { benefit: MemberBenefit }) {
       </Button>
       <ErrorText error={use.error} />
     </span>
+  );
+}
+
+interface MemberSite {
+  code: string;
+  name: string;
+  kind: 'CASHBACK' | 'POINTS';
+  homeUrl: string;
+  health: Health;
+  has: boolean;
+}
+
+/**
+ * The cash-back and points shopping sites, and which ones this member has an account on. Only the fact is recorded (never a login). The
+ * owner decides whether a member may change it, like their cards and points: otherwise the list is shown and the owner keeps it up to date.
+ */
+export function MemberCashbackSites({ canEdit }: { canEdit: boolean }) {
+  const sites = useAuthedQuery<MemberSite[]>(['member', 'cashback'], '/member/cashback');
+  const toggle = useApiMutation<{ site: string; has: boolean }>(({ site, has }) => ({ path: `/member/cashback/accounts/${site}`, method: 'PUT', body: { has } }), [['member', 'cashback']]);
+  const list = Array.isArray(sites.data) ? sites.data : [];
+  const mine = list.filter((s) => s.has).length;
+  return (
+    <Panel title={`My cash-back sites · ${mine}`} data-testid="member-cashback">
+      <p className="mb-2 text-sm text-slate-700">
+        {canEdit ? 'Tick the shopping sites you have an account on, so a shopping plan can recommend yours.' : 'The shopping sites you have an account on. The household owner keeps this list up to date.'}
+      </p>
+      <ul className="divide-y divide-slate-100 text-sm">
+        {list.map((s) => (
+          <li key={s.code} className="flex flex-wrap items-center gap-3 py-2" data-testid="member-cashback-site" data-site={s.code}>
+            <label className="flex min-w-0 flex-1 items-center gap-2">
+              <input type="checkbox" checked={s.has} disabled={!canEdit || toggle.isPending} aria-label={`I have an account on ${s.name}`} onChange={(e) => toggle.mutate({ site: s.code, has: e.target.checked })} />
+              <span className="font-medium text-slate-900">{s.name}</span>
+              <Badge tone={s.kind === 'POINTS' ? 'brand' : 'slate'}>{s.kind === 'POINTS' ? 'Points' : 'Cash back'}</Badge>
+            </label>
+            <Badge tone={HEALTH_TONE[s.health]}>{HEALTH_LABEL[s.health]}</Badge>
+          </li>
+        ))}
+      </ul>
+      <ErrorText error={sites.error ?? toggle.error} />
+      <p className="mt-2 text-xs text-slate-600">PointWise never asks for or stores a username or password for these sites.</p>
+    </Panel>
   );
 }
