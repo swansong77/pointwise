@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui';
+import { RoadmapView } from '@/components/chief-roadmap';
 import { json, useApi } from '@/lib/api';
 import { CallButton } from '@/components/call-button';
 import { confidenceWord, CopilotResponse, HORIZONS, HORIZON_LABEL, PlanItem, WhatIfOutcome } from '@/lib/copilot';
@@ -20,7 +21,7 @@ const DIRECTION = {
 const VERDICT = { FAVORABLE: ['Favorable', 'green'], UNFAVORABLE: ['Unfavorable', 'red'], MIXED: ['Mixed', 'amber'], NEUTRAL: ['About even', 'slate'] } as const;
 
 /** Snooze, dismiss or mark done: Copilot remembers and stops showing the item for a while. */
-function Decide({ id }: { id: string }) {
+export function Decide({ id }: { id: string }) {
   const api = useApi();
   const qc = useQueryClient();
   const [msg, setMsg] = useState<string | null>(null);
@@ -212,6 +213,8 @@ export function PlanView({ r, onNavigate }: { r: CopilotResponse; onNavigate?: (
 
       {p.kind === 'WHATIF' && p.whatIf && <WhatIfView o={p.whatIf} />}
 
+      {p.kind === 'ROADMAP' && p.roadmap && <RoadmapView r={p.roadmap} />}
+
       {p.items.length === 0 && p.kind === 'AGENDA' && <p className="text-sm text-slate-700">You are on track. Check back tomorrow.</p>}
 
       {(p.memory?.hidden.length ?? 0) > 0 && (
@@ -223,7 +226,7 @@ export function PlanView({ r, onNavigate }: { r: CopilotResponse; onNavigate?: (
         </p>
       )}
 
-      {HORIZONS.filter((h) => p.kind !== 'WHATIF' && p.items.some((i) => i.horizon === h)).map((h) => (
+      {HORIZONS.filter((h) => p.kind !== 'WHATIF' && p.kind !== 'ROADMAP' && p.items.some((i) => i.horizon === h)).map((h) => (
         <section key={h} aria-label={HORIZON_LABEL[h]} data-testid={`plan-${h.toLowerCase()}`}>
           {p.kind === 'AGENDA' && <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600">{HORIZON_LABEL[h]}</h4>}
           <ul className="space-y-2">

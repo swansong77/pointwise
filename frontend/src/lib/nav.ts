@@ -6,6 +6,7 @@ export interface NavItem {
 
 export const NAV: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: '🏠' },
+  { href: '/chief-of-staff', label: 'Chief of Staff', icon: '🏛️' },
   { href: '/copilot', label: 'Copilot', icon: '🧭' },
   { href: '/assistant', label: 'Assistant', icon: '✨' },
   { href: '/search', label: 'Search History', icon: '🔎' },

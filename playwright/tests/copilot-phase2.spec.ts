@@ -9,6 +9,8 @@ const us = (days: number) => {
   return String(d.getUTCMonth() + 1).padStart(2, '0') + '/' + String(d.getUTCDate()).padStart(2, '0') + '/' + d.getUTCFullYear();
 };
 const noSeriousA11y = async (page: import('@playwright/test').Page) => {
+  // a colour measured mid-fade (a button leaving its disabled state) is not what the person sees once it settles
+  await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important; animation: none !important; }' });
   const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
   expect(r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id + ': ' + v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | '))).toEqual([]);
 };

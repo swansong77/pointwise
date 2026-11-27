@@ -61,7 +61,7 @@ export const WHATIF_EXAMPLES = [
 
 export interface CopilotPlan {
   mode: string;
-  kind: 'AGENDA' | 'ANSWER' | 'WHATIF';
+  kind: 'AGENDA' | 'ANSWER' | 'WHATIF' | 'ROADMAP';
   question: string;
   headline: string;
   summary: string;
@@ -75,6 +75,7 @@ export interface CopilotPlan {
   valueAtStakeCents: number;
   memory?: { hidden: Array<{ id: string; title: string; action: string; until: string }>; boosted: number };
   whatIf?: WhatIfOutcome;
+  roadmap?: import('@/lib/chief').RoadmapData;
 }
 
 export interface CopilotResponse {
@@ -94,6 +95,8 @@ export interface CopilotSettings {
   reasoningDepth: string | null;
   responseStyle: string;
   cloudShare: { consented: boolean; consentedAt: string | null; providers: string[] };
+  briefings?: { daily: boolean; weekly: boolean; monthly: boolean; alerts: boolean };
+  chief?: { enabled: boolean; quietMode: boolean };
   providers: Array<{ name: string; kind: string; local: boolean; enabled: boolean }>;
   modes: Array<{ key: string; label: string; blurb: string }>;
   styles: string[];
@@ -161,4 +164,84 @@ export interface MemoryRow {
   key: string;
   value: { action?: string; until?: string; title?: string; shown?: number } & Record<string, unknown>;
   updatedAt: string;
+}
+
+export type BriefKind = 'DAILY' | 'WEEKLY' | 'MONTHLY';
+export const BRIEF_LABEL: Record<BriefKind, string> = { DAILY: 'Daily', WEEKLY: 'Weekly', MONTHLY: 'Monthly' };
+
+export interface BriefLine {
+  text: string;
+  detail?: string;
+  href?: string;
+  valueCents?: number | null;
+  tone: 'urgent' | 'warn' | 'good' | 'info';
+  itemId?: string;
+}
+export interface BriefSection {
+  key: string;
+  title: string;
+  lines: BriefLine[];
+  empty: string;
+}
+export interface Briefing {
+  greeting?: string;
+  kind: BriefKind;
+  periodKey: string;
+  generatedAt: string;
+  headline: string;
+  summary: string;
+  sections: BriefSection[];
+  stats: Record<string, number | string>;
+  confidence: number;
+  assumptions: string[];
+}
+export interface StoredBriefing {
+  id: string;
+  kind: BriefKind;
+  periodKey: string;
+  createdAt: string;
+  content: Briefing;
+  narration: { text: string; model: string; provider: string; local: boolean } | null;
+}
+export interface Alert {
+  key: string;
+  title: string;
+  body: string;
+  link: string;
+  dedupeKey: string;
+}
+
+export interface DashItem {
+  id: string;
+  lens: string;
+  horizon: Horizon;
+  title: string;
+  recommendation: string;
+  reason: string;
+  confidence: number;
+  expectedValueCents: number | null;
+  href: string;
+  calls: import('@/lib/search').CallAction[];
+}
+export interface Dashboard {
+  generatedAt: string;
+  headline: string;
+  summary: string;
+  confidence: number;
+  counts: Record<Horizon, number>;
+  valueAtStakeCents: number;
+  today: DashItem[];
+  expiring: DashItem[];
+  actions: DashItem[];
+  travel: DashItem[];
+  savings: { offersCents: number; creditsCents: number; totalCents: number };
+  household: {
+    members: Array<{ member: string; count: number; underLimit: boolean; nextSlotAt: string | null }>;
+    applyPick: { member: string; card: string; firstYearCents: number; usesSlot: boolean } | null;
+  };
+  portfolio: { healthScore: number | null; healthLabel: string | null; feesCents: number; valueCents: number; cards: number; toReview: number };
+  goals: Goal[];
+  recommendations: DashItem[];
+  briefing: { id: string; kind: BriefKind; periodKey: string; headline: string; narration: StoredBriefing['narration'] } | null;
+  hidden: number;
 }

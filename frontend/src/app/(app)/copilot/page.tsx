@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { BriefingsPanel } from '@/components/briefings-panel';
+import { CopilotDashboard } from '@/components/copilot-dashboard';
 import { GoalsPanel } from '@/components/goals-panel';
 import { MemoryPanel } from '@/components/memory-panel';
 import { PlanView } from '@/components/plan-view';
@@ -49,6 +51,7 @@ export default function CopilotPage() {
           </Link>
         }
       />
+      <CopilotDashboard />
       <Panel title="What should I do?">
         <div className="flex flex-wrap gap-2" data-testid="copilot-quick">
           {QUICK.map(([label, question]) => (
@@ -112,6 +115,7 @@ export default function CopilotPage() {
           <PlanView r={res} />
         </Panel>
       )}
+      <BriefingsPanel />
       <div className="grid gap-6 lg:grid-cols-2">
         <GoalsPanel />
         <MemoryPanel />
