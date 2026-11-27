@@ -16,7 +16,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const member = session?.user?.member;
-  const unread = useUnreadCount(!member);
+  const unread = useUnreadCount();
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [seed, setSeed] = useState<{ q: string; nonce: number } | null>(null);
@@ -90,8 +90,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               <span aria-hidden>🔍</span>
             </button></>)}
-            {!member && (<Link
-              href="/notifications"
+            <Link
+              href={member ? '/my/notifications' : '/notifications'}
               className="relative rounded-full p-2 hover:bg-slate-100"
               aria-label={`Notifications (${unread.data?.count ?? 0} unread)`}
               data-testid="nav-notifications"
@@ -102,7 +102,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   {unread.data.count}
                 </span>
               )}
-            </Link>)}
+            </Link>
             <span className="grid h-8 w-8 place-items-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700" title={session?.user?.email}>
               {initials(session?.user?.name, session?.user?.email)}
             </span>

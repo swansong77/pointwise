@@ -476,12 +476,12 @@ export class OfferSyncService {
   private async notifyChanges(userId: string, account: AccountFull, c: { highValue: string[]; newCount: number; autoEnrolled: number; now: Date }) {
     if (!(await this.wants(userId))) return;
     const day = c.now.toISOString().slice(0, 10);
-    if (c.highValue.length) await this.notifications.notify(userId, 'OFFER_NEW_HIGH_VALUE', `${c.highValue.length} new high-value offer(s) on ${account.holderLabel}`, 'Review them in your Offer Inbox.', '/offers/automation', `offer-hv:${account.id}:${day}:${c.highValue.length}`);
-    if (c.autoEnrolled) await this.notifications.notify(userId, 'OFFER_AUTO_ENROLLED', `${c.autoEnrolled} offer(s) added automatically`, `PointWise added them on ${account.holderLabel} according to your rules.`, '/offers/automation', `offer-auto:${account.id}:${day}:${c.autoEnrolled}`);
+    if (c.highValue.length) await this.notifications.notify(userId, 'OFFER_NEW_HIGH_VALUE', `${c.highValue.length} new high-value offer(s) on ${account.holderLabel}`, 'Review them in your Offer Inbox.', '/offers/automation', `offer-hv:${account.id}:${day}:${c.highValue.length}`, { profileId: account.profileId });
+    if (c.autoEnrolled) await this.notifications.notify(userId, 'OFFER_AUTO_ENROLLED', `${c.autoEnrolled} offer(s) added automatically`, `PointWise added them on ${account.holderLabel} according to your rules.`, '/offers/automation', `offer-auto:${account.id}:${day}:${c.autoEnrolled}`, { profileId: account.profileId });
   }
 
-  async notifyFailure(userId: string, account: Pick<AccountFull, 'id' | 'holderLabel'>, message: string, now: Date) {
+  async notifyFailure(userId: string, account: Pick<AccountFull, 'id' | 'holderLabel'> & { profileId?: string | null }, message: string, now: Date) {
     if (!(await this.wants(userId))) return;
-    await this.notifications.notify(userId, 'OFFER_SYNC_FAILED', `Offer sync failed for ${account.holderLabel}`, message.slice(0, 200), '/offers/automation', `offer-sync-fail:${account.id}:${now.toISOString().slice(0, 10)}`);
+    await this.notifications.notify(userId, 'OFFER_SYNC_FAILED', `Offer sync failed for ${account.holderLabel}`, message.slice(0, 200), '/offers/automation', `offer-sync-fail:${account.id}:${now.toISOString().slice(0, 10)}`, { profileId: account.profileId });
   }
 }

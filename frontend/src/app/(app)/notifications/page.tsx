@@ -46,7 +46,7 @@ export default function NotificationsPage() {
             <div className="min-w-0 flex-1">
               <p className={clsx('text-sm', !n.readAt && 'font-semibold')}>{n.title}</p>
               <p className="text-sm text-slate-600">{n.body}</p>
-              <p className="mt-1 text-xs text-slate-400">{shortDate(n.createdAt)}</p>
+              <p className="mt-1 text-xs text-slate-600">{shortDate(n.createdAt)}</p>
             </div>
             <div className="flex flex-col items-end gap-1">
               {n.link && (
@@ -55,7 +55,7 @@ export default function NotificationsPage() {
                 </Link>
               )}
               {!n.readAt && (
-                <button className="text-xs text-slate-500 hover:text-slate-800" onClick={() => markOne(n.id)}>
+                <button className="text-xs text-slate-700 underline hover:text-slate-900" onClick={() => markOne(n.id)}>
                   Mark read
                 </button>
               )}

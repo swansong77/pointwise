@@ -15,7 +15,7 @@ const TONE: Record<string, { icon: string; word: string; cls: string }> = {
 };
 const KINDS: BriefKind[] = ['DAILY', 'WEEKLY', 'MONTHLY'];
 
-function Body({ b, narration }: { b: Briefing; narration: StoredBriefing['narration'] }) {
+export function Body({ b, narration }: { b: Briefing; narration: StoredBriefing['narration'] }) {
   return (
     <div className="space-y-4" data-testid="briefing-body">
       <div>

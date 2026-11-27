@@ -26,6 +26,7 @@ import { BackupJobs } from "../data/data.module";
 import { RemindersService } from "../reminders/reminders.module";
 import { CopilotService } from "../copilot/copilot.service";
 import { BriefingService } from "../copilot/briefing.service";
+import { MemberBriefingService } from "../member/member-briefing.service";
 import { BoardService } from "../copilot/board.service";
 
 export const JOB_QUEUE = "pointwise-jobs";
@@ -62,8 +63,12 @@ export type JobName =
   | "copilot-weekly"
   | "copilot-monthly"
   | "copilot-alerts"
-  | "cos-board";
+  | "cos-board"
+  | "member-daily"
+  | "member-weekly";
 export const JOB_NAMES: JobName[] = [
+  "member-daily",
+  "member-weekly",
   "cos-board",
   "copilot-daily",
   "copilot-weekly",
@@ -132,6 +137,7 @@ export class JobsService {
     @Optional() private readonly copilot?: CopilotService,
     @Optional() private readonly briefings?: BriefingService,
     @Optional() private readonly board?: BoardService,
+    @Optional() private readonly memberBriefings?: MemberBriefingService,
   ) {}
 
   async run(
@@ -223,6 +229,12 @@ export class JobsService {
         break;
       case "copilot-monthly":
         created = (await this.briefings?.runDue("MONTHLY", now)) ?? 0;
+        break;
+      case "member-daily":
+        created = (await this.memberBriefings?.runDue("DAILY", now)) ?? 0;
+        break;
+      case "member-weekly":
+        created = (await this.memberBriefings?.runDue("WEEKLY", now)) ?? 0;
         break;
       case "cos-board":
         created = (await this.board?.runDue(now)) ?? 0;
@@ -343,6 +355,7 @@ export class JobsService {
           `"${uo.offer.title}" on ${uo.walletCard.nickname || uo.walletCard.card.name} ends ${ends}.`,
           "/offers",
           `expiring:${uo.id}:${ends}`,
+          { profileId: uo.walletCard.profileId },
         );
         n++;
       }
@@ -362,6 +375,8 @@ export class JobsService {
     return wallets.map((w) => ({
       userId: w.userId,
       cards: w.cards.map(toDomainWalletCard),
+      /** which household member holds each card, so the notice can also reach them */
+      profileOf: new Map(w.cards.map((c) => [c.id, c.profileId] as const)),
     }));
   }
 
@@ -376,6 +391,7 @@ export class JobsService {
           `Annual fee of ${fmt(r.annualFeeCents)} posts around ${day(r.renewsAt)}. Decide whether to keep, downgrade, or cancel.`,
           "/wallet",
           `renewal:${r.walletCardId}:${day(r.renewsAt)}`,
+          { profileId: w.profileOf.get(r.walletCardId) },
         );
         n++;
       }
@@ -394,6 +410,7 @@ export class JobsService {
           `You've spent ${fmt(b.spentCents)} of ${fmt(b.requiredSpendCents)} with ${b.daysLeft} days left.`,
           "/wallet",
           `bonus:${b.walletCardId}:${day(b.deadline)}`,
+          { profileId: w.profileOf.get(b.walletCardId) },
         );
         n++;
       }
@@ -562,8 +579,28 @@ export class JobsService {
         }
         n++;
       }
+      await this.benefitToMember(b.walletCard.profileId, b.id, isoDay(v.currentPeriod.end), t, title, body);
     }
     return n;
+  }
+
+  /**
+   * The member whose card this is gets their own copy, following THEIR switches: in-app unless they turned benefit alerts off, a push if they
+   * turned that on. (Their e-mail is the daily digest, which they control separately.) It is keyed per member, so it never repeats.
+   */
+  private async benefitToMember(profileId: string | null, benefitId: string, periodEnd: string, threshold: number, title: string, body: string) {
+    if (!profileId) return;
+    try {
+      const prof = await this.prisma.profile.findUnique({ where: { id: profileId }, select: { loginUserId: true } });
+      const memberId = prof?.loginUserId;
+      if (!memberId) return;
+      const mp = await this.prisma.notificationPreference.findUnique({ where: { userId: memberId } });
+      if (mp && !mp.benefitExpiring) return;
+      await this.notifications.notify(memberId, "BENEFIT_EXPIRING", title, body, "/my", `benefit:${benefitId}:${periodEnd}:${threshold}`);
+      if (mp?.benefitPush && this.dispatcher) await this.dispatcher.dispatch({ userId: memberId, channel: "PUSH", title, body, link: "/my" });
+    } catch (e) {
+      this.logger.warn(`member benefit alert not delivered: ${(e as Error).message}`);
+    }
   }
 
   /** Daily 5/24 history per household member (idempotent per day). */

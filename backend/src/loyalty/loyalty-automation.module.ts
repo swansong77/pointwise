@@ -214,7 +214,7 @@ export class LoyaltyRefreshJobs {
         const todo = (a.plan as Array<{ text: string; automated: boolean }>).find((p) => !p.automated)?.text ?? 'Update the balance.';
         const key = `loy:stale:${a.accountId}:${week(now)}`;
         const before = await this.prisma.notification.count({ where: { userId, dedupeKey: key } });
-        await this.notifications.notify(userId, 'LOYALTY_STALE', `${a.program} data needs a refresh`, `${a.program} (${a.member}) has not been updated recently: ${(a.reasons as string[]).join('; ')}. ${todo}`, '/loyalty', key);
+        await this.notifications.notify(userId, 'LOYALTY_STALE', `${a.program} data needs a refresh`, `${a.program} (${a.member}) has not been updated recently: ${(a.reasons as string[]).join('; ')}. ${todo}`, '/loyalty', key, { profileId: (await this.prisma.loyaltyAccount.findUnique({ where: { id: a.accountId }, select: { profileId: true } }))?.profileId });
         if (!before) n++;
       }
     }

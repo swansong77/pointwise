@@ -270,7 +270,7 @@ describe('JobsService', () => {
     prisma.userOffer.findMany.mockResolvedValue([mk('soon', 1), mk('later', 30)]);
     const res = await jobs.run('scan-expiring-offers', now);
     expect(res).toEqual({ job: 'scan-expiring-offers', created: 1 });
-    expect(notifications.notify).toHaveBeenCalledWith('u', 'OFFER_EXPIRING', 'Offer expiring in 1 day', expect.stringContaining('Gold'), '/offers', 'expiring:soon:2026-06-16');
+    expect(notifications.notify).toHaveBeenCalledWith('u', 'OFFER_EXPIRING', 'Offer expiring in 1 day', expect.stringContaining('Gold'), '/offers', 'expiring:soon:2026-06-16', { profileId: undefined });
   });
 
   it('scan-renewals and scan-bonus-deadlines', async () => {

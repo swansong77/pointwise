@@ -900,6 +900,9 @@ model NotificationPreference {
   loyaltyStale    Boolean @default(true)
   /// hold non-critical notifications for the executive briefing instead of sending each one
   quietMode       Boolean @default(false)
+  /// a household member's own briefing: what is due for them (daily, only when there is something) and a weekly summary
+  briefingDaily   Boolean @default(true)
+  briefingWeekly  Boolean @default(true)
 }
 
 model AnalyticsEvent {

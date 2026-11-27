@@ -150,6 +150,9 @@ If you track card-linked offers, the **offers extension** (`docs/offer-automatio
 
 ## Step 6: Choose how PointWise talks to you
 
+**If you have your own sign-in** (a household member), this is all yours: **Notifications**, **Briefings** and **Settings** in your own menu. You are told about the things that concern *your* cards, points and offers, on *your* switches, with *your* Quiet Mode and *your* daily e-mail digest. You also get your own briefing: a daily one on days something is due, and a weekly summary. The household owner keeps getting everything about the household, as before, and cannot see your settings.
+
+
 1. **Settings, Notifications**: pick in-app, e-mail (only if the server owner set up mail) or browser notifications.
 2. **Quiet Mode** (Settings): routine updates are held and shown in one daily summary; urgent ones (an expiring credit, a points expiry) still arrive at once. Off by default.
 3. **Copilot and Chief of Staff** (optional, off by default): Copilot answers questions and plans from your data; Chief of Staff ranks the things that need doing and shows value at risk. Both work on the server without sending anything to outside AI services. A cloud AI model is used only if the server owner adds one **and** you separately agree in Settings; even then only a masked summary is shared (no names, card numbers or exact amounts), and Settings shows exactly what was sent.

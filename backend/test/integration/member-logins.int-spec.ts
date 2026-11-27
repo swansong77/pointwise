@@ -138,7 +138,7 @@ describe('TC-MEMBER: what a member sees', () => {
 
   it('everything else is denied to a member, and my view is denied to the owner', async () => {
     const j = await joined();
-    for (const path of ['/household', '/household/members', '/wallet/cards', '/portfolio', '/benefits', '/notifications', '/me', '/offers/inventory', '/offers/savings', '/loyalty/accounts', '/spending', '/chief/command-center', '/copilot/settings']) {
+    for (const path of ['/household', '/household/members', '/wallet/cards', '/portfolio', '/benefits', '/me', '/offers/inventory', '/offers/savings', '/loyalty/accounts', '/spending', '/chief/command-center', '/copilot/settings']) {
       const r = await api(app).get(V + path).set(bearer(j.member));
       expect({ path, denied: [403, 404].includes(r.status) }).toEqual({ path, denied: true });
     }

@@ -33,6 +33,7 @@ import { JOB_NAMES, JOB_QUEUE, JobName, JobsService } from "./jobs.service";
 import { ROTATING_SCHEDULE } from "./rotating.job";
 import { RemindersCoreModule } from "../reminders/reminders.module";
 import { CopilotModule } from "../copilot/copilot.controller";
+import { MemberModule } from "../member/member.module";
 
 /** Cron schedule (UTC). */
 export const SCHEDULE: Record<JobName, string> = {
@@ -87,6 +88,9 @@ export const SCHEDULE: Record<JobName, string> = {
   "copilot-monthly": "50 13 1 * *",
   /** the Chief of Staff's monthly board report, after the monthly briefing */
   "cos-board": "55 13 1 * *",
+  /** each household member with their own sign-in: their own daily briefing (only when something is due) and a weekly summary */
+  "member-daily": "5 13 * * *",
+  "member-weekly": "35 13 * * 1",
 };
 
 const JobNameEnum = Object.fromEntries(JOB_NAMES.map((n) => [n, n])) as Record<
@@ -200,6 +204,7 @@ const jobDeps = () => [
   DataJobsModule,
   RemindersCoreModule,
   CopilotModule,
+  MemberModule,
 ];
 
 @Module({
