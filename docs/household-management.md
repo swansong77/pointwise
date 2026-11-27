@@ -73,7 +73,7 @@ A member can have their own e-mail and password without becoming a separate acco
 
 Routes without `@MemberSafe()` return 403, including every write. Public routes (catalog, `GET /offers`) are unchanged. Backups and member exports never carry `loginUserId`, and invites are not restored.
 
-**Not yet (later phase):** their own notifications, push, quiet mode and briefings (phase 3). Members cannot yet add or edit cards themselves.
+**Not yet:** members cannot add or edit cards themselves (only read routes and their own channels are open).
 
 ## 7. Mailboxes and alert addresses per person (phase 2, 2026-12)
 
@@ -93,3 +93,15 @@ Each person can have their own channels, and what a channel carries lands only o
 **Routes opened to members:** `/mailboxes` (all, including the Gmail and Outlook sign-in and its callback, which sends a member back to `/my/mail`), `GET /capture/status`, `PATCH /capture/inbox`, `POST /capture/inbox/rotate`, `POST|DELETE /capture/items/:id`. Each one acts on the member's own channel user id and resolves their scope from the database.
 
 **Not yet:** a member's own notifications, push, quiet mode and briefings (phase 3). Notifications a member's mail causes (for example a benefit being marked used) still go to the owner.
+
+## 8. Notifications, push, Quiet Mode and briefings per person (phase 3, 2026-12)
+
+**Routing.** `NotificationsService.notify(...)` takes an optional `{ profileId }`. The household owner is notified exactly as before; when the item concerns a member who has their own sign-in, that member also gets their own copy. It follows **their** switches (`memberWants`, `TYPE_SWITCH` in `domain/member-access.ts`: a kind they switched off is not sent; reminders, briefings and system notices have no switch), **their** Quiet Mode, and points at `/my`. A failure in the member copy never stops the owner's.
+
+Items that name a member today: expiring offers (the card's member), card renewals, welcome-bonus deadlines, benefits about to reset (in-app, plus a push if the member turned that on), loyalty points, certificates, memberships and status at risk, stale loyalty data, and offer-sync results (the offer account's member). Household-level items (transfer bonuses, keyword offer alerts, the monthly offer digest) stay with the owner.
+
+**Their own notifications.** `/notifications` (list, unread count, read, read all, preferences) and `/notifications/push` are open to members and act on their own user id: their own list, their own preferences row (created at accept-invite), their own push subscriptions and daily e-mail digest (at their sign-in address). The owner cannot see them and they cannot see the owner's.
+
+**Their own briefing.** `domain/member-brief.ts` builds a daily and a weekly briefing from the member's own profile only (benefits, offers, points, certificates, renewals, bonuses; the week adds spending and balances): what needs them now, what is coming, fee and bonus decisions. No model is involved. A daily one exists only on days something is due; the weekly summary also reports spending and balances. It is stored once per period under the member's own user (`CopilotBriefing`) and announced with one `COPILOT` notification (exempt from Quiet Mode). `POST /member/briefings` makes one now, `GET /member/briefings` lists them. Jobs: `member-daily` (13:05 UTC) and `member-weekly` (Mondays 13:35 UTC), each skipping members who switched that briefing off (`NotificationPreference.briefingDaily` / `briefingWeekly`).
+
+**Not opened to members:** the household Copilot (briefings, settings, memory, goals), the Chief of Staff, and the owner's preferences. A member's preferences screen is `/my/settings`.

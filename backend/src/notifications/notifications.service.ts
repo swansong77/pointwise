@@ -1,10 +1,11 @@
-import { Body, Controller, Get, HttpCode, Injectable, Module, NotFoundException, Param, ParseUUIDPipe, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Injectable, Logger, Module, NotFoundException, Param, ParseUUIDPipe, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { NotificationType } from '@prisma/client';
 import { isCritical } from '../domain/notification-severity';
-import { AuthUser, CurrentUser } from '../common/decorators';
+import { MEMBER_HOME, memberWants } from '../domain/member-access';
+import { AuthUser, CurrentUser, MemberSafe } from '../common/decorators';
 import { PrismaService } from '../common/prisma.service';
 
 export class PreferencesDto {
@@ -13,6 +14,8 @@ export class PreferencesDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() bonusDeadline?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() offerAlerts?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() emailDigest?: boolean;
+  @ApiPropertyOptional({ description: 'A household member: send me my own daily briefing (only when there is something to say)' }) @IsOptional() @IsBoolean() briefingDaily?: boolean;
+  @ApiPropertyOptional({ description: 'A household member: send me my own weekly briefing' }) @IsOptional() @IsBoolean() briefingWeekly?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsInt() @Min(1) @Max(60) expiringDays?: number;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() benefitExpiring?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() benefitEmail?: boolean;
@@ -29,6 +32,7 @@ export class ListQuery {
 
 @Injectable()
 export class NotificationsService {
+  private readonly log = new Logger(NotificationsService.name);
   constructor(private readonly prisma: PrismaService) {}
 
   list(userId: string, q: ListQuery) {
@@ -58,7 +62,30 @@ export class NotificationsService {
    * With Quiet Mode on, a notification that is not critical (see `notification-severity.ts`) is stored as held: it is not counted as
    * unread, not e-mailed, and the executive briefing reports it. Critical ones, reminders and the briefings themselves go out at once.
    */
-  async notify(userId: string, type: NotificationType, title: string, body: string, link?: string, dedupeKey?: string) {
+  async notify(userId: string, type: NotificationType, title: string, body: string, link?: string, dedupeKey?: string, opts: { profileId?: string | null } = {}) {
+    const row = await this.store(userId, type, title, body, link, dedupeKey);
+    // an item that concerns one household member also goes to that member's own sign-in, if they have one
+    if (opts.profileId) await this.toMember(opts.profileId, type, title, body, dedupeKey);
+    return row;
+  }
+
+  /**
+   * The member's own copy of a household notification. It follows THEIR preferences (a kind they switched off is not sent) and THEIR Quiet
+   * Mode, points at their own view, and never stops the owner's notification if anything goes wrong here.
+   */
+  private async toMember(profileId: string, type: NotificationType, title: string, body: string, dedupeKey?: string) {
+    try {
+      const p = await this.prisma.profile.findUnique({ where: { id: profileId }, select: { loginUserId: true } });
+      if (!p?.loginUserId) return;
+      const prefs = await this.prisma.notificationPreference.findUnique({ where: { userId: p.loginUserId } });
+      if (!memberWants(type, prefs)) return;
+      await this.store(p.loginUserId, type, title, body, MEMBER_HOME, dedupeKey ? `m:${dedupeKey}` : undefined);
+    } catch (e) {
+      this.log.warn(`member copy of ${type} not delivered: ${(e as Error).message}`);
+    }
+  }
+
+  private async store(userId: string, type: NotificationType, title: string, body: string, link?: string, dedupeKey?: string) {
     const deferredAt = !isCritical(type) && (await this.quiet(userId)) ? new Date() : null;
     if (dedupeKey) {
       return this.prisma.notification.upsert({
@@ -93,6 +120,8 @@ export class NotificationsService {
 
 @ApiTags('notifications')
 @ApiBearerAuth()
+// a household member has their own notifications, preferences and push subscriptions (their own user id)
+@MemberSafe()
 @Controller('notifications')
 export class NotificationsController {
   constructor(private readonly n: NotificationsService) {}

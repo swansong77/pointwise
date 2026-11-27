@@ -63,7 +63,8 @@ test('the owner invites a member, who joins through the link and sees only their
   await expect(cards).not.toContainText('··1111');
   // a restricted shell: no search, no bell, no general navigation
   await expect(m.getByTestId('search-trigger')).toHaveCount(0);
-  await expect(m.getByTestId('nav-notifications')).toHaveCount(0);
+  // they have their own bell, and their own pages, but not the general navigation
+  await expect(m.getByTestId('nav-notifications')).toBeVisible();
   await expect(m.getByRole('link', { name: 'Wallet' })).toHaveCount(0);
   await axe(m);
 

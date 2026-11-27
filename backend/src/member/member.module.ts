@@ -1,8 +1,12 @@
-import { Controller, ForbiddenException, Get, Injectable, Module } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, ForbiddenException, Get, HttpCode, Injectable, Module, Post, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
+import { IsBoolean, IsIn, IsOptional } from 'class-validator';
 import { AuthUser, CurrentUser, MemberSafe } from '../common/decorators';
 import { PrismaService } from '../common/prisma.service';
 import { MemberContext } from '../domain/member-access';
+import { MEMBER_BRIEF_KINDS, MemberBriefKind } from '../domain/member-brief';
+import { NotificationsModule } from '../notifications/notifications.service';
+import { MemberBriefingService } from './member-briefing.service';
 import { benefitView, BenefitsModule, BenefitsService } from '../portfolio/benefits';
 import { PortfolioModule, PortfolioService } from '../portfolio/portfolio';
 
@@ -77,12 +81,23 @@ const needMember = (u: AuthUser): MemberContext => {
   return u.member;
 };
 
+export class BriefingQuery {
+  @ApiPropertyOptional({ enum: MEMBER_BRIEF_KINDS }) @IsOptional() @IsIn(MEMBER_BRIEF_KINDS as unknown as string[]) kind?: MemberBriefKind;
+}
+export class MakeBriefingDto {
+  @ApiProperty({ enum: MEMBER_BRIEF_KINDS }) @IsIn(MEMBER_BRIEF_KINDS as unknown as string[]) kind: MemberBriefKind;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() force?: boolean;
+}
+
 @ApiTags('member')
 @ApiBearerAuth()
 @MemberSafe()
 @Controller('member')
 export class MemberController {
-  constructor(private readonly view: MemberViewService) {}
+  constructor(
+    private readonly view: MemberViewService,
+    private readonly briefings: MemberBriefingService,
+  ) {}
 
   @Get('me') me(@CurrentUser() u: AuthUser) {
     return this.view.me(needMember(u), u.email);
@@ -93,7 +108,23 @@ export class MemberController {
   @Get('household') household(@CurrentUser() u: AuthUser) {
     return this.view.household(needMember(u));
   }
+  /** The member's own saved briefings, newest first. */
+  @Get('briefings') briefingList(@CurrentUser() u: AuthUser, @Query() q: BriefingQuery) {
+    needMember(u);
+    return this.briefings.list(u.sub, q.kind);
+  }
+  /** Make this period's briefing now. A daily one is only made when something is due, so the answer can be empty. */
+  @Post('briefings') @HttpCode(200) async briefingNow(@CurrentUser() u: AuthUser, @Body() dto: MakeBriefingDto) {
+    needMember(u);
+    const r = await this.briefings.generate(u.sub, dto.kind, new Date(), { force: !!dto.force });
+    return { briefing: r.briefing, message: r.briefing ? null : dto.kind === 'DAILY' ? 'Nothing is due today, so there is no briefing.' : 'There is nothing to report this week.' };
+  }
 }
 
-@Module({ imports: [PortfolioModule, BenefitsModule], controllers: [MemberController], providers: [MemberViewService] })
+@Module({
+  imports: [PortfolioModule, BenefitsModule, NotificationsModule],
+  controllers: [MemberController],
+  providers: [MemberViewService, MemberBriefingService],
+  exports: [MemberBriefingService],
+})
 export class MemberModule {}

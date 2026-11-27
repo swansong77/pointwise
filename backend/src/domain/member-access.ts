@@ -1,3 +1,4 @@
+import type { NotificationType } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
 
 /**
@@ -55,3 +56,37 @@ export interface MemberContext {
   visibility: MemberVisibility;
   nickname: string;
 }
+
+// ───────────── notifications for a member ─────────────
+
+/**
+ * Which of the member's own notification switches governs a notification type. A household item that concerns one member is also sent to
+ * that member's own sign-in, and only if they have not switched that kind off for themselves. Types without a switch (reminders, the
+ * briefings themselves, system notices) always arrive.
+ */
+export const TYPE_SWITCH: Partial<Record<NotificationType, MemberSwitch>> = {
+  OFFER_EXPIRING: 'offerExpiring',
+  CARD_RENEWAL: 'cardRenewal',
+  BONUS_DEADLINE: 'bonusDeadline',
+  OFFER_ALERT: 'offerAlerts',
+  BENEFIT_EXPIRING: 'benefitExpiring',
+  TRANSFER_BONUS: 'transferBonuses',
+  OFFER_NEW_HIGH_VALUE: 'offerAutomation',
+  OFFER_AUTO_ENROLLED: 'offerAutomation',
+  OFFER_ENROLL_FAILED: 'offerAutomation',
+  OFFER_SYNC_FAILED: 'offerAutomation',
+  OFFER_SAVINGS_DIGEST: 'offerAutomation',
+  LOYALTY_EXPIRING: 'loyaltyExpiring',
+  LOYALTY_STALE: 'loyaltyStale',
+};
+export type MemberSwitch = 'offerExpiring' | 'cardRenewal' | 'bonusDeadline' | 'offerAlerts' | 'benefitExpiring' | 'transferBonuses' | 'offerAutomation' | 'loyaltyExpiring' | 'loyaltyStale';
+
+/** A member without a preferences row has everything on, like any new account. */
+export function memberWants(type: NotificationType, prefs: Partial<Record<MemberSwitch, boolean>> | null): boolean {
+  const key = TYPE_SWITCH[type];
+  if (!key || !prefs) return true;
+  return prefs[key] !== false;
+}
+
+/** Household items are never worded for the owner's pages: a member's own copy always points at their own view. */
+export const MEMBER_HOME = '/my';

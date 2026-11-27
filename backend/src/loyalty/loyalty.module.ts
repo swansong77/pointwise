@@ -176,33 +176,39 @@ export class LoyaltyJobsService {
     let n = 0;
     for (const u of users) {
       if (u.notificationPrefs?.loyaltyExpiring === false) continue;
-      const send = async (key: string, title: string, body: string) => {
+      const profileOf = async (e: 'acct' | 'cert' | 'mem' | 'status', id: string): Promise<string | null> => {
+        const where = { where: { id }, select: { profileId: true } };
+        const r = e === 'acct' ? await this.prisma.loyaltyAccount.findUnique(where) : e === 'cert' ? await this.prisma.loyaltyCertificate.findUnique(where) : e === 'mem' ? await this.prisma.membership.findUnique(where) : await this.prisma.eliteStatus.findUnique(where);
+        return r?.profileId ?? null;
+      };
+      const send = async (key: string, title: string, body: string, whose: ['acct' | 'cert' | 'mem' | 'status', string]) => {
         const before = await this.prisma.notification.count({ where: { userId: u.id, dedupeKey: key } });
-        await this.notifications.notify(u.id, 'LOYALTY_EXPIRING', title, body, '/loyalty', key);
+        // the member whose points, certificate, membership or status it is also hears about it, on their own sign-in
+        await this.notifications.notify(u.id, 'LOYALTY_EXPIRING', title, body, '/loyalty', key, { profileId: await profileOf(...whose) });
         if (!before) n++;
       };
       for (const a of await this.svc.accounts(u.id, now)) {
         const p = a.prediction;
         const t = alertThreshold(p.daysLeft);
         if (!t || !p.expiresAt || p.atRiskPoints <= 0) continue;
-        await send(`loy:acct:${a.id}:${day(p.expiresAt)}:${t}`, `${a.programName}: ${a.unit} at risk`, `${alertText(a.programName, a.unit, p)} Confidence ${p.confidence}% (${p.source}).`);
+        await send(`loy:acct:${a.id}:${day(p.expiresAt)}:${t}`, `${a.programName}: ${a.unit} at risk`, `${alertText(a.programName, a.unit, p)} Confidence ${p.confidence}% (${p.source}).`, ['acct', a.id]);
       }
       for (const c of await this.svc.certificates(u.id, undefined, now)) {
         const v = c.view;
         const t = alertThreshold(v.daysLeft);
         if (v.effectiveStatus !== 'AVAILABLE' || !t || !c.expiresAt) continue;
-        await send(`loy:cert:${c.id}:${t}`, `${c.name} expires in ${v.daysLeft} day(s)`, `${c.name} (${c.member}) expires ${day(c.expiresAt)}.${c.potentialValueCents ? ` Potential value $${Math.round((c.potentialValueCents * c.quantity) / 100)}.` : ''}`);
+        await send(`loy:cert:${c.id}:${t}`, `${c.name} expires in ${v.daysLeft} day(s)`, `${c.name} (${c.member}) expires ${day(c.expiresAt)}.${c.potentialValueCents ? ` Potential value $${Math.round((c.potentialValueCents * c.quantity) / 100)}.` : ''}`, ['cert', c.id]);
       }
       for (const m of await this.svc.memberships(u.id, [], now)) {
         const when = m.expiresAt ?? m.renewalAt;
         const t = alertThreshold(m.view.daysLeft);
         if (!when || !t) continue;
-        await send(`loy:mem:${m.id}:${day(when)}:${t}`, `${m.name} expires in ${m.view.daysLeft} day(s)`, m.view.headline);
+        await send(`loy:mem:${m.id}:${day(when)}:${t}`, `${m.name} expires in ${m.view.daysLeft} day(s)`, m.view.headline, ['mem', m.id]);
       }
       for (const s of await this.svc.statuses(u.id, now)) {
         const t = alertThreshold(s.view.daysLeft);
         if (!s.current || s.maintained || !t || !s.expiresAt || s.view.risk === 'LOW' || s.view.risk === 'NONE') continue;
-        await send(`loy:status:${s.id}:${t}`, `${s.program} ${s.level} status at risk`, `${s.view.headline}. ${s.view.actions[0] ?? ''}`.trim());
+        await send(`loy:status:${s.id}:${t}`, `${s.program} ${s.level} status at risk`, `${s.view.headline}. ${s.view.actions[0] ?? ''}`.trim(), ['status', s.id]);
       }
     }
     return n;

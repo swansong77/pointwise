@@ -16,7 +16,7 @@ import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsString, IsUrl, MaxLength, ValidateNested } from 'class-validator';
 import { Job, Queue } from 'bullmq';
-import { AuthUser, CurrentUser } from '../common/decorators';
+import { AuthUser, CurrentUser, MemberSafe } from '../common/decorators';
 import { PrismaService } from '../common/prisma.service';
 import { MailService } from '../jobs/mail.service';
 
@@ -177,6 +177,7 @@ export class DeliveryProcessor extends WorkerHost {
 
 @ApiTags('notifications')
 @ApiBearerAuth()
+@MemberSafe()
 @Controller('notifications/push')
 export class PushController {
   constructor(private readonly push: PushService) {}

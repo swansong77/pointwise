@@ -32,7 +32,7 @@ describe('Member sign-ins API', () => {
                   expect(JSON.stringify(ov.body)).to.contain('2222').and.not.to.contain('1111');
                 });
                 // everything else is denied
-                for (const p of ['/household', '/wallet/cards', '/portfolio', '/notifications', '/me']) {
+                for (const p of ['/household', '/wallet/cards', '/portfolio', '/loyalty/accounts', '/me']) {
                   cy.request({ url: '/api/v1' + p, headers: auth(member), failOnStatusCode: false }).its('status').should('eq', 403);
                 }
                 cy.request({ url: '/api/v1/member/household', headers: auth(member), failOnStatusCode: false }).its('status').should('eq', 403);
@@ -79,6 +79,38 @@ describe('Member sign-ins API', () => {
                   cy.request({ method: 'POST', url: '/api/v1/mailboxes', headers: auth(owner), body: { label: 'x', host: 'imap.example.com', username: 'x@example.com', password: 'p', profileId: '00000000-0000-4000-8000-000000000000' }, failOnStatusCode: false }).its('status').should('eq', 400);
                 });
               });
+            });
+          });
+        });
+      });
+    });
+  });
+
+  it('CY-MEMBER-03 a member has their own notifications, preferences and briefing; none of it reaches the owner', () => {
+    cy.request('POST', '/api/v1/auth/register', { email: 'cy.owner3.' + stamp() + '@e2e.test', password: 'e2e-password-1', name: 'Owner' }).then((reg) => {
+      const owner = reg.body.accessToken as string;
+      cy.request({ method: 'POST', url: '/api/v1/subscription/checkout', headers: auth(owner), body: { interval: 'month' } });
+      cy.request({ method: 'POST', url: '/api/v1/household/members', headers: auth(owner), body: { nickname: 'Riley', relationship: 'SPOUSE' } }).then((rm) => {
+        const riley = rm.body.id as string;
+        cy.request('/api/v1/cards/contoso-gold').then((card) => {
+          const opened = new Date(Date.now() - 355 * 86_400_000).toISOString();
+          cy.request({ method: 'POST', url: '/api/v1/wallet/cards', headers: auth(owner), body: { cardId: card.body.id, profileId: riley, lastFour: '2222', approvedAt: opened } });
+          cy.request({ method: 'POST', url: `/api/v1/household/members/${riley}/invite`, headers: auth(owner) }).then((inv) => {
+            cy.request('POST', '/api/v1/auth/accept-invite', { token: tokenOf(inv.body.url), email: 'cy.riley3.' + stamp() + '@e2e.test', password: 'riley-password-9' }).then((acc) => {
+              const member = acc.body.accessToken as string;
+              // their own preferences, saved for them only
+              cy.request({ method: 'PUT', url: '/api/v1/notifications/preferences', headers: auth(member), body: { briefingWeekly: false, quietMode: true } }).its('body').should('include', { briefingWeekly: false, quietMode: true });
+              cy.request({ url: '/api/v1/notifications/preferences', headers: auth(owner) }).its('body').should('include', { quietMode: false });
+              // their own briefing, built from their own card
+              cy.request({ method: 'POST', url: '/api/v1/member/briefings', headers: auth(member), body: { kind: 'DAILY' } }).then((b) => {
+                expect(b.body.briefing.content.kind).to.eq('DAILY');
+                expect(JSON.stringify(b.body.briefing.content)).to.match(/renews/);
+              });
+              cy.request({ url: '/api/v1/member/briefings', headers: auth(member) }).its('body').should('have.length', 1);
+              cy.request({ url: '/api/v1/member/briefings', headers: auth(owner), failOnStatusCode: false }).its('status').should('eq', 403);
+              // their notification list is their own
+              cy.request({ url: '/api/v1/notifications', headers: auth(member) }).its('body').should('be.an', 'array');
+              cy.request({ url: '/api/v1/copilot/briefings', headers: auth(member), failOnStatusCode: false }).its('status').should('be.oneOf', [403, 404]);
             });
           });
         });
