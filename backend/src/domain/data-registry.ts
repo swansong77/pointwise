@@ -139,6 +139,9 @@ export const DATA_RULES: Record<string, ModelRule> = {
   Reminder: { cls: 'USER', scope: U, natural: ['title', 'dueAt'] },
   // what AI Mode sent to a model (already redacted), for the member to inspect
   AiDisclosure: { cls: 'USER', scope: U },
+  // goals and what Copilot remembers (preferences, decisions); part of the member's data
+  Goal: { cls: 'USER', scope: U, natural: ['title', 'kind'] },
+  CopilotMemory: { cls: 'USER', scope: U, natural: ['kind', 'key'] },
   AiUsage: { cls: 'EPHEMERAL' },
   AgentRun: { cls: 'EPHEMERAL' },
   AgentStep: { cls: 'EPHEMERAL' },
