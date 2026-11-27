@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ConflictException,
   ForbiddenException,
   Get,
   HttpCode,
@@ -16,10 +17,13 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiPropertyOptional, ApiTags, PartialType } from '@nestjs/swagger';
 import { ArrayMaxSize, IsArray, IsBoolean, IsEmail, IsEnum, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
-import { CardholderRelationship, Profile, CreditBand } from '@prisma/client';
+import { CardholderRelationship, Profile, CreditBand, MemberVisibility } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
 import { AuthUser, CurrentUser } from '../common/decorators';
 import { PrismaService } from '../common/prisma.service';
 import { limitsFor } from '../domain/entitlements';
+import { canHaveLogin, inviteExpiry, loginStatus, newInviteToken, VISIBILITIES } from '../domain/member-access';
+import { MailService } from '../jobs/mail.service';
 
 export const MAX_MEMBERS = 10;
 
@@ -34,6 +38,8 @@ export class MemberDto {
   @ApiPropertyOptional({ type: [String], enum: ['TRAVEL', 'CASHBACK', 'HOTEL', 'AIRLINE', 'LOW_FEE'], description: 'Reward goals used by the recommendation engine (never sent to an AI provider)' })
   @IsOptional() @IsArray() @ArrayMaxSize(5) @IsIn(['TRAVEL', 'CASHBACK', 'HOTEL', 'AIRLINE', 'LOW_FEE'], { each: true }) goals?: string[];
   @ApiPropertyOptional({ description: 'Can apply for business cards' }) @IsOptional() @IsBoolean() hasBusiness?: boolean;
+  @ApiPropertyOptional({ enum: VISIBILITIES, description: "What this member's own sign-in may see: OWN (their own cards, benefits, loyalty, spending) or HOUSEHOLD (also the household overview, read only)" })
+  @IsOptional() @IsIn(VISIBILITIES) visibility?: MemberVisibility;
 }
 export class UpdateMemberDto extends PartialType(MemberDto) {}
 
@@ -48,7 +54,38 @@ export class HouseholdDto {
  */
 @Injectable()
 export class HouseholdsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+    private readonly mail: MailService,
+  ) {}
+
+  /** A member row as the owner sees it: the sign-in is described, never exposed (no user id, no hash). */
+  shapeMembers<T extends Profile>(rows: T[]) {
+    return this.shape(rows);
+  }
+
+  private async shape<T extends Profile>(rows: T[]) {
+    const now = new Date();
+    const [users, invites] = await Promise.all([
+      this.prisma.user.findMany({ where: { id: { in: rows.map((r) => r.loginUserId).filter((x): x is string => !!x) } }, select: { id: true, email: true } }),
+      this.prisma.memberInvite.findMany({ where: { profileId: { in: rows.map((r) => r.id) }, usedAt: null, revokedAt: null, expiresAt: { gt: now } } }),
+    ]);
+    return rows.map((r) => {
+      const { loginUserId, loginSince, ...rest } = r;
+      const open = invites.filter((i) => i.profileId === r.id);
+      return {
+        ...rest,
+        login: {
+          status: loginStatus({ loginUserId }, open, now),
+          canHaveLogin: canHaveLogin(r),
+          email: users.find((u) => u.id === loginUserId)?.email ?? null,
+          since: loginSince,
+          inviteExpiresAt: open.map((i) => i.expiresAt).sort((a, b) => b.getTime() - a.getTime())[0] ?? null,
+        },
+      };
+    });
+  }
 
   async ensure(userId: string) {
     const [existing, primary] = await Promise.all([
@@ -91,9 +128,13 @@ export class HouseholdsService {
       include: { _count: { select: { cards: true } } },
     });
     const unassigned = await this.prisma.walletCard.count({ where: { wallet: { userId }, profileId: null } });
+    const shaped = await this.shape(members);
     return {
       ...hh,
-      members: members.map(({ _count, ...m }) => ({ ...m, cardCount: _count.cards + (m.isPrimary ? unassigned : 0) })),
+      members: shaped.map((m) => {
+        const { _count } = members.find((x) => x.id === m.id)!;
+        return { ...m, cardCount: _count.cards + (m.isPrimary ? unassigned : 0) };
+      }),
     };
   }
 
@@ -144,15 +185,63 @@ export class HouseholdsService {
     }
     return this.prisma.profile.update({
       where: { id },
-      data: { nickname: dto.nickname, relationship: dto.relationship, email: dto.email, birthYear: dto.birthYear, ...(dto.creditBand !== undefined && { creditBand: dto.creditBand }), ...(dto.goals !== undefined && { goals: [...new Set(dto.goals)] }), ...(dto.hasBusiness !== undefined && { hasBusiness: dto.hasBusiness }) },
+      data: { nickname: dto.nickname, relationship: dto.relationship, email: dto.email, birthYear: dto.birthYear, visibility: dto.visibility, ...(dto.creditBand !== undefined && { creditBand: dto.creditBand }), ...(dto.goals !== undefined && { goals: [...new Set(dto.goals)] }), ...(dto.hasBusiness !== undefined && { hasBusiness: dto.hasBusiness }) },
     });
   }
 
   async removeMember(userId: string, id: string): Promise<void> {
     const p = await this.owned(userId, id);
     if (p.isPrimary) throw new ForbiddenException('Cannot delete the primary member');
-    // cards fall back to the primary member (profileId → null)
-    await this.prisma.profile.delete({ where: { id } });
+    // cards fall back to the primary member (profileId → null); the member's own sign-in goes with them
+    await this.prisma.$transaction([
+      ...(p.loginUserId ? [this.prisma.user.delete({ where: { id: p.loginUserId } })] : []),
+      this.prisma.profile.delete({ where: { id } }),
+    ]);
+  }
+
+  /**
+   * A one-time link the owner shares (and, when the member has an address on file and mail is configured, e-mails).
+   * The token is returned once; only its hash is stored. A new invite replaces any open one.
+   */
+  async invite(userId: string, id: string) {
+    const p = await this.owned(userId, id);
+    if (!canHaveLogin(p)) throw new BadRequestException('The account owner already has a sign-in');
+    if (p.loginUserId) throw new ConflictException('This member already has a sign-in. Remove it first to invite again.');
+    const { token, hash } = newInviteToken();
+    const now = new Date();
+    const expiresAt = inviteExpiry(now);
+    await this.prisma.$transaction([
+      this.prisma.memberInvite.updateMany({ where: { profileId: id, usedAt: null, revokedAt: null }, data: { revokedAt: now } }),
+      this.prisma.memberInvite.create({ data: { profileId: id, tokenHash: hash, expiresAt } }),
+      this.prisma.auditLog.create({ data: { actorId: userId, action: 'member.invite.created', entity: 'Profile', entityId: id } }),
+    ]);
+    const base = String(this.config.get('APP_URL') ?? 'http://localhost:3000').replace(/\/+$/, '');
+    const url = `${base}/join/${token}`;
+    let emailed = false;
+    if (p.email) {
+      const owner = await this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+      emailed = await this.mail.send(
+        p.email,
+        'You are invited to PointWise',
+        `${owner?.name ?? 'Someone'} invited you to your household's PointWise.\n\nChoose your own sign-in here (valid for 7 days, works once):\n${url}\n`,
+      );
+    }
+    return { url, expiresAt, emailed };
+  }
+
+  async revokeInvite(userId: string, id: string): Promise<void> {
+    await this.owned(userId, id);
+    await this.prisma.memberInvite.updateMany({ where: { profileId: id, usedAt: null, revokedAt: null }, data: { revokedAt: new Date() } });
+  }
+
+  /** Removes the member's own sign-in (and with it their mailboxes, alert address and notifications). Their cards and data stay. */
+  async removeLogin(userId: string, id: string): Promise<void> {
+    const p = await this.owned(userId, id);
+    if (!p.loginUserId) throw new NotFoundException('This member has no sign-in');
+    await this.prisma.$transaction([
+      this.prisma.user.delete({ where: { id: p.loginUserId } }),
+      this.prisma.auditLog.create({ data: { actorId: userId, action: 'member.login.removed', entity: 'Profile', entityId: id } }),
+    ]);
   }
 
   /** Enforced by the wallet: minors can only be authorized users. */
@@ -175,14 +264,23 @@ export class HouseholdsController {
   @Patch() rename(@CurrentUser() u: AuthUser, @Body() dto: HouseholdDto) {
     return this.hh.rename(u.sub, dto);
   }
-  @Get('members') members(@CurrentUser() u: AuthUser) {
-    return this.hh.members(u.sub);
+  @Get('members') async members(@CurrentUser() u: AuthUser) {
+    return this.hh.shapeMembers(await this.hh.members(u.sub));
   }
-  @Post('members') add(@CurrentUser() u: AuthUser, @Body() dto: MemberDto) {
-    return this.hh.addMember(u.sub, dto);
+  @Post('members') async add(@CurrentUser() u: AuthUser, @Body() dto: MemberDto) {
+    return (await this.hh.shapeMembers([await this.hh.addMember(u.sub, dto)]))[0];
   }
-  @Patch('members/:id') update(@CurrentUser() u: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateMemberDto) {
-    return this.hh.updateMember(u.sub, id, dto);
+  @Patch('members/:id') async update(@CurrentUser() u: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateMemberDto) {
+    return (await this.hh.shapeMembers([await this.hh.updateMember(u.sub, id, dto)]))[0];
+  }
+  @Post('members/:id/invite') @HttpCode(200) invite(@CurrentUser() u: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.hh.invite(u.sub, id);
+  }
+  @Delete('members/:id/invite') @HttpCode(204) revokeInvite(@CurrentUser() u: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.hh.revokeInvite(u.sub, id);
+  }
+  @Delete('members/:id/login') @HttpCode(204) removeLogin(@CurrentUser() u: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.hh.removeLogin(u.sub, id);
   }
   @Delete('members/:id') @HttpCode(204) remove(@CurrentUser() u: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.hh.removeMember(u.sub, id);

@@ -38,7 +38,9 @@ export const DATA_RULES: Record<string, ModelRule> = {
   RefreshToken: { cls: 'EPHEMERAL' },
   PersonalAccessToken: { cls: 'USER', importable: false },
   Household: { cls: 'USER', scope: 'ownerId', natural: ['name'] },
-  Profile: { cls: 'USER', scope: U, natural: ['nickname'] },
+  Profile: { cls: 'USER', scope: U, natural: ['nickname'], drop: ['loginUserId', 'loginSince'] },
+  // one-time sign-in links: never exported, and not worth restoring (the owner makes a new one)
+  MemberInvite: { cls: 'EPHEMERAL' },
   Wallet: { cls: 'USER', scope: U, natural: ['userId'] },
   Subscription: { cls: 'USER', scope: U, drop: ['providerCustomerId', 'providerSubId'], importable: false },
   EmailInbox: { cls: 'USER', importable: false },

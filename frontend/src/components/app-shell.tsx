@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { CommandBar } from '@/components/command-bar';
-import { ADMIN_NAV, NAV } from '@/lib/nav';
+import { ADMIN_NAV, MEMBER_HOUSEHOLD_NAV, MEMBER_NAV, NAV } from '@/lib/nav';
 import { ASK_EVENT, isOpenShortcut } from '@/lib/search';
 import { useUnreadCount } from '@/lib/queries';
 import { initials } from '@/lib/format';
@@ -15,7 +15,8 @@ import { initials } from '@/lib/format';
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const unread = useUnreadCount();
+  const member = session?.user?.member;
+  const unread = useUnreadCount(!member);
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [seed, setSeed] = useState<{ q: string; nonce: number } | null>(null);
@@ -51,7 +52,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const links = isAdmin ? [...NAV, ...ADMIN_NAV] : NAV;
+  // a member's own sign-in sees only their own pages; the server denies the rest as well
+  const links = member ? (member.visibility === 'HOUSEHOLD' ? [...MEMBER_NAV, MEMBER_HOUSEHOLD_NAV] : MEMBER_NAV) : isAdmin ? [...NAV, ...ADMIN_NAV] : NAV;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -63,11 +65,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button className="md:hidden" aria-label="Toggle navigation" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
             ☰
           </button>
-          <Link href="/dashboard" className="flex items-center" aria-label="PointWise home">
+          <Link href={member ? '/my' : '/dashboard'} className="flex items-center" aria-label="PointWise home">
             <Logo size="sm" />
           </Link>
           <div className="ml-auto flex items-center gap-3">
-            <button
+            {!member && (<><button
               type="button"
               onClick={() => setSearchOpen(true)}
               data-testid="search-trigger"
@@ -87,8 +89,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               className="rounded-full p-2 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-brand-500 md:hidden"
             >
               <span aria-hidden>🔍</span>
-            </button>
-            <Link
+            </button></>)}
+            {!member && (<Link
               href="/notifications"
               className="relative rounded-full p-2 hover:bg-slate-100"
               aria-label={`Notifications (${unread.data?.count ?? 0} unread)`}
@@ -100,7 +102,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   {unread.data.count}
                 </span>
               )}
-            </Link>
+            </Link>)}
             <span className="grid h-8 w-8 place-items-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700" title={session?.user?.email}>
               {initials(session?.user?.name, session?.user?.email)}
             </span>
@@ -136,7 +138,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
-      <button
+      {!member && <button
         type="button"
         onClick={() => setSearchOpen(true)}
         aria-label="Search or ask a question"
@@ -144,8 +146,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-40 grid h-12 w-12 place-items-center rounded-full bg-brand-600 text-xl text-white shadow-lg hover:bg-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 md:hidden"
       >
         <span aria-hidden>🔍</span>
-      </button>
-      <CommandBar open={searchOpen} onClose={() => setSearchOpen(false)} isAdmin={isAdmin} seed={seed} />
+      </button>}
+      {!member && <CommandBar open={searchOpen} onClose={() => setSearchOpen(false)} isAdmin={isAdmin} seed={seed} />}
     </div>
   );
 }

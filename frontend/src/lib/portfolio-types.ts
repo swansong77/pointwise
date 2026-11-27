@@ -15,6 +15,9 @@ export interface Member {
   goals?: string[];
   hasBusiness?: boolean;
   cardCount?: number;
+  visibility?: 'OWN' | 'HOUSEHOLD';
+  /** The member's own sign-in, as the owner sees it */
+  login?: { status: 'NONE' | 'INVITED' | 'ACTIVE'; canHaveLogin: boolean; email: string | null; since: string | null; inviteExpiresAt: string | null };
 }
 
 export interface Household {

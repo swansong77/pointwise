@@ -45,3 +45,7 @@ export const ADMIN_NAV: NavItem[] = [
   { href: '/admin/ops', label: 'Operations', icon: '🩺' },
   { href: '/admin/backup', label: 'Backup & Migration', icon: '💾' },
 ];
+
+/** What a household member's own sign-in sees. The household overview is added only when the owner shares it. */
+export const MEMBER_NAV: NavItem[] = [{ href: '/my', label: 'My view', icon: '🏠' }];
+export const MEMBER_HOUSEHOLD_NAV: NavItem = { href: '/my/household', label: 'Household', icon: '👪' };

@@ -1,19 +1,30 @@
+import { NextResponse } from 'next/server';
 import { withAuth } from 'next-auth/middleware';
 
-/** Route protection: all app pages need a session; /admin additionally needs ADMIN. */
-export default withAuth({
-  callbacks: {
-    authorized: ({ token, req }) => {
-      if (!token || token.error === 'RefreshAccessTokenError') return false;
-      if (req.nextUrl.pathname.startsWith('/admin')) return token.role === 'ADMIN';
-      return true;
-    },
+/** Route protection: all app pages need a session; /admin additionally needs ADMIN. A household member's own sign-in only gets /my. */
+export default withAuth(
+  function middleware(req) {
+    const t = req.nextauth.token;
+    const path = req.nextUrl.pathname;
+    if (t?.member && path !== '/my' && !path.startsWith('/my/')) return NextResponse.redirect(new URL('/my', req.url));
+    return NextResponse.next();
   },
-  pages: { signIn: '/login' },
-});
+  {
+    callbacks: {
+      authorized: ({ token, req }) => {
+        if (!token || token.error === 'RefreshAccessTokenError') return false;
+        if (req.nextUrl.pathname.startsWith('/admin')) return token.role === 'ADMIN';
+        return true;
+      },
+    },
+    pages: { signIn: '/login' },
+  },
+);
 
 export const config = {
   matcher: [
+    '/my/:path*',
+    '/my',
     '/dashboard/:path*',
     '/wallet/:path*',
     '/offers/:path*',

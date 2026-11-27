@@ -86,7 +86,12 @@ export class UsersService {
 
   /** Hard delete; cascades remove all user-owned rows. */
   async delete(userId: string) {
-    await this.prisma.user.delete({ where: { id: userId } });
+    // household members' own sign-ins belong to this household: they go with it
+    const logins = await this.prisma.profile.findMany({ where: { userId, loginUserId: { not: null } }, select: { loginUserId: true } });
+    await this.prisma.$transaction([
+      ...logins.map((l) => this.prisma.user.delete({ where: { id: l.loginUserId as string } })),
+      this.prisma.user.delete({ where: { id: userId } }),
+    ]);
   }
 
   profiles(userId: string) {
@@ -105,7 +110,11 @@ export class UsersService {
     const p = await this.prisma.profile.findUnique({ where: { id } });
     if (!p || p.userId !== userId) throw new NotFoundException('Profile not found');
     if (p.isPrimary) throw new ForbiddenException('Cannot delete the primary profile');
-    await this.prisma.profile.delete({ where: { id } });
+    // a member's own sign-in goes with them
+    await this.prisma.$transaction([
+      ...(p.loginUserId ? [this.prisma.user.delete({ where: { id: p.loginUserId } })] : []),
+      this.prisma.profile.delete({ where: { id } }),
+    ]);
   }
 
   alerts(userId: string) {

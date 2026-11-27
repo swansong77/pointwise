@@ -10,7 +10,7 @@ interface TokenPair {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
-  user: { id: string; email: string; name: string | null; role: 'USER' | 'ADMIN' };
+  user: { id: string; email: string; name: string | null; role: 'USER' | 'ADMIN'; member?: { profileId: string; nickname: string; visibility: 'OWN' | 'HOUSEHOLD'; household: string } };
 }
 
 /** First IP from forwarding headers of the incoming browser request (set by the edge proxy). */
@@ -40,6 +40,7 @@ function fromPair(pair: TokenPair): JWT {
     email: pair.user.email,
     name: pair.user.name,
     role: pair.user.role,
+    member: pair.user.member,
     accessToken: pair.accessToken,
     refreshToken: pair.refreshToken,
     // refresh 60s before expiry
@@ -111,7 +112,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       session.accessToken = token.accessToken;
       session.error = token.error;
-      session.user = { id: token.sub as string, email: token.email ?? '', name: token.name ?? null, role: token.role ?? 'USER' };
+      session.user = { id: token.sub as string, email: token.email ?? '', name: token.name ?? null, role: token.role ?? 'USER', member: token.member };
       return session;
     },
   },
