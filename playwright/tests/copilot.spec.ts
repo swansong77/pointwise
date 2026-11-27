@@ -98,7 +98,9 @@ test.describe('AI Mode', () => {
     await page.getByTestId('copilot-enabled').click();
     await expect(page.getByTestId('copilot-enabled')).toBeChecked();
     await page.getByLabel('Default mode').selectOption('PLANNING');
+    const saved = page.waitForResponse((r) => r.url().includes('/copilot/settings') && r.request().method() === 'PUT' && r.ok());
     await page.getByLabel('Response style').selectOption('CONCISE');
+    await saved;
     await page.reload();
     await expect(page.getByTestId('copilot-enabled')).toBeChecked();
     await expect(page.getByLabel('Default mode')).toHaveValue('PLANNING');

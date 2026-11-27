@@ -1,15 +1,129 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui';
+import { json, useApi } from '@/lib/api';
 import { CallButton } from '@/components/call-button';
-import { confidenceWord, CopilotResponse, HORIZONS, HORIZON_LABEL, PlanItem } from '@/lib/copilot';
+import { confidenceWord, CopilotResponse, HORIZONS, HORIZON_LABEL, PlanItem, WhatIfOutcome } from '@/lib/copilot';
 import { money } from '@/lib/format';
 
 const tone = (c: number) => (c >= 80 ? 'green' : c >= 55 ? 'amber' : 'red');
 const EFFECT = { UP: '▲', DOWN: '▼', NEUTRAL: '•' } as const;
+const DIRECTION = {
+  BETTER: ['▲', 'better', 'text-emerald-700'],
+  WORSE: ['▼', 'worse', 'text-red-700'],
+  SAME: ['•', 'same', 'text-slate-600'],
+  UNKNOWN: ['', '', 'text-slate-600'],
+} as const;
+const VERDICT = { FAVORABLE: ['Favorable', 'green'], UNFAVORABLE: ['Unfavorable', 'red'], MIXED: ['Mixed', 'amber'], NEUTRAL: ['About even', 'slate'] } as const;
 
-function Item({ i, onNavigate }: { i: PlanItem; onNavigate?: () => void }) {
+/** Snooze, dismiss or mark done: Copilot remembers and stops showing the item for a while. */
+function Decide({ id }: { id: string }) {
+  const api = useApi();
+  const qc = useQueryClient();
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const act = async (action: 'SNOOZE' | 'DISMISS' | 'DONE', label: string, days?: number) => {
+    setErr(null);
+    try {
+      await api('/copilot/memory/decisions', { method: 'POST', ...json({ itemId: id, action, ...(days ? { days } : {}) }) });
+      setMsg(label);
+      void qc.invalidateQueries({ queryKey: ['copilot'] });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'That did not work.');
+    }
+  };
+  if (msg)
+    return (
+      <p role="status" className="text-xs text-slate-600" data-testid="decision-result">
+        {msg}
+      </p>
+    );
+  const b = 'rounded-lg px-2 py-1 text-xs text-slate-700 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-brand-500';
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1" data-testid="decide">
+      <button type="button" className={b} onClick={() => act('DONE', 'Marked done. It will stay hidden for 30 days.')}>
+        Done
+      </button>
+      <button type="button" className={b} onClick={() => act('SNOOZE', 'Snoozed for 7 days.', 7)}>
+        Snooze 7 days
+      </button>
+      <button type="button" className={b} onClick={() => act('DISMISS', 'Dismissed. It will stay hidden for 90 days.')}>
+        Not interested
+      </button>
+      {err && (
+        <span role="alert" className="text-xs text-red-700">
+          {err}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** Before and after, by what it affects: money, points, benefits, 5/24 and the household. */
+export function WhatIfView({ o }: { o: WhatIfOutcome }) {
+  const [label, tone] = VERDICT[o.verdict];
+  return (
+    <div className="space-y-3" data-testid="whatif-view">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge tone={tone as 'green'}>{label}</Badge>
+        {o.netCents != null && <Badge tone="brand">{money(o.netCents)} a year</Badge>}
+      </div>
+      <p className="text-sm font-medium text-slate-900">{o.recommendation}</p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm" data-testid="whatif-table">
+          <caption className="sr-only">{o.title}: before and after</caption>
+          <thead>
+            <tr className="text-xs uppercase tracking-wide text-slate-600">
+              <th scope="col" className="py-1 pr-3">
+                What
+              </th>
+              <th scope="col" className="py-1 pr-3">
+                Now
+              </th>
+              <th scope="col" className="py-1 pr-3">
+                If
+              </th>
+              <th scope="col" className="py-1">
+                Change
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {o.deltas.map((d) => {
+              const [icon, word, cls] = DIRECTION[d.direction];
+              return (
+                <tr key={d.label + d.dimension} className="border-t border-slate-100 align-top">
+                  <th scope="row" className="py-1 pr-3 font-normal text-slate-800">
+                    <span className="block text-xs text-slate-600">{d.dimension === 'FIVE24' ? '5/24' : d.dimension[0] + d.dimension.slice(1).toLowerCase()}</span>
+                    {d.label}
+                  </th>
+                  <td className="py-1 pr-3 text-slate-700">{d.before}</td>
+                  <td className="py-1 pr-3 text-slate-700">{d.after}</td>
+                  <td className={`py-1 ${cls}`}>
+                    <span aria-hidden>{icon} </span>
+                    {word && <span className="sr-only">{word}: </span>}
+                    {d.change}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {o.alternatives.length > 0 && (
+        <p className="text-sm text-slate-700">
+          <span className="font-medium">Instead, consider: </span>
+          {o.alternatives.join(' ')}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Item({ i, onNavigate, decide }: { i: PlanItem; onNavigate?: () => void; decide?: boolean }) {
   return (
     <li className="rounded-lg border border-slate-200 bg-white p-3" data-testid="plan-item">
       <div className="flex flex-wrap items-start gap-2">
@@ -51,6 +165,7 @@ function Item({ i, onNavigate }: { i: PlanItem; onNavigate?: () => void }) {
         {i.calls.map((c) => (
           <CallButton key={c.id} c={c} />
         ))}
+        {decide && <Decide id={i.id} />}
       </div>
     </li>
   );
@@ -95,16 +210,27 @@ export function PlanView({ r, onNavigate }: { r: CopilotResponse; onNavigate?: (
         )}
       </div>
 
+      {p.kind === 'WHATIF' && p.whatIf && <WhatIfView o={p.whatIf} />}
+
       {p.items.length === 0 && p.kind === 'AGENDA' && <p className="text-sm text-slate-700">You are on track. Check back tomorrow.</p>}
 
-      {HORIZONS.filter((h) => p.items.some((i) => i.horizon === h)).map((h) => (
+      {(p.memory?.hidden.length ?? 0) > 0 && (
+        <p className="text-xs text-slate-600" data-testid="plan-hidden">
+          {p.memory!.hidden.length} item{p.memory!.hidden.length === 1 ? '' : 's'} you put aside {p.memory!.hidden.length === 1 ? 'is' : 'are'} hidden.{' '}
+          <Link href="/copilot#memory" onClick={onNavigate} className="underline">
+            Manage what Copilot remembers
+          </Link>
+        </p>
+      )}
+
+      {HORIZONS.filter((h) => p.kind !== 'WHATIF' && p.items.some((i) => i.horizon === h)).map((h) => (
         <section key={h} aria-label={HORIZON_LABEL[h]} data-testid={`plan-${h.toLowerCase()}`}>
           {p.kind === 'AGENDA' && <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600">{HORIZON_LABEL[h]}</h4>}
           <ul className="space-y-2">
             {p.items
               .filter((i) => i.horizon === h)
               .map((i) => (
-                <Item key={i.id} i={i} onNavigate={onNavigate} />
+                <Item key={i.id} i={i} onNavigate={onNavigate} decide={p.kind === 'AGENDA'} />
               ))}
           </ul>
         </section>

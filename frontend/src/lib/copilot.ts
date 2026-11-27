@@ -27,9 +27,41 @@ export interface PlanItem {
   calls: CallAction[];
 }
 
+export interface WhatIfDelta {
+  dimension: 'FINANCIAL' | 'POINTS' | 'BENEFITS' | 'FIVE24' | 'HOUSEHOLD';
+  label: string;
+  before: string;
+  after: string;
+  change: string;
+  direction: 'BETTER' | 'WORSE' | 'SAME' | 'UNKNOWN';
+}
+
+export interface WhatIfOutcome {
+  scenario: 'APPLY' | 'WAIT' | 'TRANSFER' | 'CANCEL' | 'CHANGE';
+  title: string;
+  summary: string;
+  verdict: 'FAVORABLE' | 'UNFAVORABLE' | 'MIXED' | 'NEUTRAL';
+  recommendation: string;
+  deltas: WhatIfDelta[];
+  netCents: number | null;
+  assumptions: string[];
+  risks: string[];
+  alternatives: string[];
+  evidence: string[];
+  confidence: number;
+}
+
+export const WHATIF_EXAMPLES = [
+  'What if I wait 3 months?',
+  'What if my spouse applies instead?',
+  'What if I cancel Venture X?',
+  'What if I transfer 60,000 points to Hyatt?',
+  'What if I upgrade Freedom Flex to Sapphire Preferred?',
+];
+
 export interface CopilotPlan {
   mode: string;
-  kind: 'AGENDA' | 'ANSWER';
+  kind: 'AGENDA' | 'ANSWER' | 'WHATIF';
   question: string;
   headline: string;
   summary: string;
@@ -41,6 +73,8 @@ export interface CopilotPlan {
   evidence: string[];
   counts: Record<Horizon, number>;
   valueAtStakeCents: number;
+  memory?: { hidden: Array<{ id: string; title: string; action: string; until: string }>; boosted: number };
+  whatIf?: WhatIfOutcome;
 }
 
 export interface CopilotResponse {
@@ -76,3 +110,55 @@ export interface Disclosure {
 }
 
 export const confidenceWord = (c: number) => (c >= 80 ? 'High' : c >= 55 ? 'Medium' : 'Low');
+
+export type GoalKind = 'STATUS' | 'FIVE24' | 'TRIP' | 'CASHBACK' | 'FEES' | 'MILES' | 'CUSTOM';
+export const GOAL_KINDS: Array<{ kind: GoalKind; label: string }> = [
+  { kind: 'STATUS', label: 'Earn elite status' },
+  { kind: 'FIVE24', label: 'Stay under 5/24' },
+  { kind: 'TRIP', label: 'Save points for a trip' },
+  { kind: 'CASHBACK', label: 'Earn cash back' },
+  { kind: 'FEES', label: 'Keep annual fees down' },
+  { kind: 'MILES', label: 'Build a points balance' },
+  { kind: 'CUSTOM', label: 'Something else' },
+];
+
+export interface Goal {
+  id: string;
+  kind: GoalKind;
+  title: string;
+  status: 'ACTIVE' | 'DONE' | 'DROPPED';
+  dueAt: string | null;
+  manualProgress: number | null;
+  progress: {
+    pct: number | null;
+    current: string;
+    target: string;
+    state: 'ACHIEVED' | 'ON_TRACK' | 'AT_RISK' | 'BEHIND' | 'UNKNOWN';
+    detail: string;
+    next: string[];
+    confidence: number;
+  };
+}
+
+export interface Preferences {
+  airlines: string[];
+  hotels: string[];
+  destinations: string[];
+  merchants: string[];
+  priorities: string[];
+}
+export const PRIORITIES = [
+  ['CASHBACK', 'Cash back'],
+  ['TRAVEL', 'Travel'],
+  ['HOTEL', 'Hotels'],
+  ['AIRLINE', 'Airlines'],
+  ['LOW_FEE', 'Low fees'],
+] as const;
+
+export interface MemoryRow {
+  id: string;
+  kind: 'PREFERENCE' | 'DECISION' | 'RECOMMENDATION';
+  key: string;
+  value: { action?: string; until?: string; title?: string; shown?: number } & Record<string, unknown>;
+  updatedAt: string;
+}

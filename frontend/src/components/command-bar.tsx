@@ -243,6 +243,15 @@ export function CommandBar({ open, onClose, isAdmin, seed }: { open: boolean; on
   const aiMode = !!cs.data?.aiModeEnabled;
   const toggleAi = useMutation({
     mutationFn: (on: boolean) => api<CopilotSettings>('/copilot/settings', { method: 'PUT', ...json({ aiModeEnabled: on }) }),
+    // the switch flips at once, so a question asked right after goes to the mode the person just chose; it rolls back if the save fails
+    onMutate: (on) => {
+      const prev = qc.getQueryData<CopilotSettings>(['copilot', 'settings']);
+      if (prev) qc.setQueryData(['copilot', 'settings'], { ...prev, aiModeEnabled: on });
+      return { prev };
+    },
+    onError: (_e, _on, ctx) => {
+      if (ctx?.prev) qc.setQueryData(['copilot', 'settings'], ctx.prev);
+    },
     onSuccess: (r) => {
       qc.setQueryData(['copilot', 'settings'], r);
       setAnswer(null);
