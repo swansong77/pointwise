@@ -1,0 +1,13 @@
+# Deploys new commits. Install with: sudo bash deploy/systemd/install-timers.sh
+[Unit]
+Description=PointWise: deploy new commits (if any)
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=@USER@
+WorkingDirectory=@DIR@
+ExecStart=/bin/bash @DIR@/deploy/deploy.sh --if-changed
+# a deploy builds images: give it room
+TimeoutStartSec=45min
