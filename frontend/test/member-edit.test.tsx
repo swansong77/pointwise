@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import MyViewPage from '../src/app/(app)/my/page';
-import { MemberAccountActions, MemberAddAccount, MemberAddCard, MemberCardActions, MemberUseCredit } from '../src/components/member-edit';
+import { MemberAccountActions, MemberAddAccount, MemberAddCard, MemberCardActions, MemberCashbackSites, MemberUseCredit } from '../src/components/member-edit';
 import { MemberLogin } from '../src/components/member-login';
 import type { Member } from '../src/lib/portfolio-types';
 
@@ -153,5 +153,33 @@ describe("TC-MEDIT-UI: the owner's two switches", () => {
     wrap(<MemberLogin member={member({ login: { status: 'NONE', canHaveLogin: true, email: null, since: null, inviteExpiresAt: null } })} />);
     expect(screen.queryByTestId('can-edit')).toBeNull();
     expect(screen.queryByTestId('notify-owner')).toBeNull();
+  });
+});
+
+describe('TC-MCB-UI: my cash-back sites', () => {
+  const SITES = [
+    { code: 'rakuten', name: 'Rakuten', kind: 'CASHBACK', homeUrl: 'https://www.rakuten.com', health: 'UP', has: true },
+    { code: 'swagbucks', name: 'Swagbucks', kind: 'POINTS', homeUrl: 'https://www.swagbucks.com', health: 'UNKNOWN', has: false },
+  ];
+  it('lets the member tick the sites they use when allowed, recording only the fact', async () => {
+    stub((u) => (u.endsWith('/member/cashback') ? ok(SITES) : null));
+    wrap(<MemberCashbackSites canEdit />);
+    await screen.findByLabelText('I have an account on Rakuten');
+    const panel = within(screen.getByTestId('member-cashback'));
+    expect(panel.getByText(/my cash-back sites · 1/i)).toBeTruthy();
+    expect((panel.getByLabelText('I have an account on Rakuten') as HTMLInputElement).checked).toBe(true);
+    fireEvent.click(panel.getByLabelText('I have an account on Swagbucks'));
+    await waitFor(() => expect(sent('PUT', '/member/cashback/accounts/swagbucks')).toBeTruthy());
+    expect(JSON.parse(sent('PUT', '/member/cashback/accounts/swagbucks')!.body as string)).toEqual({ has: true });
+    expect(panel.getByText(/never asks for or stores a username or password/)).toBeTruthy();
+  });
+  it('shows the list read-only, and says who keeps it, when the owner has not allowed editing', async () => {
+    stub((u) => (u.endsWith('/member/cashback') ? ok(SITES) : null));
+    wrap(<MemberCashbackSites canEdit={false} />);
+    await screen.findByLabelText('I have an account on Rakuten');
+    const panel = within(screen.getByTestId('member-cashback'));
+    expect((panel.getByLabelText('I have an account on Rakuten') as HTMLInputElement).disabled).toBe(true);
+    expect(panel.getByText(/household owner keeps this list up to date/)).toBeTruthy();
+    expect(calls.some((c) => c.method === 'PUT')).toBe(false);
   });
 });

@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { CashbackService } from '../cashback/cashback.service';
 import { PrismaService } from '../common/prisma.service';
 import { MemberContext } from '../domain/member-access';
 import { CreateAccountDto, UpdateAccountDto } from '../loyalty/loyalty.dto';
@@ -23,6 +24,7 @@ export class MemberEditService {
     private readonly wallet: WalletService,
     private readonly loyalty: LoyaltyService,
     private readonly benefits: BenefitsService,
+    private readonly cashback: CashbackService,
   ) {}
 
   private async audit(ctx: MemberContext, actorId: string, action: string, entity: string, entityId: string) {
@@ -86,6 +88,20 @@ export class MemberEditService {
     await this.myAccount(ctx, id);
     await this.loyalty.deleteAccount(ctx.ownerId, id);
     await this.audit(ctx, actorId, 'member.loyalty.removed', 'LoyaltyAccount', id);
+  }
+
+  // ───────── cash-back sites ─────────
+
+  /** The shopping sites and whether THIS member has an account on each. Other members' accounts are never part of it. */
+  async cashbackSites(ctx: MemberContext, now = new Date()) {
+    const sites = await this.cashback.sites(ctx.ownerId, now);
+    return sites.map(({ accounts, ...s }) => ({ ...s, has: accounts.some((a) => a.profileId === ctx.profileId) }));
+  }
+
+  /** Records only the fact that the member has (or no longer has) an account: never a username or password. */
+  async setCashbackAccount(ctx: MemberContext, actorId: string, site: string, has: boolean) {
+    await this.cashback.setAccount(ctx.ownerId, site, ctx.profileId, has);
+    await this.audit(ctx, actorId, has ? 'member.cashback.added' : 'member.cashback.removed', 'CashbackSite', site);
   }
 
   // ───────── benefit usage ─────────

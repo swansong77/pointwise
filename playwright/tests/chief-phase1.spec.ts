@@ -98,7 +98,10 @@ test.describe('Chief of Staff', () => {
     const run = async (name: string) => expect((await request.post(`${API}/api/v1/admin/jobs/${name}/run`, { headers: { Authorization: `Bearer ${admin}` }, timeout: 120_000 })).ok()).toBe(true);
     await run('scan-expiring-offers'); // an OFFER_EXPIRING notification: normal, so held
     const count = async () => (await (await request.get(`${API}/api/v1/notifications/unread-count`, { headers: auth })).json()).count as number;
-    expect(await count()).toBe(0);
+    // the routine offer notice is held, not unread. (Other specs run global scheduled jobs in parallel that can give this user an unrelated
+    // urgent notice, so this checks the kind rather than the total.)
+    const unread = await (await request.get(`${API}/api/v1/notifications?unreadOnly=true`, { headers: auth })).json();
+    expect(JSON.stringify(unread)).not.toMatch(/OFFER_EXPIRING/);
     const held = await (await request.get(`${API}/api/v1/notifications?includeDeferred=true`, { headers: auth })).json();
     expect(JSON.stringify(held)).toMatch(/OFFER_EXPIRING/);
 

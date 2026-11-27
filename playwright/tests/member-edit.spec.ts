@@ -96,9 +96,22 @@ test('the owner lets a member edit; the member adds a card and points, edits, an
   await expect(m.getByTestId('my-loyalty')).toContainText('7,500');
   await axe(m);
 
+  // the shopping sites she has an account on, recorded by her
+  const sitePanel = m.getByTestId('member-cashback');
+  const siteSaved = m.waitForResponse((r) => r.url().includes('/member/cashback/accounts/rakuten') && r.request().method() === 'PUT');
+  await sitePanel.getByLabel('I have an account on Rakuten').click();
+  await siteSaved;
+  await expect(sitePanel.getByLabel('I have an account on Rakuten')).toBeChecked();
+  await expect(sitePanel).toContainText(/my cash-back sites · 1/i);
+  await axe(m);
+
   // the owner sees the card on Riley (it is in the household), and the owner's own card is untouched
   await page.reload();
   await expect(page.getByTestId('household-member').filter({ hasText: 'Riley' })).toContainText('Everyday card');
+  // and sees on the cash-back sites page that Riley has the Rakuten account
+  await page.goto('/cashback');
+  await expect(page.locator('[data-testid="cashback-site"][data-site="rakuten"]').getByLabel(/Riley has an account on Rakuten/)).toBeChecked();
+  await page.goto('/household');
 
   // taking the permission away is immediate
   const off = page.waitForResponse((r) => r.url().includes('/household/members/') && r.request().method() === 'PATCH');

@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, Injectable, Module, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, Injectable, Module, Param, ParseUUIDPipe, Patch, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiPropertyOptional, ApiTags, OmitType } from '@nestjs/swagger';
 import { IsBoolean, IsIn, IsOptional } from 'class-validator';
+import { CashbackCoreModule } from '../cashback/cashback.module';
 import { AuthUser, CurrentUser, MemberSafe } from '../common/decorators';
 import { PrismaService } from '../common/prisma.service';
 import { MemberContext } from '../domain/member-access';
@@ -97,6 +98,9 @@ const needMember = (u: AuthUser): MemberContext => {
 export class BriefingQuery {
   @ApiPropertyOptional({ enum: MEMBER_BRIEF_KINDS }) @IsOptional() @IsIn(MEMBER_BRIEF_KINDS as unknown as string[]) kind?: MemberBriefKind;
 }
+export class MemberCashbackDto {
+  @ApiProperty() @IsBoolean() has: boolean;
+}
 export class MakeBriefingDto {
   @ApiProperty({ enum: MEMBER_BRIEF_KINDS }) @IsIn(MEMBER_BRIEF_KINDS as unknown as string[]) kind: MemberBriefKind;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() force?: boolean;
@@ -150,6 +154,13 @@ export class MemberController {
   @Delete('loyalty/accounts/:id') @HttpCode(204) removeAccount(@CurrentUser() u: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.edit.removeAccount(needEditor(u), u.sub, id);
   }
+  /** The shopping sites, and which of them this member has an account on. */
+  @Get('cashback') cashbackSites(@CurrentUser() u: AuthUser) {
+    return this.edit.cashbackSites(needMember(u));
+  }
+  @Put('cashback/accounts/:site') @HttpCode(204) setCashback(@CurrentUser() u: AuthUser, @Param('site') site: string, @Body() dto: MemberCashbackDto) {
+    return this.edit.setCashbackAccount(needEditor(u), u.sub, site, dto.has);
+  }
   @Post('benefits/:id/usage') logUsage(@CurrentUser() u: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UsageDto) {
     return this.edit.logUsage(needEditor(u), u.sub, id, dto);
   }
@@ -171,7 +182,7 @@ export class MemberController {
 }
 
 @Module({
-  imports: [PortfolioModule, BenefitsModule, NotificationsModule, WalletModule, LoyaltyCoreModule],
+  imports: [PortfolioModule, BenefitsModule, NotificationsModule, WalletModule, LoyaltyCoreModule, CashbackCoreModule],
   controllers: [MemberController],
   providers: [MemberViewService, MemberBriefingService, MemberEditService],
   exports: [MemberBriefingService],
