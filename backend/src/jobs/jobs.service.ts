@@ -28,6 +28,7 @@ import { CopilotService } from "../copilot/copilot.service";
 import { BriefingService } from "../copilot/briefing.service";
 import { MemberBriefingService } from "../member/member-briefing.service";
 import { CashbackService } from "../cashback/cashback.service";
+import { CashbackReadService } from "../cashback/cashback-read.service";
 import { BoardService } from "../copilot/board.service";
 
 export const JOB_QUEUE = "pointwise-jobs";
@@ -67,8 +68,10 @@ export type JobName =
   | "cos-board"
   | "member-daily"
   | "member-weekly"
-  | "cashback-status";
+  | "cashback-status"
+  | "cashback-rates";
 export const JOB_NAMES: JobName[] = [
+  "cashback-rates",
   "cashback-status",
   "member-daily",
   "member-weekly",
@@ -142,6 +145,7 @@ export class JobsService {
     @Optional() private readonly board?: BoardService,
     @Optional() private readonly memberBriefings?: MemberBriefingService,
     @Optional() private readonly cashback?: CashbackService,
+    @Optional() private readonly cashbackRead?: CashbackReadService,
   ) {}
 
   async run(
@@ -233,6 +237,9 @@ export class JobsService {
         break;
       case "copilot-monthly":
         created = (await this.briefings?.runDue("MONTHLY", now)) ?? 0;
+        break;
+      case "cashback-rates":
+        created = (await this.cashbackRead?.runAll(now)) ?? 0;
         break;
       case "cashback-status":
         created = (await this.cashback?.checkAll(now)) ?? 0;

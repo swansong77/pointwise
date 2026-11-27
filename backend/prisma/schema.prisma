@@ -380,6 +380,7 @@ model Merchant {
   pins          CategoryPin[]
   transactions  Transaction[]
   portalRates   PortalRate[]
+  benchmark     MerchantBenchmark?
 
   @@index([categoryId])
   @@index([name])
@@ -2985,6 +2986,8 @@ model CashbackSite {
   failures      Int          @default(0)
   lastReadAt    DateTime?
   lastReadNote  String?
+  /// automatic reads that failed in a row; reading stops by itself after a few
+  readFailures  Int          @default(0)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   accounts      UserCashbackAccount[]
@@ -3003,4 +3006,16 @@ model UserCashbackAccount {
 
   @@unique([profileId, siteId])
   @@index([userId])
+}
+
+/// The best cash-back rate a comparison site (Cashback Monitor) shows for a store across ALL sites, read from the headline of its public page.
+/// Used only as a cross-check that the rates on file have not gone stale; never as a rate to pay out.
+model MerchantBenchmark {
+  id          String   @id @default(uuid())
+  merchantId  String   @unique
+  source      String
+  bestPercent Decimal  @db.Decimal(5, 2)
+  url         String
+  observedAt  DateTime @default(now())
+  merchant    Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 }

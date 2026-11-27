@@ -4,6 +4,7 @@ import { Type } from 'class-transformer';
 import { IsBoolean, IsDateString, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { AuthUser, CurrentUser, Roles } from '../common/decorators';
 import { RolesGuard } from '../common/guards';
+import { CashbackReadService } from './cashback-read.service';
 import { CashbackService } from './cashback.service';
 
 const CODE = /^[a-z0-9][a-z0-9-]{1,39}$/;
@@ -58,6 +59,15 @@ export class CompareDto {
   @ApiProperty({ description: 'false = only show what was read' }) @IsBoolean() save: boolean;
 }
 
+export class ReadNowDto {
+  @ApiProperty() @IsString() @Matches(CODE) site: string;
+  @ApiProperty({ description: 'merchant slug or name' }) @IsString() @MinLength(1) @MaxLength(100) merchant: string;
+}
+
+export class SettingsDto {
+  @ApiPropertyOptional({ description: "compare the rates on file with Cashback Monitor's best rate for each store (one public page read per store)" }) @IsOptional() @IsBoolean() benchmark?: boolean;
+}
+
 export class StatusDto {
   @ApiPropertyOptional({ description: 'one site; omit for all' }) @IsOptional() @IsString() @Matches(CODE) site?: string;
 }
@@ -93,8 +103,21 @@ export class CashbackController {
 @UseGuards(RolesGuard)
 @Controller('admin/cashback')
 export class CashbackAdminController {
-  constructor(private readonly svc: CashbackService) {}
+  constructor(
+    private readonly svc: CashbackService,
+    private readonly reader: CashbackReadService,
+  ) {}
 
+  @Get('settings') settings() {
+    return this.svc.getSettings();
+  }
+  @Put('settings') setSettings(@Body() dto: SettingsDto) {
+    return this.svc.setSettings(dto);
+  }
+  /** Read one store's public page at one site now (the site must be allowed to be read automatically). */
+  @Post('read') @HttpCode(200) readNow(@Body() dto: ReadNowDto) {
+    return this.reader.readOne(dto.site, dto.merchant);
+  }
   @Get('sites') sites() {
     return this.svc.adminSites();
   }
@@ -130,7 +153,7 @@ export class CashbackAdminController {
 }
 
 /** Providers only: the shopping planner, the scheduled status check and the AI tools use these. */
-@Module({ providers: [CashbackService], exports: [CashbackService] })
+@Module({ providers: [CashbackService, CashbackReadService], exports: [CashbackService, CashbackReadService] })
 export class CashbackCoreModule {}
 
 @Module({ imports: [CashbackCoreModule], controllers: [CashbackController, CashbackAdminController] })

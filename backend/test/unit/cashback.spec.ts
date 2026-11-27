@@ -177,3 +177,72 @@ describe('TC-CB-CMP: a comparison page (Cashback Monitor and similar)', () => {
     expect(r.rates.map((x) => [x.site, x.ratePercent, x.pointsPerDollar])).toEqual([['united-shopping', null, 2], ['rakuten', 2, null]]);
   });
 });
+
+import { readMonitorBest, readStorePage, slugOf, storeUrl } from '../../src/domain/cashback';
+
+describe('TC-CB-PAGE: reading a public store page', () => {
+  // the wording below is what real public store pages returned when they were checked
+  const rakutenTarget = '<html><head><title>Target Coupons, Promo Codes &amp; 1% Cash Back - November 2026</title></head><body><div>Earn up to 40% Cash Back at over 3,500 stores</div><h1>Target</h1><p>1% Cash Back</p><p>Exclusive 7.5% Cash Back offer on select products</p></body></html>';
+
+  it('addresses: the store\'s web address or its dashed name, only when the pattern has what it needs', () => {
+    expect(storeUrl('https://www.rakuten.com/{host}', { name: 'Target', hosts: ['target.com'] })).toBe('https://www.rakuten.com/target.com');
+    expect(storeUrl('https://www.rakuten.com/{host}', { name: 'Best Buy', hosts: ['bestbuy.com', 'bby.com'] })).toBe('https://www.rakuten.com/bby.com');
+    expect(storeUrl('https://www.topcashback.com/{slug}/', { name: 'Best Buy', hosts: [] })).toBe('https://www.topcashback.com/best-buy/');
+    expect(storeUrl('https://www.rakuten.com/{host}', { name: 'Target', hosts: [] })).toBeNull();
+    expect(storeUrl(null, { name: 'Target', hosts: ['target.com'] })).toBeNull();
+    expect(slugOf("Macy's")).toBe('macy-s');
+  });
+
+  it('takes the store rate from the page title, not the banner or a promotion on the page', () => {
+    const r = readStorePage(rakutenTarget, 'Target')!;
+    expect(r).toMatchObject({ ratePercent: 1, upTo: false, where: 'title' });
+  });
+
+  it('reads "No Cash Back" as zero, and "up to" from the main heading as a best case', () => {
+    expect(readStorePage('<title>Walmart Coupons, Promo Codes &amp; No Cash Back - November 2026</title><p>You’ll earn $5 on your first purchases</p>', 'Walmart')).toMatchObject({ ratePercent: 0, where: 'title' });
+    const tcb = '<title>Walmart Cash Back, Coupons | TopCashback</title><h1>Get <b>up to 9%</b> of the price back with our Walmart Cash Back offers</h1><span>2% Cash Back</span>';
+    expect(readStorePage(tcb, 'Walmart')).toMatchObject({ ratePercent: 9, upTo: true, where: 'heading' });
+    expect(readStorePage('<title>Target Cash Back | TopCashback</title><h1>Get 2% of the price back with our Target Cash Back offers</h1>', 'Target')).toMatchObject({ ratePercent: 2, upTo: false, where: 'heading' });
+  });
+
+  it('falls back to the text around the store name, never to a banner far from it', () => {
+    const page = '<body><script>var a = "up to 40% Cash Back"</script><div>Earn up to 40% Cash Back at hundreds of stores!</div><div>Menu Home Stores</div><section>Target stores: <b>3% Cash Back</b> today</section></body>';
+    expect(readStorePage(page, 'Target')).toMatchObject({ ratePercent: 3, where: 'text' });
+    expect(readStorePage('<body><div>Earn up to 40% Cash Back at hundreds of stores!</div><div>Nothing else</div></body>', 'Target')).toBeNull();
+    // the store's name followed straight away by the site's banner is not the store's rate
+    expect(readStorePage('<html><head><title>Target Coupons</title></head><body><div>Earn up to 40% Cash Back at over 3,500 stores</div></body></html>', 'Target')).toBeNull();
+    expect(readStorePage('<body><h2>Target</h2><p>Earn up to 8% Cash Back</p></body>', 'Target')).toBeNull();
+  });
+
+  it('does not take another store\'s title, and reads nothing from a page with no rate', () => {
+    expect(readStorePage('<title>Other Store Coupons &amp; 8% Cash Back</title><p>nothing</p>', 'Target')).toBeNull();
+    expect(readStorePage('<title>Target Coupons</title><h1>Target</h1><p>Free shipping on orders over $35</p>', 'Target')).toBeNull();
+  });
+
+  it('reads the best rate a comparison site headlines in its page title', () => {
+    expect(readMonitorBest('<title>Target Cashback Comparison - 5% ($10**) - Cashback Monitor</title>')).toBe(5);
+    expect(readMonitorBest('<title>Walmart Cash Back Rates 20% ($10**)</title>')).toBe(20);
+    expect(readMonitorBest('<title>Some page with no rate</title>')).toBeNull();
+    expect(readMonitorBest('no title here')).toBeNull();
+  });
+});
+
+describe('TC-CB-BENCH: the comparison site as a cross-check', () => {
+  const sites = [site('rakuten')];
+  const base = (benchmark: { source: string; bestPercent: number; observedAt: Date; url: string } | null, amountCents = 50_000) => ({ ...input([rate('rakuten', { ratePercent: 2 })], sites, { rakuten: ['Jo'] }, amountCents), benchmark });
+  const b = (bestPercent: number, ageDays = 1) => ({ source: 'Cashback Monitor', bestPercent, observedAt: daysAgo(ageDays), url: 'https://www.cashbackmonitor.com/cashback-store/target/' });
+
+  it('warns when the comparison site shows a clearly higher best rate than anything on file', () => {
+    const r = recommendCashback(base(b(5)));
+    expect(r.benchmark).toMatchObject({ source: 'Cashback Monitor', bestPercent: 5 });
+    expect(r.warnings.join(' ')).toMatch(/Cashback Monitor lists a best rate of 5% at Target across all sites; the best on file here is 2%/);
+  });
+  it('stays quiet when the difference is small, the amount is small, or the reading is old', () => {
+    expect(recommendCashback(base(b(3))).warnings.join(' ')).not.toMatch(/Cashback Monitor lists/);
+    expect(recommendCashback(base(b(5), 2_000)).warnings.join(' ')).not.toMatch(/Cashback Monitor lists/);
+    const old = recommendCashback(base(b(5, 20)));
+    expect(old.benchmark).toBeNull();
+    expect(old.warnings.join(' ')).not.toMatch(/Cashback Monitor lists/);
+    expect(recommendCashback(base(null)).benchmark).toBeNull();
+  });
+});

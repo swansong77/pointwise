@@ -33,6 +33,8 @@ export interface CashbackRec {
   warnings: string[];
   /** the store's page on Cashback Monitor, where every site's current rate is compared */
   monitorUrl?: string;
+  /** what the comparison site headlines as the best rate for this store, when it was read lately */
+  benchmark?: { source: string; bestPercent: number; observedAt: string; url: string } | null;
 }
 
 export interface CashbackSiteView {
@@ -60,6 +62,10 @@ export interface AdminSite {
   notes: string | null;
   isActive: boolean;
   autoRead: boolean;
+  storeUrlTemplate: string | null;
+  lastReadAt: string | null;
+  lastReadNote: string | null;
+  readFailures: number;
   reachable: boolean | null;
   httpStatus: number | null;
   lastCheckedAt: string | null;

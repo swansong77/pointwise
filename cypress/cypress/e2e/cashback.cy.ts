@@ -28,4 +28,20 @@ describe('Cash-back sites API', () => {
       });
     });
   });
+
+  it('CY-CB-02 automatic reading is off by default, needs a store-page address on the site\'s own domain, and is the administrator\'s alone', () => {
+    cy.request('POST', '/api/v1/auth/login', { email: 'admin@pointwise.local', password: 'Admin12345!' }).then((a) => {
+      const admin = a.body.accessToken as string;
+      cy.request({ url: '/api/v1/admin/cashback/sites', headers: auth(admin) }).its('body').should('satisfy', (s: Array<{ autoRead: boolean }>) => s.every((x) => !x.autoRead));
+      cy.request({ method: 'PUT', url: '/api/v1/admin/cashback/sites/befrugal', headers: auth(admin), body: { autoRead: true }, failOnStatusCode: false }).its('status').should('eq', 400);
+      cy.request({ method: 'PUT', url: '/api/v1/admin/cashback/sites/rakuten', headers: auth(admin), body: { storeUrlTemplate: 'https://evil.example.test/{host}' }, failOnStatusCode: false }).its('status').should('eq', 400);
+      cy.request({ method: 'POST', url: '/api/v1/admin/cashback/read', headers: auth(admin), body: { site: 'rakuten', merchant: 'hilton' }, failOnStatusCode: false }).its('status').should('eq', 400);
+      cy.request({ url: '/api/v1/admin/cashback/settings', headers: auth(admin) }).its('body.benchmark').should('eq', false);
+      cy.request('POST', '/api/v1/auth/register', { email: 'cy.cb2.' + stamp() + '@e2e.test', password: 'e2e-password-1', name: 'Shopper' }).then((reg) => {
+        const t = reg.body.accessToken as string;
+        cy.request({ method: 'PUT', url: '/api/v1/admin/cashback/settings', headers: auth(t), body: { benchmark: true }, failOnStatusCode: false }).its('status').should('eq', 403);
+        cy.request({ method: 'PUT', url: '/api/v1/admin/cashback/sites/rakuten', headers: auth(t), body: { autoRead: true }, failOnStatusCode: false }).its('status').should('eq', 403);
+      });
+    });
+  });
 });
