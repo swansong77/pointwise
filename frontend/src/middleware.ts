@@ -26,6 +26,7 @@ export const config = {
     '/my/:path*',
     '/my',
     '/dashboard/:path*',
+    '/cashback/:path*',
     '/wallet/:path*',
     '/offers/:path*',
     '/nearby/:path*',

@@ -150,6 +150,10 @@ Open **Loyalty**. You will see your balances, what expires in the next 30 days, 
 
 If you track card-linked offers, the **offers extension** (`docs/offer-automation-extension.md`) reads your issuer's offers page on your click and brings them into **Offers**. After you approve offers in PointWise it can press the issuer's own "Add" button for exactly the ones you chose. Without it, add offers by hand in **Offers**.
 
+## Step 5b: Cash-back sites (optional)
+
+If you shop through a cash-back or points site (Rakuten, TopCashback, an airline's shopping portal), open **Cash-back sites** and tick the ones you have an account on, for each person. In **Plan a purchase**, PointWise then recommends the best of *your* sites for that store, with the steps to follow, tells you if a site you do not use would pay noticeably more, and warns you when a site is not answering or its rate is old. It never signs in to those sites and never stores a password. The server administrator keeps the rates up to date (Admin, Cash-back sites).
+
 ## Step 6: Choose how PointWise talks to you
 
 **If you have your own sign-in** (a household member), this is all yours: **Notifications**, **Briefings** and **Settings** in your own menu. You are told about the things that concern *your* cards, points and offers, on *your* switches, with *your* Quiet Mode and *your* daily e-mail digest. You also get your own briefing: a daily one on days something is due, and a weekly summary. The household owner keeps getting everything about the household, as before, and cannot see your settings.

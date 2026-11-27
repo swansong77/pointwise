@@ -157,6 +157,7 @@ export class OfferDashboardsService {
         .map((p) => ({ currency: p.currency.name, program: p.program.name, ratio: `${p.ratioFrom}:${p.ratioTo}`, bonusPercent: p.bonusEndsAt && p.bonusEndsAt < now ? 0 : p.bonusPercent, bonusEndsAt: p.bonusEndsAt })),
       history: timeline,
       spend: { last12MonthsCents: spendCents, purchases: purchases.length },
+      cashback: plan.cashback,
       bestWayToPay: best
         ? {
             referenceAmountCents: reference,

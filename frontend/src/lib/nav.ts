@@ -25,6 +25,7 @@ export const NAV: NavItem[] = [
   { href: '/offers/inventory', label: 'Offer Inventory', icon: '🗂️' },
   { href: '/offers/expirations', label: 'Expirations', icon: '⏰' },
   { href: '/offers/savings', label: 'Savings', icon: '💰' },
+  { href: '/cashback', label: 'Cash-back sites', icon: '🛍️' },
   { href: '/offers/household', label: 'Household Offers', icon: '👪' },
   { href: '/offers/automation', label: 'Offer Automation', icon: '🤖' },
   { href: '/offers/market', label: 'Offer Market', icon: '📈' },
@@ -42,6 +43,7 @@ export const ADMIN_NAV: NavItem[] = [
   { href: '/admin', label: 'Admin', icon: '🛠️' },
   { href: '/admin/ai', label: 'AI & MCP', icon: '🤖' },
   { href: '/admin/catalog', label: 'Card Data', icon: '🗂️' },
+  { href: '/admin/cashback', label: 'Cash-back sites', icon: '🛍️' },
   { href: '/admin/ops', label: 'Operations', icon: '🩺' },
   { href: '/admin/backup', label: 'Backup & Migration', icon: '💾' },
 ];

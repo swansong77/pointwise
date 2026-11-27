@@ -24,6 +24,7 @@ import { HealthModule } from './health/health.controller';
 import { JobsApiModule } from './jobs/jobs.module';
 import { HouseholdsModule } from './portfolio/households';
 import { MemberModule } from './member/member.module';
+import { CashbackModule } from './cashback/cashback.module';
 import { BenefitsModule } from './portfolio/benefits';
 import { PortfolioModule } from './portfolio/portfolio';
 import { ImportsModule } from './portfolio/imports';
@@ -74,6 +75,7 @@ const rateLimit = Number(process.env.RATE_LIMIT_PER_MIN ?? 100);
     JobsApiModule,
     HouseholdsModule,
     MemberModule,
+    CashbackModule,
     BenefitsModule,
     PortfolioModule,
     ImportsModule,

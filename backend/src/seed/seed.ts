@@ -8,6 +8,7 @@
  *   SEED_DEMO_USERS=false node ...    # catalog only
  *   SEED_CATALOG=real node ...        # real cards instead of the fictional demo catalog
  */
+import { seedCashbackSites } from "./cashback-sites";
 import { CardNetwork, CardType, OfferKind, PrismaClient } from "@prisma/client";
 import * as argon2 from "argon2";
 import {
@@ -908,6 +909,7 @@ async function main() {
   if (!["demo", "real", "both"].includes(mode))
     throw new Error(`SEED_CATALOG must be demo, real or both (got ${mode})`);
   await seedAi(prisma);
+  console.log("cash-back sites", await seedCashbackSites(prisma));
   if (mode === "real") {
     await upsertCategories();
     console.log(
