@@ -1,0 +1,24 @@
+# Reverse proxy for PointWise. PW_SITE_ADDRESS comes from .env:
+#   pointwise.example.com          a public name: Caddy gets and renews a free Let's Encrypt certificate (needs ports 80 and 443)
+#   http://192.168.1.20            a private address with no HTTPS (home network only; sign-in cookies are then sent unencrypted)
+#   localhost                      a certificate from Caddy's own local authority (testing)
+{$PW_SITE_ADDRESS} {
+	encode zstd gzip
+
+	# statement uploads can be large
+	request_body {
+		max_size 70MB
+	}
+
+	# the API reference is for developers; keep it off the public address
+	@docs path /api/docs*
+	respond @docs "Not found" 404
+
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	reverse_proxy frontend:3000
+}

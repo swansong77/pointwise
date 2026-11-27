@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Copy backups off this machine. Copy this file to deploy/offsite.sh, edit ONE of the lines below, chmod +x it.
+# Backups are already encrypted with your backup passphrase, so the copy can sit on a service you do not fully trust.
+# The server runs it after every backup (systemd timer from deploy/systemd) and ignores it if it is missing.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+# A. another machine you own, over SSH (set up a key first)
+# rsync -a --delete-after backups/ backup-user@other-machine:/srv/pointwise-backups/
+
+# B. a cloud drive through rclone (https://rclone.org, free; run "rclone config" once to name a remote, here "mydrive")
+# rclone copy backups/ mydrive:pointwise-backups --max-age 30d
+
+# C. a USB disk or NAS share mounted on this machine
+# rsync -a backups/ /mnt/backup-disk/pointwise/

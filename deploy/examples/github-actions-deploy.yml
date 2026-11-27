@@ -1,0 +1,99 @@
+# Example: deploy to your own server whenever the main branch changes.
+#
+# NOT active as shipped. To use it, copy it to .github/workflows/deploy.yml and add the secrets listed below.
+# It is free for private repositories within GitHub's monthly free minutes, and free for public ones.
+#
+# What it does
+#   1. test     : backend unit tests and web-app tests must pass
+#   2. images   : builds the two images and pushes them to GitHub's container registry (ghcr.io), tagged with the commit
+#   3. deploy   : signs in to your server over SSH and runs  deploy/deploy.sh --registry  with those exact images
+#                 (the script backs up first and goes back to the old version if the new one does not come up healthy)
+#
+# Secrets to add (Repository, Settings, Secrets and variables, Actions)
+#   DEPLOY_HOST        your server's name or address
+#   DEPLOY_USER        the user that owns the checkout on the server (not root)
+#   DEPLOY_SSH_KEY     a private key made only for this: ssh-keygen -t ed25519 -f deploy_key -N ""
+#                      put deploy_key.pub in ~/.ssh/authorized_keys on the server; paste deploy_key here
+#   DEPLOY_KNOWN_HOSTS the output of: ssh-keyscan -t ed25519 your-server     (so the server's identity is pinned)
+#   DEPLOY_PATH        the checkout folder on the server, e.g. /home/you/pointwise
+#   GHCR_PULL_TOKEN    only if the repository is private: a token with read:packages, so the server can pull the images
+name: deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency: { group: deploy, cancel-in-progress: false }
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: "backend/package-lock.json\nfrontend/package-lock.json" }
+      - run: npm ci && npx prisma generate && npm test
+        working-directory: backend
+      - run: npm ci && npm test
+        working-directory: frontend
+
+  images:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      owner: ${{ steps.meta.outputs.owner }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: meta
+        run: |
+          echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+          echo "owner=$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          target: runtime
+          push: true
+          tags: ghcr.io/${{ steps.meta.outputs.owner }}/pointwise-backend:${{ steps.meta.outputs.tag }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          build-args: API_INTERNAL_URL=http://backend:4000
+          push: true
+          tags: ghcr.io/${{ steps.meta.outputs.owner }}/pointwise-frontend:${{ steps.meta.outputs.tag }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+  deploy:
+    needs: images
+    runs-on: ubuntu-latest
+    environment: production   # optional: add a required reviewer under Settings, Environments for a manual approval
+    steps:
+      - name: Prepare SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+      - name: Deploy
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER_: ${{ secrets.DEPLOY_USER }}
+          DIR: ${{ secrets.DEPLOY_PATH }}
+          BACKEND: ghcr.io/${{ needs.images.outputs.owner }}/pointwise-backend:${{ needs.images.outputs.tag }}
+          FRONTEND: ghcr.io/${{ needs.images.outputs.owner }}/pointwise-frontend:${{ needs.images.outputs.tag }}
+          PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+          ACTOR: ${{ github.repository_owner }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$USER_@$HOST" \
+            "cd '$DIR' && git fetch --quiet && git reset --hard origin/main \
+             && { [ -z '$PULL_TOKEN' ] || echo '$PULL_TOKEN' | docker login ghcr.io -u '$ACTOR' --password-stdin; } \
+             && PW_BACKEND_IMAGE='$BACKEND' PW_FRONTEND_IMAGE='$FRONTEND' bash deploy/deploy.sh --registry"
