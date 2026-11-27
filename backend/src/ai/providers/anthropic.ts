@@ -97,6 +97,7 @@ export class AnthropicProvider implements LlmProvider {
     return {
       model: req.model,
       max_tokens: req.maxTokens,
+      ...(req.temperature != null && !caps.includes("effort") && { temperature: req.temperature }),
       system: [
         {
           type: "text",

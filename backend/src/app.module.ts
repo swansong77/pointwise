@@ -32,6 +32,7 @@ import { DeliveryModule } from './notifications/delivery';
 import { AiModule } from './ai/ai.module';
 import { SearchModule } from './search/search.controller';
 import { RemindersModule } from './reminders/reminders.module';
+import { CopilotModule } from './copilot/copilot.controller';
 import { CardRefreshModule } from './catalog-refresh/card-refresh.module';
 import { StrategyModule } from './strategy/strategy.module';
 import { CardResearchModule } from './catalog-research/card-research.module';
@@ -80,6 +81,7 @@ const rateLimit = Number(process.env.RATE_LIMIT_PER_MIN ?? 100);
     AiModule,
     SearchModule,
     RemindersModule,
+    CopilotModule,
     CardRefreshModule,
     StrategyModule,
     CardResearchModule,

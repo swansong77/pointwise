@@ -90,6 +90,8 @@ export interface ChatRequest {
   serverTools?: ServerToolSpec[];
   /** per-request timeout override (server-tool turns can take minutes) */
   timeoutMs?: number;
+  /** 0..1, the member's preference; ignored by models that reason with an effort level, which reject it */
+  temperature?: number;
 }
 
 /** `pause`: a long server-tool turn paused; send the assistant turn back to continue it. */

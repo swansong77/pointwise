@@ -17,6 +17,8 @@ export interface AskResult {
   /** send these back with the next question so a follow-up knows what "it" is */
   slots: Slots;
   usedFollowUp: boolean;
+  /** the engines that answered, for the audit trail */
+  engines: string[];
   cached: boolean;
   tookMs: number;
 }
@@ -51,7 +53,7 @@ export class SearchAskService {
     private readonly memory: SearchMemoryService,
   ) {}
 
-  private async runStep(userId: string, step: ToolStep, now: Date): Promise<StepResult> {
+  async runStep(userId: string, step: ToolStep, now: Date): Promise<StepResult> {
     const tool = this.tools.get(step.tool);
     if (!tool) return { tool: step.tool, label: step.label, ok: false, summary: '', data: null, error: 'engine not available' };
     try {
@@ -89,7 +91,7 @@ export class SearchAskService {
       const answer = composeAnswer(understanding, route, results, now);
       // an unanswered question must not wipe what the conversation knew
       const slots = answer.unanswered && prev ? prev : slotsFrom(understanding);
-      value = { answer, slots, usedFollowUp: followed.usedFollowUp };
+      value = { answer, slots, usedFollowUp: followed.usedFollowUp, engines: route.steps.map((st) => st.tool) };
       if (this.answers.size >= MAX_CACHED) this.answers.delete(this.answers.keys().next().value as string);
       if (!answer.unanswered && results.every((r) => r.ok)) this.answers.set(key, { at: Date.now(), value });
     }

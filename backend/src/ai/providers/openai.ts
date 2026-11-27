@@ -59,6 +59,7 @@ export class OpenAiProvider implements LlmProvider {
       // first-party reasoning models use max_completion_tokens; compatible servers still expect max_tokens
       ...(firstParty ? { max_completion_tokens: req.maxTokens } : { max_tokens: req.maxTokens }),
       ...(req.effort && req.capabilities?.includes('effort') && { reasoning_effort: req.effort }),
+      ...(req.temperature != null && !req.capabilities?.includes('effort') && { temperature: req.temperature }),
     };
     let res: OpenAI.Chat.Completions.ChatCompletion;
     try {
@@ -99,6 +100,7 @@ export class OpenAiProvider implements LlmProvider {
       }),
       ...(firstParty ? { max_completion_tokens: req.maxTokens } : { max_tokens: req.maxTokens }),
       ...(req.effort && req.capabilities?.includes('effort') && { reasoning_effort: req.effort }),
+      ...(req.temperature != null && !req.capabilities?.includes('effort') && { temperature: req.temperature }),
     };
     let text = '';
     let finish: string | null = null;

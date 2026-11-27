@@ -45,3 +45,21 @@ export function isLocalProvider(kind: string): boolean {
 export function mayReceive(privacy: StepPrivacy, providerKind: string): boolean {
   return privacy === 'PUBLIC' || isLocalProvider(providerKind);
 }
+
+// ───────────── the redacted view (ADR-004a) ─────────────
+
+/** What a member allowed in the separate cloud-sharing consent (AiSettings). */
+export interface CloudShare {
+  consentedAt: Date | null;
+  /** provider names the member allowed */
+  providers: string[];
+}
+
+/**
+ * A redacted, pseudonymized view (never raw user data) may go to a local provider always, and to a cloud provider only when the
+ * member has consented to sharing it and has allowed that provider by name.
+ */
+export function mayReceiveRedacted(provider: { name: string; kind: string }, share: CloudShare): boolean {
+  if (isLocalProvider(provider.kind)) return true;
+  return !!share.consentedAt && share.providers.includes(provider.name);
+}

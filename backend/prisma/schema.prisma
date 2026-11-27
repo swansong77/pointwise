@@ -61,6 +61,7 @@ model User {
   searchEntries SearchEntry[]
   searchSessions SearchSession[]
   reminders Reminder[]
+  aiDisclosures AiDisclosure[]
   aiUsage         AiUsage[]
   aiPendingActions AiPendingAction[]
   accessTokens    PersonalAccessToken[]
@@ -1279,6 +1280,20 @@ model AiSettings {
   monthlyTokenBudget Int?   // overrides AI_MONTHLY_TOKEN_BUDGET
   /// opt-in: let the user's chosen model classify cleaned merchant names (never amounts, dates, digits or names) for benefit detection
   classifyMerchants Boolean @default(false)
+  /// AI Mode (Copilot) is on: the command bar and the Copilot page answer with a plan
+  aiModeEnabled   Boolean   @default(false)
+  /// QUICK | PLANNING | RESEARCH | TRAVEL | CARD_STRATEGY | AUDIT
+  copilotMode     String    @default("QUICK")
+  /// 0..1; applied to models that accept it
+  temperature     Float?
+  /// LOW | MEDIUM | HIGH
+  reasoningDepth  String?
+  /// CONCISE | BALANCED | DETAILED
+  responseStyle   String    @default("BALANCED")
+  /// separate, off-by-default consent to share a redacted, pseudonymized view with cloud models (ADR-004a)
+  cloudShareConsentAt DateTime?
+  /// names of the AI providers allowed to receive that view; local providers are always allowed
+  cloudProviders  String[]  @default([])
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -2732,4 +2747,22 @@ model Reminder {
 
   @@index([userId, status, dueAt])
   @@index([status, dueAt])
+}
+
+/// What was sent to a model by AI Mode, exactly as sent (already redacted), so the member can inspect it. Kept 90 days.
+model AiDisclosure {
+  id        String   @id @default(uuid())
+  userId    String
+  runId     String?
+  /// the provider name and model that received it
+  provider  String
+  model     String
+  /// the provider is local (Ollama or the offline mock)
+  local     Boolean  @default(false)
+  purpose   String
+  payload   Json
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

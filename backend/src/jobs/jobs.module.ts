@@ -32,6 +32,7 @@ import { CardResearchCoreModule } from "../catalog-research/card-research.module
 import { JOB_NAMES, JOB_QUEUE, JobName, JobsService } from "./jobs.service";
 import { ROTATING_SCHEDULE } from "./rotating.job";
 import { RemindersCoreModule } from "../reminders/reminders.module";
+import { CopilotModule } from "../copilot/copilot.controller";
 
 /** Cron schedule (UTC). */
 export const SCHEDULE: Record<JobName, string> = {
@@ -77,6 +78,8 @@ export const SCHEDULE: Record<JobName, string> = {
   "update-rotating-categories": ROTATING_SCHEDULE,
   /** hourly: turns reminders that have fallen due into notifications */
   "reminders-due": "10 * * * *",
+  /** deletes what AI Mode sent to a model after 90 days */
+  "copilot-cleanup": "20 3 * * *",
 };
 
 const JobNameEnum = Object.fromEntries(JOB_NAMES.map((n) => [n, n])) as Record<
@@ -189,6 +192,7 @@ const jobDeps = () => [
   OfferAutomationCoreModule,
   DataJobsModule,
   RemindersCoreModule,
+  CopilotModule,
 ];
 
 @Module({

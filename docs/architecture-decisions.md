@@ -169,3 +169,9 @@ Format: Context · Options · Decision · Consequences · Status. Evidence and i
 - **Not covered:** logins, credentials, activating a category for a member, any page behind a login, offers, portals, or any other feature. Each of those still follows the standing rule.
 - **Consequences:** quarters appear without a code change when an issuer's page is readable; a wrong or unreadable page degrades to an admin notice, never to a wrong calendar. Issuer terms against automated access are the operator's to check; the job is polite and can be switched off.
 - **Status:** accepted.
+
+## ADR-004a — Opt-in redacted view for cloud models (amends ADR-004)
+- **Context:** AI Mode (Copilot) should reason about the household's whole portfolio. On 2026-11-26 the owner chose to allow cloud models to receive a redacted, pseudonymized view instead of keeping all private data local.
+- **Decision:** raw USER data still goes only to local providers. A new privacy class `REDACTED` may go to a cloud provider only when the member has given a separate consent (`cloudShareConsentAt`, off by default) and the provider is on their allow-list. The view is built by an allow-list serializer: members become "Member A (spouse)", card products, programs and merchants keep their public names, amounts and balances are rounded, dates are relative. Names, emails, card numbers and last four, account and login identifiers, statement lines, addresses, birth years and free-text notes are never included. Every request is stored in `AiDisclosure` and shown to the member. Models only write prose: they never call user tools, and actions come only from the server allow-list. Without consent the deterministic engines answer alone.
+- **Consequences:** better prose when a cloud key is supplied; pseudonymized facts can still identify a household in combination, which rounding, consent, the allow-list and the viewer reduce but do not remove.
+- **Status:** accepted (user-confirmed).
