@@ -251,7 +251,7 @@ Then apply it with `bash deploy/deploy.sh --no-pull`. Test with **Forgot passwor
 | The certificate is not issued (browser warning, or `ERR_SSL`) | DNS does not yet point at this server, or 80/443 are blocked. Fix it, then `docker compose -p pointwise-prod restart caddy`; watch with `logs caddy`. |
 | Sign-in loops or "invalid callback" | `PW_PUBLIC_URL` in `.env` differs from the address in the browser (http versus https, a missing `www.`). Make them identical, then `bash deploy/deploy.sh --no-pull`. |
 | "Network error" after sign-in | the API is down: `docker compose -p pointwise-prod ps backend` |
-| Port 80 or 443 already in use | set `PW_HTTP_PORT` and `PW_HTTPS_PORT` in `.env` (with choice A, free the ports instead: HTTPS needs them) |
+| Port 80 or 443 already in use | the installer checks before it starts. With a private `http://` address it moves the unused HTTPS port aside by itself; if port 80 is taken it tells you which program has it and what to set (`PW_HTTP_PORT` and the same port in `PW_PUBLIC_URL`, in `.env`). With choice A (public name) HTTPS needs 80 and 443, so free them. |
 | No e-mail arrives | check the SMTP values and `MAIL_DISABLED=false`; `logs backend` shows `mail to ... failed` with the reason |
 | You forgot the administrator password | `bash deploy/make-admin.sh you@example.com` does not reset passwords. Use **Forgot password** (needs e-mail), or ask another administrator. |
 | You want to start over | `docker compose -p pointwise-prod down -v` deletes **all data**, then delete `.env` and run the installer again |
