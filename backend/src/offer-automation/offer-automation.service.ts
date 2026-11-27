@@ -384,8 +384,8 @@ export class OfferAutomationService {
    * An offer-alert email from an issuer. It lists only some offers, so it adds and updates but never removes. Returns a
    * note for the mailbox log, or null when the member has no email account for this issuer or the mail has no offers.
    */
-  async ingestFromMail(userId: string, issuerName: string, text: string): Promise<string | null> {
-    const account = await this.prisma.offerAccount.findFirst({ where: { userId, connectorKind: 'EMAIL', issuer: { name: { equals: issuerName, mode: 'insensitive' } } }, select: { id: true } });
+  async ingestFromMail(userId: string, issuerName: string, text: string, profileId: string | null = null): Promise<string | null> {
+    const account = await this.prisma.offerAccount.findFirst({ where: { userId, ...(profileId && { profileId }), connectorKind: 'EMAIL', issuer: { name: { equals: issuerName, mode: 'insensitive' } } }, select: { id: true } });
     if (!account) return null;
     const r = await this.ingestSnapshot(userId, { accountId: account.id, text }, 'EMAIL');
     if (!r.accepted) return null;

@@ -124,8 +124,10 @@ describe("TC-MBX: mail classification", () => {
 
 describe("TC-MBX: mailbox service", () => {
   const row = { id: "mb1", userId: "u1", kind: "IMAP" as const, host: "imap.gmail.com", port: 993, username: "me@gmail.com", folder: "INBOX", secretEnc: encryptSecret("app-pass"), cursor: "7:3", active: true };
-  const make = (over: { fetch?: () => Promise<unknown>; receive?: jest.Mock; count?: number; dup?: boolean } = {}) => {
+  const make = (over: { fetch?: () => Promise<unknown>; receive?: jest.Mock; count?: number; dup?: boolean; link?: { id: string; userId: string } | null; owned?: { id: string } | null } = {}) => {
     const prisma = {
+      // who a channel belongs to: a member's own sign-in links to a profile; an owner may assign one of their own profiles
+      profile: { findUnique: jest.fn().mockResolvedValue(over.link ?? null), findFirst: jest.fn().mockResolvedValue(over.owned ?? null) },
       mailbox: {
         findUniqueOrThrow: jest.fn().mockResolvedValue(row),
         findMany: jest.fn().mockResolvedValue([{ id: "mb1" }]),
@@ -179,6 +181,22 @@ describe("TC-MBX: mailbox service", () => {
     expect(stored).not.toContain("secret-app-pass");
     await expect(make({ count: 3 }).svc.connect("u1", { label: "x", host: "imap.example.com", username: "a@b.c", password: "p" })).rejects.toThrow(/up to 3 mailboxes/);
     await expect(make({ dup: true }).svc.connect("u1", { label: "x", host: "imap.example.com", username: "me@gmail.com", password: "p" })).rejects.toThrow(/already connected/);
+  });
+  it("a household-wide mailbox has no profile; a member's own is pinned to theirs; an owner can assign one of their members; nobody can pick someone else's", async () => {
+    const dto = { label: "Mail", host: "imap.example.com", username: "me@example.com", password: "p" };
+    const wide = make();
+    await wide.svc.connect("u1", dto);
+    expect(wide.prisma.mailbox.create.mock.calls[0][0].data.profileId).toBeNull();
+    const mine = make({ link: { id: "p-riley", userId: "owner" } });
+    await mine.svc.connect("member", dto);
+    expect(mine.prisma.mailbox.create.mock.calls[0][0].data.profileId).toBe("p-riley");
+    await expect(make({ link: { id: "p-riley", userId: "owner" } }).svc.connect("member", { ...dto, profileId: "p-someone-else" })).rejects.toThrow(/Unknown household member/);
+    const assigned = make({ owned: { id: "p-sam" } });
+    await assigned.svc.connect("owner", { ...dto, profileId: "p-sam" });
+    expect(assigned.prisma.mailbox.create.mock.calls[0][0].data.profileId).toBe("p-sam");
+    await expect(make({ owned: null }).svc.connect("owner", { ...dto, profileId: "p-not-mine" })).rejects.toThrow(/Unknown household member/);
+    // the limit is counted per person
+    expect(assigned.prisma.mailbox.count).toHaveBeenCalledWith({ where: { userId: "owner", profileId: "p-sam" } });
   });
   it("a bad login surfaces as a clear 400 and nothing is stored", async () => {
     const { svc, prisma, verify } = make();

@@ -37,6 +37,12 @@ export default function MyViewPage() {
           ['Points and miles', d.loyalty.reduce((a, l) => a + l.balance, 0).toLocaleString('en-US')],
         ]}
       />
+      <p className="text-sm">
+        <Link href="/my/mail" className="font-medium text-brand-700 hover:underline" data-testid="my-mail-link">
+          Set up your mail and alerts
+        </Link>{' '}
+        <span className="text-slate-500">so your transactions and points update by themselves.</span>
+      </p>
       {me.data.visibility === 'HOUSEHOLD' && (
         <p className="text-sm">
           <Link href="/my/household" className="font-medium text-brand-700 hover:underline">

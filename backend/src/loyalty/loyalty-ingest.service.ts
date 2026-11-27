@@ -23,6 +23,8 @@ export interface IngestContext {
   evidenceHash: string;
   /** digits the message mentions, to choose between several accounts of one program */
   memberDigits?: string | null;
+  /** only this household member's accounts may be matched (a member's own mailbox or alert address) */
+  profileId?: string | null;
   now: Date;
   /** overrides the source's default reliability */
   reliability?: number;
@@ -68,9 +70,9 @@ const toJson = (v: unknown): Prisma.InputJsonValue => (v instanceof Date ? v.toI
 export class LoyaltyIngestService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async accountFor(userId: string, programCode: string, digits?: string | null) {
+  private async accountFor(userId: string, programCode: string, digits?: string | null, profileId?: string | null) {
     const code = programCode.toUpperCase();
-    const accounts = await this.prisma.loyaltyAccount.findMany({ where: { userId, OR: [{ program: { code } }, { currency: { code } }] }, include: { program: { select: { name: true, kind: true } }, currency: { select: { name: true } } } });
+    const accounts = await this.prisma.loyaltyAccount.findMany({ where: { userId, ...(profileId && { profileId }), OR: [{ program: { code } }, { currency: { code } }] }, include: { program: { select: { name: true, kind: true } }, currency: { select: { name: true } } } });
     if (!accounts.length) return { account: null, why: `No ${code} account to update. Add the account first.` };
     if (digits) {
       const hit = accounts.filter((a) => a.accountLast4 && (a.accountLast4.toUpperCase().endsWith(digits.toUpperCase()) || digits.toUpperCase().endsWith(a.accountLast4.toUpperCase())));
@@ -105,7 +107,7 @@ export class LoyaltyIngestService {
     if (!observations.length) return result;
     const { account, why } = ctx.accountId
       ? await this.byId(ctx.userId, ctx.accountId)
-      : await this.accountFor(ctx.userId, ctx.programCode, ctx.memberDigits);
+      : await this.accountFor(ctx.userId, ctx.programCode, ctx.memberDigits, ctx.profileId);
     if (!account) {
       result.unmatched = why;
       await this.prisma.loyaltySyncRun.create({ data: { userId: ctx.userId, method: ctx.sourceType === 'EMAIL' ? 'EMAIL' : ctx.sourceType === 'STATEMENT' ? 'STATEMENT' : 'EXTENSION', trigger: 'EVENT', status: 'PARTIAL', finishedAt: new Date(), observations: observations.length, error: why } });

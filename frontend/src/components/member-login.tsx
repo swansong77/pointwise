@@ -48,6 +48,11 @@ export function MemberLogin({ member }: { member: Member }) {
         {login.status === 'NONE' && <Badge>None</Badge>}
       </div>
 
+      {login.status !== 'ACTIVE' && member.channels && member.channels.mailboxes > 0 && (
+        <p className="mt-1 text-slate-600" data-testid="member-channels">
+          {member.channels.mailboxes} of your mailboxes feed {member.nickname}.
+        </p>
+      )}
       {login.status === 'NONE' && !invite && (
         <>
           <p className="mt-1 text-slate-600">{member.nickname} can have their own e-mail and password, see their own cards and points, and later get their own alerts and briefings.</p>
@@ -93,6 +98,20 @@ export function MemberLogin({ member }: { member: Member }) {
             Signs in as <strong>{login.email}</strong>
             {login.since ? ` since ${shortDate(login.since)}` : ''}.
           </p>
+          {member.channels && (
+            <p className="mt-1 text-slate-600" data-testid="member-channels">
+              {member.channels.mailboxes === 0 ? 'No mailbox connected' : `${member.channels.mailboxes} mailbox${member.channels.mailboxes === 1 ? '' : 'es'} connected`}
+              {member.channels.lastSyncAt ? `, last read ${shortDate(member.channels.lastSyncAt)}` : ''}
+              {' · '}
+              {member.channels.alertAddress ? 'alert address on' : 'no alert address in use'}
+              {member.channels.needsAttention > 0 && (
+                <>
+                  {' '}
+                  <Badge tone="red">{member.channels.needsAttention} need attention</Badge>
+                </>
+              )}
+            </p>
+          )}
           <div className="mt-2 flex flex-wrap items-end gap-2">
             <div className="w-64">
               <label htmlFor={`vis-${member.id}`} className="mb-1 block text-xs font-medium text-slate-700">

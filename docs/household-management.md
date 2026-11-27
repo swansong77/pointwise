@@ -73,4 +73,23 @@ A member can have their own e-mail and password without becoming a separate acco
 
 Routes without `@MemberSafe()` return 403, including every write. Public routes (catalog, `GET /offers`) are unchanged. Backups and member exports never carry `loginUserId`, and invites are not restored.
 
-**Not yet (later phases):** members connecting their own mailboxes or alert address and feeding their profile (phase 2); their own notifications, push, quiet mode and briefings (phase 3). Members cannot yet add or edit cards themselves.
+**Not yet (later phase):** their own notifications, push, quiet mode and briefings (phase 3). Members cannot yet add or edit cards themselves.
+
+## 7. Mailboxes and alert addresses per person (phase 2, 2026-12)
+
+Each person can have their own channels, and what a channel carries lands only on that person's cards and points.
+
+**Scope.** `common/channel-scope.ts` resolves a channel to `{ channelUserId, ownerId, profileId }`. A member's own channel (their user id) is always pinned to their profile; an owner's channel is household-wide unless the owner assigned the mailbox to one of their members (`Mailbox.profileId`, validated against the owner's own profiles). Data always lands in the owner's account (`ownerId`); only the review queue ("Which card?") and the address belong to the channel's user.
+
+**What is pinned.** Card matching by last digits (`SpendService.cardForDigits`), statement PDFs, loyalty e-mail and statement matching (`LoyaltyIngestService.accountFor`) and e-mail offer accounts are all restricted to the profile. That is the point of the feature: when two household cards end the same four digits, or two members hold the same program, the household address cannot tell which one (nothing is guessed), while a member's own address can.
+
+| Channel | Who | Feeds |
+|---|---|---|
+| Alert address (`EmailInbox`) | the owner, and each member with a sign-in | owner: the whole household; member: their own profile |
+| Mailbox (IMAP, Gmail, Outlook) | the owner, and each member with a sign-in | as above, and an owner can assign a mailbox to a member who has no sign-in |
+
+**Limits and privacy.** Up to 3 mailboxes per person (the owner's household-wide ones, each member's own, and each member's assigned ones are separate counts). A member's mailbox addresses and alert address are never shown to the owner: the owner sees only counts, last read time, problems and whether an alert address is in use (`channels` on the member). A member cannot connect banks or pick another person's profile. Removing a member's sign-in deletes their mailboxes and address; deleting a member whose mailbox the owner assigned turns that mailbox back into a household-wide one.
+
+**Routes opened to members:** `/mailboxes` (all, including the Gmail and Outlook sign-in and its callback, which sends a member back to `/my/mail`), `GET /capture/status`, `PATCH /capture/inbox`, `POST /capture/inbox/rotate`, `POST|DELETE /capture/items/:id`. Each one acts on the member's own channel user id and resolves their scope from the database.
+
+**Not yet:** a member's own notifications, push, quiet mode and briefings (phase 3). Notifications a member's mail causes (for example a benefit being marked used) still go to the owner.

@@ -69,6 +69,8 @@ export interface StatePayload {
   kind: OAuthKind;
   /** PKCE verifier, when used */
   verifier?: string;
+  /** the household member this mailbox is for (an owner assigning it); a member's own mailbox needs none */
+  profileId?: string;
   exp: number;
 }
 

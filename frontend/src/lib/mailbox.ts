@@ -1,5 +1,7 @@
 export interface MailboxView {
   id: string;
+  /** the household member this mailbox feeds; null = the whole household */
+  profile?: { id: string; nickname: string } | null;
   kind: 'IMAP' | 'GMAIL' | 'GRAPH';
   label: string;
   host: string | null;

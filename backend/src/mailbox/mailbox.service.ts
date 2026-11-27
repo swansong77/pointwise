@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CaptureService } from '../capture/capture.service';
 import { PrismaService } from '../common/prisma.service';
+import { channelScope } from '../common/channel-scope';
 import { decryptSecret, encryptSecret } from '../common/crypto';
 import { senderDomains } from '../domain/email-alerts';
 import { authservIdFor, MailboxConfig, MailboxConnector } from './connector';
@@ -9,6 +10,7 @@ import { buildAuthUrl, credentialsFor, exchangeCode, FetchLike, KIND_PATH, newVe
 import { assertPublicHost } from './host-guard';
 import { ImapConnector } from './imap.connector';
 
+/** per person: the owner's household-wide mailboxes, and each member's own (or the ones the owner assigns to that member) */
 export const MAX_MAILBOXES = 3;
 const SINCE_DAYS = 30;
 const MAX_PER_RUN = 60;
@@ -20,6 +22,8 @@ export interface ConnectDto {
   username: string;
   password: string;
   folder?: string;
+  /** the household member this mailbox feeds (owner only); omitted = the whole household */
+  profileId?: string;
 }
 
 /**
@@ -48,9 +52,10 @@ export class MailboxService {
     private readonly capture: CaptureService,
   ) {}
 
-  private view(m: { id: string; kind: string; label: string; host: string | null; port: number | null; username: string; folder: string; active: boolean; lastSyncAt: Date | null; lastStatus: string | null; lastError: string | null; processed: number; createdAt: Date }) {
+  private view(m: { id: string; profile?: { id: string; nickname: string } | null; kind: string; label: string; host: string | null; port: number | null; username: string; folder: string; active: boolean; lastSyncAt: Date | null; lastStatus: string | null; lastError: string | null; processed: number; createdAt: Date }) {
     return {
       id: m.id,
+      profile: m.profile ? { id: m.profile.id, nickname: m.profile.nickname } : null,
       kind: m.kind,
       label: m.label,
       host: m.host,
@@ -67,13 +72,21 @@ export class MailboxService {
   }
 
   async list(userId: string) {
-    const rows = await this.prisma.mailbox.findMany({ where: { userId }, orderBy: { createdAt: 'asc' } });
+    const rows = await this.prisma.mailbox.findMany({ where: { userId }, orderBy: { createdAt: 'asc' }, include: { profile: { select: { id: true, nickname: true } } } });
     return rows.map((m) => this.view(m));
   }
 
+  /** Who the mailbox feeds: a member's own is always their profile; an owner's is the whole household unless assigned to a member of theirs. */
+  private async profileFor(userId: string, requested?: string | null): Promise<string | null> {
+    const scope = await channelScope(this.prisma, userId, requested);
+    if (requested && scope.profileId !== requested) throw new BadRequestException('Unknown household member');
+    return scope.profileId;
+  }
+
   async connect(userId: string, dto: ConnectDto) {
-    const count = await this.prisma.mailbox.count({ where: { userId } });
-    if (count >= MAX_MAILBOXES) throw new BadRequestException(`You can connect up to ${MAX_MAILBOXES} mailboxes`);
+    const profileId = await this.profileFor(userId, dto.profileId);
+    const count = await this.prisma.mailbox.count({ where: { userId, profileId } });
+    if (count >= MAX_MAILBOXES) throw new BadRequestException(`You can connect up to ${MAX_MAILBOXES} mailboxes${profileId ? ' for this person' : ''}`);
     try {
       await assertPublicHost(dto.host);
     } catch (e) {
@@ -88,7 +101,8 @@ export class MailboxService {
     const dup = await this.prisma.mailbox.findUnique({ where: { userId_kind_username: { userId, kind: 'IMAP', username: cfg.username } } });
     if (dup) throw new BadRequestException('This mailbox is already connected');
     const row = await this.prisma.mailbox.create({
-      data: { userId, kind: 'IMAP', label: dto.label.trim().slice(0, 60), host: cfg.host, port: cfg.port, username: cfg.username, folder: cfg.folder, secretEnc: encryptSecret(dto.password) },
+      include: { profile: { select: { id: true, nickname: true } } },
+      data: { userId, profileId, kind: 'IMAP', label: dto.label.trim().slice(0, 60), host: cfg.host, port: cfg.port, username: cfg.username, folder: cfg.folder, secretEnc: encryptSecret(dto.password) },
     });
     return this.view(row);
   }
@@ -109,17 +123,26 @@ export class MailboxService {
   }
 
   /** The provider's consent URL for this user. The state is sealed, expires in 10 minutes and names the user. */
-  startOAuth(userId: string, pathKind: string): { url: string } {
+  async startOAuth(userId: string, pathKind: string, requestedProfileId?: string): Promise<{ url: string }> {
     const kind = KIND_PATH[pathKind];
     if (!kind) throw new BadRequestException('Unknown provider');
     const creds = credentialsFor(kind);
     if (!creds) throw new BadRequestException('This sign-in is not set up on this server yet (see docs/email-ingestion-research.md)');
     const verifier = kind === 'GRAPH' ? newVerifier() : undefined;
-    return { url: buildAuthUrl(kind, creds.clientId, sealState({ userId, kind, verifier }), verifier) };
+    const profileId = (await this.profileFor(userId, requestedProfileId)) ?? undefined;
+    return { url: buildAuthUrl(kind, creds.clientId, sealState({ userId, kind, verifier, profileId }), verifier) };
   }
 
   /** Completes the sign-in: exchanges the code, stores the encrypted refresh token and creates (or refreshes) the mailbox. */
-  async finishOAuth(code: string | undefined, state: string | undefined, error?: string): Promise<{ ok: boolean; message?: string }> {
+  async finishOAuth(code: string | undefined, state: string | undefined, error?: string): Promise<{ ok: boolean; message?: string; member: boolean }> {
+    const r = await this.finishOAuthInner(code, state, error);
+    // a member returns to their own page, not the owner's Spending page
+    const st = state ? openState(state) : null;
+    const member = st ? !!(await this.prisma.profile.findUnique({ where: { loginUserId: st.userId }, select: { id: true } })) : false;
+    return { ...r, member };
+  }
+
+  private async finishOAuthInner(code: string | undefined, state: string | undefined, error?: string): Promise<{ ok: boolean; message?: string }> {
     const st = state ? openState(state) : null;
     if (!st) return { ok: false, message: 'The sign-in link expired. Start again.' };
     if (error || !code) return { ok: false, message: error === 'access_denied' ? 'You declined access.' : 'The provider did not complete the sign-in.' };
@@ -136,9 +159,10 @@ export class MailboxService {
         await this.prisma.mailbox.update({ where: { id: existing.id }, data: { secretEnc: encryptSecret(tokens.refreshToken), active: true, lastStatus: null, lastError: null } });
         return { ok: true };
       }
-      if ((await this.prisma.mailbox.count({ where: { userId: st.userId } })) >= MAX_MAILBOXES) return { ok: false, message: `You can connect up to ${MAX_MAILBOXES} mailboxes` };
+      const profileId = await this.profileFor(st.userId, st.profileId);
+      if ((await this.prisma.mailbox.count({ where: { userId: st.userId, profileId } })) >= MAX_MAILBOXES) return { ok: false, message: `You can connect up to ${MAX_MAILBOXES} mailboxes${profileId ? ' for this person' : ''}` };
       await this.prisma.mailbox.create({
-        data: { userId: st.userId, kind: st.kind, label: st.kind === 'GMAIL' ? 'Gmail' : 'Outlook', username: address, folder: cfg.folder, secretEnc: encryptSecret(tokens.refreshToken) },
+        data: { userId: st.userId, profileId, kind: st.kind, label: st.kind === 'GMAIL' ? 'Gmail' : 'Outlook', username: address, folder: cfg.folder, secretEnc: encryptSecret(tokens.refreshToken) },
       });
       return { ok: true };
     } catch (e) {
@@ -173,7 +197,7 @@ export class MailboxService {
       const authserv = m.kind === 'GMAIL' ? 'mx.google.com' : authservIdFor(m.host);
       for (const msg of page.messages) {
         try {
-          await this.capture.receiveFromMailbox(m.userId, msg.raw, authserv, now);
+          await this.capture.receiveFromMailbox(m.userId, msg.raw, authserv, now, m.profileId);
           processed++;
         } catch (e) {
           skipped++;

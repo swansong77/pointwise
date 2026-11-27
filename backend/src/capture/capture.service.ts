@@ -10,6 +10,7 @@ import { TransactionKind } from "@prisma/client";
 import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import { simpleParser } from "mailparser";
 import { PrismaService } from "../common/prisma.service";
+import { ChannelScope, channelScope, scopedCards } from "../common/channel-scope";
 import { htmlToText } from "../domain/card-extract";
 import {
   domainOf,
@@ -133,6 +134,7 @@ export class CaptureService {
       : null;
     if (!inbox || !inbox.enabled) return { accepted: false };
     const userId = inbox.userId;
+    const scope = await channelScope(this.prisma, userId);
     await this.prisma.emailInbox.update({
       where: { id: inbox.id },
       data: { received: { increment: 1 }, lastReceivedAt: now },
@@ -144,7 +146,7 @@ export class CaptureService {
       },
     });
 
-    return this.processMail(userId, mail, now, process.env.INBOUND_AUTHSERV_ID);
+    return this.processMail(scope, mail, now, process.env.INBOUND_AUTHSERV_ID);
   }
 
   /**
@@ -158,17 +160,21 @@ export class CaptureService {
     rawMime: Buffer,
     authservId: string | undefined,
     now = new Date(),
+    assignedProfileId: string | null = null,
   ): Promise<{ accepted: boolean; status?: string; kind?: string }> {
     const mail = await simpleParser(rawMime, { skipImageLinks: true, skipTextToHtml: true });
-    return this.processMail(userId, mail, now, authservId);
+    return this.processMail(await channelScope(this.prisma, userId, assignedProfileId), mail, now, authservId);
   }
 
   private async processMail(
-    userId: string,
+    scope: ChannelScope,
     mail: Awaited<ReturnType<typeof simpleParser>>,
     now: Date,
     authservId: string | undefined,
   ): Promise<{ accepted: boolean; status?: string; kind?: string }> {
+    // the review queue belongs to the channel's owner; the data goes to the household owner, pinned to a member when the channel is theirs
+    const userId = scope.ownerId;
+    const profileId = scope.profileId;
     const fromAddr = mail.from?.value?.[0]?.address ?? "";
     const fromDomain = domainOf(fromAddr);
     const subject = (mail.subject ?? "").slice(0, 200);
@@ -178,7 +184,7 @@ export class CaptureService {
     const record: RecordFn = (data) =>
       this.prisma.inboundEmail.create({
         data: {
-          userId,
+          userId: scope.channelUserId,
           fromDomain: fromDomain || "unknown",
           subject,
           ...data,
@@ -233,7 +239,7 @@ export class CaptureService {
     // loyalty program mail: balances, status, certificates, expiry notices (and loyalty statements)
     const program = programForDomain(fromDomain);
     if (program) {
-      const handled = await this.loyaltyMail(userId, program, mail, subject, text, fromDomain, verified, record, now);
+      const handled = await this.loyaltyMail(userId, profileId, program, mail, subject, text, fromDomain, verified, record, now);
       if (handled) return handled;
     }
 
@@ -247,6 +253,7 @@ export class CaptureService {
       for (const a of pdfs.slice(0, 3))
         last = await this.statementAttachment(
           userId,
+          profileId,
           a.content,
           record,
           verified,
@@ -257,7 +264,7 @@ export class CaptureService {
     // an offer-alert email from an issuer the member keeps an email offers account for
     const offerIssuer = issuerNameForDomain(fromDomain);
     if (offerIssuer && /\b(offers?|deals?)\b/i.test(subject) && this.offerAutomation) {
-      const note = await this.offerAutomation.ingestFromMail(userId, offerIssuer, `${subject}\n${text}`);
+      const note = await this.offerAutomation.ingestFromMail(userId, offerIssuer, `${subject}\n${text}`, profileId);
       if (note) {
         await record({ kind: "IGNORED", status: "PROCESSED", verified, note });
         return { accepted: true, kind: "IGNORED", status: "PROCESSED" };
@@ -276,7 +283,7 @@ export class CaptureService {
       return { accepted: true, kind: "IGNORED", status: "PROCESSED" };
     }
     const a = parsed.alert;
-    const card = await this.cardFor(userId, a.lastDigits);
+    const card = await this.cardFor(userId, a.lastDigits, profileId);
     const base = {
       kind: "ALERT" as const,
       verified,
@@ -330,6 +337,7 @@ export class CaptureService {
    */
   private async loyaltyMail(
     userId: string,
+    profileId: string | null,
     program: ProgramRule,
     mail: Awaited<ReturnType<typeof simpleParser>>,
     subject: string,
@@ -352,7 +360,7 @@ export class CaptureService {
           ...st.activity.map((x) => ({ entity: "ACCOUNT" as const, field: "activity", value: { kind: x.kind, points: x.points, occurredAt: x.occurredAt, balanceAfter: x.balanceAfter, note: x.description }, rule: "statement.line", ruleConfidence: 90, observedAt: x.occurredAt })),
           ...st.extras,
         ];
-        const r = await this.loyalty.apply({ userId, programCode: st.program.programCode, sourceType: "STATEMENT", method: "statement-pdf", evidenceHash: evidenceHashOf("pdf", createHash("sha256").update(a.content).digest("hex")), now }, observations);
+        const r = await this.loyalty.apply({ userId, profileId, programCode: st.program.programCode, sourceType: "STATEMENT", method: "statement-pdf", evidenceHash: evidenceHashOf("pdf", createHash("sha256").update(a.content).digest("hex")), now }, observations);
         await record({ kind: "LOYALTY", status: "PROCESSED", verified, note: r.unmatched ?? `${st.program.name} statement: ${r.applied} applied, ${r.confirmed} confirmed${st.validation.status === "WARNING" ? " (needs review: " + st.validation.reasons[0] + ")" : ""}` });
         return { accepted: true, kind: "LOYALTY", status: "PROCESSED" };
       } catch {
@@ -361,7 +369,7 @@ export class CaptureService {
     }
     const parsed = parseLoyaltyEmail(fromDomain, subject, text, when);
     if (!parsed.observations.length) return null;
-    const r = await this.loyalty.apply({ userId, programCode: program.programCode, sourceType: "EMAIL", method: parsed.rules.join("+").slice(0, 60) || "email", evidenceHash: evidence, memberDigits: parsed.memberDigits, now }, parsed.observations);
+    const r = await this.loyalty.apply({ userId, profileId, programCode: program.programCode, sourceType: "EMAIL", method: parsed.rules.join("+").slice(0, 60) || "email", evidenceHash: evidence, memberDigits: parsed.memberDigits, now }, parsed.observations);
     const isCardAlert = parseAlert(subject, text, when).kind !== "IGNORED";
     if (isCardAlert) return null; // also a card transaction alert: continue to the card flow
     await record({ kind: "LOYALTY", status: "PROCESSED", verified, note: r.unmatched ?? `${program.name}: ${r.applied} applied, ${r.confirmed} confirmed${r.conflicts + r.pending ? `, ${r.conflicts + r.pending} need your decision` : ""}` });
@@ -402,6 +410,7 @@ export class CaptureService {
 
   private async statementAttachment(
     userId: string,
+    profileId: string | null,
     content: Buffer,
     save: RecordFn,
     verified: boolean,
@@ -409,7 +418,7 @@ export class CaptureService {
     try {
       const pages = await extractPdfLines(content);
       const digits = statementDigits(pages.flat());
-      const card = await this.cardFor(userId, digits);
+      const card = await this.cardFor(userId, digits, profileId);
       if (!card) {
         await save({
           kind: "STATEMENT",
@@ -448,8 +457,8 @@ export class CaptureService {
   }
 
   /** The user's one open card whose stored last digits match (4 vs 5 digits for Amex handled). */
-  private cardFor(userId: string, digits: string | null) {
-    return this.spend.cardForDigits(userId, digits);
+  private cardFor(userId: string, digits: string | null, profileId: string | null = null) {
+    return this.spend.cardForDigits(userId, digits, profileId);
   }
 
   // ───────── review ─────────
@@ -473,13 +482,15 @@ export class CaptureService {
       throw new BadRequestException(
         "Only alerts waiting for a card can be assigned",
       );
+    // a member can only assign to their own cards; the data lands in the household owner's account
+    const scope = await channelScope(this.prisma, userId);
     const card = await this.prisma.walletCard.findFirst({
-      where: { id: walletCardId, wallet: { userId } },
+      where: { id: walletCardId, ...scopedCards(scope) },
       select: { id: true, lastFour: true },
     });
     if (!card) throw new NotFoundException("Wallet card not found");
     const r = await this.ingestAlert(
-      userId,
+      scope.ownerId,
       card.id,
       {
         amountCents: item.amountCents,
@@ -518,12 +529,14 @@ export class CaptureService {
   // ───────── status ─────────
 
   /** Per card: how its transactions arrive (bank / alert emails / manual) and whether that is current. */
-  async status(userId: string, now = new Date()) {
+  async status(channelUserId: string, now = new Date()) {
+    const userId = channelUserId;
+    const scope = await channelScope(this.prisma, userId);
     const inbox = await this.inboxRow(userId);
     const domain = this.domain();
     const [cards, connections, items, lastTx] = await Promise.all([
       this.prisma.walletCard.findMany({
-        where: { wallet: { userId }, status: { not: "CLOSED" } },
+        where: { ...scopedCards(scope), status: { not: "CLOSED" } },
         select: {
           id: true,
           nickname: true,
@@ -540,8 +553,9 @@ export class CaptureService {
         },
         orderBy: { sortOrder: "asc" },
       }),
-      this.prisma.bankConnection.findMany({
-        where: { userId },
+      // bank connections belong to the household owner; a member's view never includes them
+      scope.profileId ? Promise.resolve([] as Array<{ id: string; institutionName: string | null; lastSyncedAt: Date | null; lastTxSyncAt: Date | null; needsReauth: boolean; lastError: string | null }>) : this.prisma.bankConnection.findMany({
+        where: { userId: scope.ownerId },
         select: {
           id: true,
           institutionName: true,
@@ -559,14 +573,15 @@ export class CaptureService {
       this.prisma.transaction.groupBy({
         by: ["walletCardId", "source"],
         where: {
-          userId,
+          userId: scope.ownerId,
+          ...(scope.profileId && { walletCard: { profileId: scope.profileId } }),
           occurredAt: { gte: new Date(now.getTime() - 90 * DAY) },
         },
         _max: { occurredAt: true },
         _count: true,
       }),
     ]);
-    const coverage = await this.spend.statementCoverage(userId);
+    const coverage = await this.spend.statementCoverage(scope.ownerId);
     const confirmation = items.find(
       (i) =>
         i.kind === "FORWARD_CONFIRMATION" &&

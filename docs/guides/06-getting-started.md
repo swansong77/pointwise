@@ -110,6 +110,12 @@ Every card issuer can e-mail you for each transaction. PointWise can read those 
 
 What PointWise keeps from each alert: the amount, merchant, card digits and date. It does not keep the e-mail itself. Alerts it cannot match to exactly one card appear under **Which card?** and you pick the right one once.
 
+### Everyone in the household can have their own mail and alerts
+
+If a member has their own sign-in (Step 1), they get **Mail & alerts** in their own menu: their own private forwarding address and their own mailboxes (up to 3). What arrives there updates **only their own cards and points**. That also solves a real problem: if two people have a card ending in the same four digits, or you both hold the same airline program, the household address cannot tell which is which, while each person's own address can.
+
+The account owner can also connect a mailbox **for** a member who has no sign-in: in **Spending**, **Connected mailboxes**, choose *Whose cards and points does this mailbox feed?* and pick the person. In **Household** the owner sees how many mailboxes each person has, when they were last read, and whether anything needs attention, but never the other person's e-mail addresses.
+
 ### Method 3: connect a mailbox (PointWise reads it for you)
 
 In **Spending** (or **Loyalty**), **Connected mailboxes**, choose **Connect Gmail** or **Connect Outlook** and sign in with that provider's own screen; or connect any other mailbox with its IMAP details and an **app password** that you create for this purpose and can revoke any time.
