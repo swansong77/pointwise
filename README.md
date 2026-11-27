@@ -28,6 +28,8 @@ project-analysis/
 | [1. Local development](docs/guides/01-local-development.md) | changing the code, running the tests |
 | [2. Install on your own server](docs/guides/02-self-host-install.md) | a real install with HTTPS, your first administrator, and first-time setup for each member |
 | [3. Automated deployment](docs/guides/03-automated-deployment.md) | updates, backups, rollback and recovery without doing it by hand |
+| [4. On a Mac](docs/guides/04-mac.md) | develop on, or run PointWise on, a Mac |
+| [5. On a Windows PC](docs/guides/05-windows.md) | develop on, or run PointWise on, a Windows PC (WSL 2 and Docker Desktop) |
 
 **Fastest install on a fresh Linux server:** `curl -fsSL <raw address of deploy/get.sh> | sudo bash -s -- --domain your.name --admin-email you@example.com` (details in guide 2).
 
