@@ -7,13 +7,14 @@ import { useSession } from 'next-auth/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Spinner } from '@/components/ui';
+import { CallButton } from '@/components/call-button';
+import { PlanView } from '@/components/plan-view';
 import { json, useApi } from '@/lib/api';
+import type { CopilotResponse, CopilotSettings } from '@/lib/copilot';
 import { ADMIN_NAV, NAV } from '@/lib/nav';
 import {
   AnswerRelated,
   AskResponse,
-  CallAction,
-  isSafeCall,
   confidenceText,
   confidenceTone,
   matchPages,
@@ -28,77 +29,6 @@ import {
 
 const RELATED_ICON: Record<AnswerRelated['type'], string> = { CARD: '💳', OFFER: '🏷️', BENEFIT: '🎁', CERTIFICATE: '🎟️', PROGRAM: '✈️', MERCHANT: '🏪', MEMBER: '👤' };
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-type CallState = { phase: 'idle' | 'confirm' | 'running' | 'done' | 'error'; message?: string };
-
-/** One change offered with an answer: a button, an inline confirmation when the change matters, then the result. */
-function CallButton({ c }: { c: CallAction }) {
-  const api = useApi();
-  const qc = useQueryClient();
-  const [st, setSt] = useState<CallState>({ phase: 'idle' });
-  const confirmRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    if (st.phase === 'confirm') confirmRef.current?.focus();
-  }, [st.phase]);
-  const run = async () => {
-    if (!isSafeCall(c)) {
-      setSt({ phase: 'error', message: 'That action is not allowed.' });
-      return;
-    }
-    setSt({ phase: 'running' });
-    try {
-      await api(c.path, { method: c.method, ...json(c.body) });
-      setSt({ phase: 'done', message: c.success });
-      await qc.invalidateQueries();
-    } catch (e) {
-      setSt({ phase: 'error', message: e instanceof Error ? e.message : 'That did not work.' });
-    }
-  };
-  if (st.phase === 'done' || st.phase === 'error')
-    return (
-      <p
-        role="status"
-        className={clsx('rounded-lg px-3 py-1.5 text-sm', st.phase === 'done' ? 'bg-emerald-50 text-emerald-900' : 'bg-red-50 text-red-900')}
-        data-testid="call-result"
-      >
-        {st.message}
-      </p>
-    );
-  if (st.phase === 'confirm')
-    return (
-      <div role="group" aria-label={`Confirm: ${c.label}`} className="w-full rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950" data-testid="call-confirm">
-        <p>{c.confirm}</p>
-        <div className="mt-2 flex gap-2">
-          <button
-            ref={confirmRef}
-            type="button"
-            onClick={run}
-            className="rounded-lg bg-brand-600 px-3 py-1 text-sm font-medium text-white hover:bg-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500"
-          >
-            Confirm
-          </button>
-          <button
-            type="button"
-            onClick={() => setSt({ phase: 'idle' })}
-            className="rounded-lg bg-white px-3 py-1 text-sm font-medium text-slate-800 ring-1 ring-slate-300 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-brand-500"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    );
-  return (
-    <button
-      type="button"
-      disabled={st.phase === 'running'}
-      onClick={() => (c.confirm ? setSt({ phase: 'confirm' }) : run())}
-      data-testid="call-action"
-      className="rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-brand-800 ring-1 ring-brand-300 hover:bg-brand-50 focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-60"
-    >
-      {st.phase === 'running' ? 'Working…' : c.label}
-    </button>
-  );
-}
 
 function AnswerView({
   a,
@@ -268,7 +198,8 @@ function AnswerView({
 
 /**
  * The universal search bar: ask in plain language or search everything. Opens with Ctrl/Cmd+K, from the header or the floating button.
- * Suggestions come as you type; Enter asks. Everything stays on this server — no AI provider is involved.
+ * Suggestions come as you type; Enter asks. Standard mode stays on this server with no AI provider; AI Mode answers with a plan and may let a model
+ * reword it, but only from a redacted summary and only as the member allowed in Settings.
  */
 export function CommandBar({ open, onClose, isAdmin, seed }: { open: boolean; onClose: () => void; isAdmin: boolean; seed?: { q: string; nonce: number } | null }) {
   const router = useRouter();
@@ -282,6 +213,8 @@ export function CommandBar({ open, onClose, isAdmin, seed }: { open: boolean; on
   const [dq, setDq] = useState('');
   const [active, setActive] = useState(-1);
   const [answer, setAnswer] = useState<AskResponse | null>(null);
+  const [plan, setPlan] = useState<CopilotResponse | null>(null);
+  const hasResult = !!answer || !!plan;
   const [asked, setAsked] = useState('');
   const slots = useRef<Slots | null>(null);
   const session = useRef<string | null>(null);
@@ -296,20 +229,47 @@ export function CommandBar({ open, onClose, isAdmin, seed }: { open: boolean; on
   const suggest = useQuery({
     queryKey: ['search', 'suggest', dq],
     queryFn: ({ signal }) => api<SuggestResponse>(`/search/suggest?q=${encodeURIComponent(dq)}`, { signal }),
-    enabled: open && status === 'authenticated' && !answer,
+    enabled: open && status === 'authenticated' && !hasResult,
     staleTime: 30_000,
     placeholderData: keepPreviousData,
   });
+  // AI Mode: the question goes to the Copilot (a plan with reasoning) instead of the search engines
+  const cs = useQuery({
+    queryKey: ['copilot', 'settings'],
+    queryFn: () => api<CopilotSettings>('/copilot/settings'),
+    enabled: open && status === 'authenticated',
+    staleTime: 60_000,
+  });
+  const aiMode = !!cs.data?.aiModeEnabled;
+  const toggleAi = useMutation({
+    mutationFn: (on: boolean) => api<CopilotSettings>('/copilot/settings', { method: 'PUT', ...json({ aiModeEnabled: on }) }),
+    onSuccess: (r) => {
+      qc.setQueryData(['copilot', 'settings'], r);
+      setAnswer(null);
+      setPlan(null);
+      session.current = null;
+      slots.current = null;
+    },
+  });
   const ask = useMutation({
     // the server remembers the conversation; the slots are only a fallback for a conversation it no longer has
-    mutationFn: (question: string) =>
-      api<AskResponse>('/search/ask', {
-        method: 'POST',
-        ...json({ q: question, ...(session.current ? { sessionId: session.current } : slots.current ? { slots: slots.current } : {}) }),
-      }),
+    mutationFn: (question: string): Promise<AskResponse | CopilotResponse> =>
+      aiMode
+        ? api<CopilotResponse>('/copilot/ask', { method: 'POST', ...json({ q: question, ...(session.current ? { sessionId: session.current } : {}) }) })
+        : api<AskResponse>('/search/ask', {
+            method: 'POST',
+            ...json({ q: question, ...(session.current ? { sessionId: session.current } : slots.current ? { slots: slots.current } : {}) }),
+          }),
     onSuccess: (r) => {
+      if ('plan' in r) {
+        if (r.sessionId) session.current = r.sessionId;
+        setAnswer(null);
+        setPlan(r);
+        return;
+      }
       slots.current = r.slots;
       session.current = r.sessionId;
+      setPlan(null);
       setAnswer(r);
     },
   });
@@ -334,9 +294,9 @@ export function CommandBar({ open, onClose, isAdmin, seed }: { open: boolean; on
   });
 
   const items: Suggestion[] = useMemo(() => {
-    if (answer) return [];
+    if (hasResult) return [];
     return mergeSuggestions(suggest.data?.suggestions ?? [], matchPages(q, pages));
-  }, [answer, suggest.data, q, pages]);
+  }, [hasResult, suggest.data, q, pages]);
 
   // open: remember where focus was, lock scroll, focus the input. Close: reset the conversation and give focus back.
   useEffect(() => {
@@ -351,6 +311,7 @@ export function CommandBar({ open, onClose, isAdmin, seed }: { open: boolean; on
       setQ('');
       setDq('');
       setAnswer(null);
+      setPlan(null);
       setAsked('');
       setActive(-1);
       slots.current = null;
@@ -362,7 +323,7 @@ export function CommandBar({ open, onClose, isAdmin, seed }: { open: boolean; on
   }, [open]);
 
   // the highlight starts over when the person types or an answer appears, not when late results arrive; it never points past the list
-  useEffect(() => setActive(-1), [q, answer]);
+  useEffect(() => setActive(-1), [q, answer, plan]);
   useEffect(() => setActive((i) => (i >= items.length ? items.length - 1 : i)), [items.length]);
 
   const runAsk = useCallback(
@@ -393,8 +354,9 @@ export function CommandBar({ open, onClose, isAdmin, seed }: { open: boolean; on
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault();
-      if (answer || q) {
+      if (answer || plan || q) {
         setAnswer(null);
+        setPlan(null);
         setQ('');
         inputRef.current?.focus();
       } else onClose();
@@ -437,7 +399,7 @@ export function CommandBar({ open, onClose, isAdmin, seed }: { open: boolean; on
   };
 
   if (!open) return null;
-  const showList = !answer && !ask.isPending;
+  const showList = !hasResult && !ask.isPending;
   return (
     <div className="fixed inset-0 z-[60]" data-testid="command-bar">
       <div className="absolute inset-0 bg-slate-900/40" onClick={onClose} aria-hidden />
@@ -465,15 +427,31 @@ export function CommandBar({ open, onClose, isAdmin, seed }: { open: boolean; on
             autoComplete="off"
             spellCheck={false}
             maxLength={300}
-            placeholder="Ask anything: “Costco $1500”, “What’s expiring?”, “Hilton offers”…"
+            placeholder={aiMode ? 'Ask your rewards strategist: “What should I do today?”' : 'Ask anything: “Costco $1500”, “What’s expiring?”, “Hilton offers”…'}
             value={q}
             onChange={(e) => {
               setQ(e.target.value);
               if (answer) setAnswer(null);
+              if (plan) setPlan(null);
             }}
             onKeyDown={onInputKeyDown}
             className="min-w-0 flex-1 bg-transparent py-2 text-base text-slate-900 placeholder:text-slate-500 focus:outline-none"
           />
+          <button
+            type="button"
+            role="switch"
+            aria-checked={aiMode}
+            aria-label="AI Mode"
+            disabled={toggleAi.isPending || !cs.data}
+            onClick={() => toggleAi.mutate(!aiMode)}
+            data-testid="ai-mode-toggle"
+            className={clsx(
+              'rounded-full px-3 py-1 text-xs font-medium ring-1 focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-60',
+              aiMode ? 'bg-brand-600 text-white ring-brand-600' : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50',
+            )}
+          >
+            <span aria-hidden>✨ </span>AI Mode {aiMode ? 'on' : 'off'}
+          </button>
           <button
             type="button"
             onClick={onClose}
@@ -505,6 +483,25 @@ export function CommandBar({ open, onClose, isAdmin, seed }: { open: boolean; on
               onToggleSave={() => toggleSave.mutate()}
               savePending={toggleSave.isPending || savedCheck.isLoading}
             />
+          )}
+          {plan && !ask.isPending && (
+            <div className="px-4 pb-4 pt-3">
+              <PlanView r={plan} onNavigate={onClose} />
+            </div>
+          )}
+          {showList && aiMode && (
+            <div className="flex flex-wrap gap-2 px-4 pt-3" data-testid="ai-quick">
+              {['What should I do today?', 'What should I do this week?', 'What should I do this month?'].map((x) => (
+                <button
+                  key={x}
+                  type="button"
+                  onClick={() => runAsk(x)}
+                  className="rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-800 hover:bg-brand-100 focus-visible:ring-2 focus-visible:ring-brand-500"
+                >
+                  {x}
+                </button>
+              ))}
+            </div>
           )}
           {showList && (
             <ul id="command-list" role="listbox" aria-label="Suggestions" className="py-1" data-testid="command-list">
@@ -539,11 +536,11 @@ export function CommandBar({ open, onClose, isAdmin, seed }: { open: boolean; on
             <Link href="/search" onClick={onClose} className="underline">
               Search history
             </Link>{' '}
-            · answers use only your own PointWise data
+            · {aiMode ? 'a model sees only what you allow in Settings' : 'answers use only your own PointWise data'}
           </span>
         </div>
         <div aria-live="polite" className="sr-only" data-testid="command-status">
-          {answer ? 'Answer ready.' : showList ? `${items.length} suggestion${items.length === 1 ? '' : 's'}.` : ''}
+          {answer || plan ? 'Answer ready.' : showList ? `${items.length} suggestion${items.length === 1 ? '' : 's'}.` : ''}
         </div>
       </div>
     </div>

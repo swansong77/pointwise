@@ -86,4 +86,28 @@ describe('Universal search API', () => {
       cy.request({ method: 'POST', url: '/api/v1/search/ask', headers: auth(token), body: { q: 'Sync offers' } }).its('body.answer.calls').should('have.length', 0);
     });
   });
+
+  it('CY-COP-01 AI Mode: settings, the plan, consent defaults, and isolation', () => {
+    const email = 'cy.cop.' + Date.now() + '@e2e.test';
+    cy.request('POST', '/api/v1/auth/register', { email, password: 'e2e-password-1', name: 'Copilot Tester' }).then((reg) => {
+      const token = reg.body.accessToken as string;
+      cy.request({ url: '/api/v1/copilot/settings', headers: auth(token) }).then((s) => {
+        expect(s.body).to.deep.include({ aiModeEnabled: false, mode: 'QUICK', responseStyle: 'BALANCED' });
+        expect(s.body.cloudShare).to.deep.include({ consented: false });
+        expect(s.body.modes).to.have.length(6);
+      });
+      cy.request({ method: 'PUT', url: '/api/v1/copilot/settings', headers: auth(token), body: { mode: 'NOPE' }, failOnStatusCode: false }).its('status').should('eq', 400);
+      cy.request({ method: 'PUT', url: '/api/v1/copilot/settings', headers: auth(token), body: { cloudProviders: ['No Such Provider'] }, failOnStatusCode: false }).its('status').should('eq', 400);
+      cy.request({ method: 'PUT', url: '/api/v1/copilot/settings', headers: auth(token), body: { aiModeEnabled: true, mode: 'TRAVEL', temperature: 0.2 } }).its('body.mode').should('eq', 'TRAVEL');
+      cy.request({ method: 'POST', url: '/api/v1/copilot/ask', headers: auth(token), body: { q: 'What should I do today?' } }).then((r) => {
+        expect(r.body.plan.kind).to.eq('AGENDA');
+        expect(r.body.mode).to.eq('TRAVEL');
+        expect(r.body.plan.lenses.length).to.be.greaterThan(0);
+        expect(r.body.runId).to.match(/^[0-9a-f-]{36}$/);
+      });
+      cy.request({ url: '/api/v1/copilot/agenda?when=month', headers: auth(token) }).its('body.plan.kind').should('eq', 'AGENDA');
+      cy.request({ url: '/api/v1/copilot/disclosures', headers: auth(token) }).its('body').should('be.an', 'array');
+      cy.request({ method: 'POST', url: '/api/v1/copilot/ask', body: { q: 'hi' }, failOnStatusCode: false }).its('status').should('eq', 401);
+    });
+  });
 });

@@ -9,6 +9,7 @@ import { qk, useApiMutation, useAuthedQuery, useSubscription } from '@/lib/queri
 import { money, shortDate } from '@/lib/format';
 import { pushSupported, subscribeToPush, unsubscribeFromPush } from '@/lib/push';
 import { AiSettingsSection, TokensSection } from './ai-section';
+import { CopilotSettingsSection } from '@/components/copilot-settings';
 
 interface Me {
   id: string;
@@ -253,6 +254,7 @@ export default function SettingsPage() {
       <SubscriptionSection />
       <NotificationPrefs />
       <AiSettingsSection />
+      <CopilotSettingsSection />
       <TokensSection />
       <DataSection />
       <PrivacySection />

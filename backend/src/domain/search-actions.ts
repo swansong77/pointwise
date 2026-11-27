@@ -51,7 +51,7 @@ const day = (d: Date) => d.toISOString().slice(0, 10);
 const MAX_REMINDERS = 2;
 const MAX_ROW_ACTIONS = 3;
 
-function reminderFor(label: string, endsAt: unknown, link: string, daysBefore: number, now: Date, id: string): CallAction | null {
+export function reminderFor(label: string, endsAt: unknown, link: string, daysBefore: number, now: Date, id: string): CallAction | null {
   const end = typeof endsAt === 'string' || endsAt instanceof Date ? new Date(endsAt) : null;
   if (!end || Number.isNaN(end.getTime())) return null;
   const due = reminderDue(end, now, daysBefore);

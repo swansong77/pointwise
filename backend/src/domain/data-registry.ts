@@ -92,7 +92,7 @@ export const DATA_RULES: Record<string, ModelRule> = {
 
   // ───────── settings
   NotificationPreference: { cls: 'USER', scope: U, natural: ['userId'], singleton: true },
-  AiSettings: { cls: 'USER', scope: U, drop: ['consentedAt'], natural: ['userId'], singleton: true, refs: { preferredModelId: 'AiModel' } },
+  AiSettings: { cls: 'USER', scope: U, drop: ['consentedAt', 'cloudShareConsentAt'], natural: ['userId'], singleton: true, refs: { preferredModelId: 'AiModel' } },
   EnrollmentPolicy: { cls: 'USER', scope: U, natural: ['userId'], singleton: true },
   EnrollmentRule: { cls: 'USER', scope: U, refs: { accountId: 'OfferAccount', walletCardId: 'WalletCard' } },
 
@@ -137,6 +137,8 @@ export const DATA_RULES: Record<string, ModelRule> = {
   SearchSession: { cls: 'EPHEMERAL' },
   // reminders the member set; pending ones are part of their data
   Reminder: { cls: 'USER', scope: U, natural: ['title', 'dueAt'] },
+  // what AI Mode sent to a model (already redacted), for the member to inspect
+  AiDisclosure: { cls: 'USER', scope: U },
   AiUsage: { cls: 'EPHEMERAL' },
   AgentRun: { cls: 'EPHEMERAL' },
   AgentStep: { cls: 'EPHEMERAL' },

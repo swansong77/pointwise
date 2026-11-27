@@ -52,6 +52,7 @@ export class GeminiProvider implements LlmProvider {
         config: {
           systemInstruction: req.system,
           maxOutputTokens: req.maxTokens,
+          ...(req.temperature != null && !req.capabilities?.includes('effort') && { temperature: req.temperature }),
           ...(req.tools.length && {
             tools: [{ functionDeclarations: req.tools.map((t) => ({ name: t.name, description: t.description, parametersJsonSchema: t.inputSchema })) }],
           }),
