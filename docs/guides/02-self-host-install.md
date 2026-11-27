@@ -182,7 +182,7 @@ Give each person the address. They choose **Sign up**, then use a password of at
 bash deploy/make-admin.sh other@example.com
 ```
 
-For **a spouse, children and authorized users in one household**, the person who owns the cards creates the household inside the app (below, step 6). They do not need separate accounts unless they want their own sign-in.
+For **a spouse, children and authorized users in one household**, one person (the account owner) holds the household and adds the others as members inside that account (Guide 6, Step 1). Members do not get their own sign-in. A person who signs up separately gets a separate account, and accounts do not share data.
 
 ## Part 5: First-time setup for a member
 

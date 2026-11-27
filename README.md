@@ -30,6 +30,7 @@ project-analysis/
 | [3. Automated deployment](docs/guides/03-automated-deployment.md) | updates, backups, rollback and recovery without doing it by hand |
 | [4. On a Mac](docs/guides/04-mac.md) | develop on, or run PointWise on, a Mac |
 | [5. On a Windows PC](docs/guides/05-windows.md) | develop on, or run PointWise on, a Windows PC (WSL 2 and Docker Desktop) |
+| [6. Getting started (for your household)](docs/guides/06-getting-started.md) | for the people who use it: add cards, spending, transactions and loyalty data, and what can be automatic |
 
 **Fastest install on a fresh Linux server:** `curl -fsSL <raw address of deploy/get.sh> | sudo bash -s -- --domain your.name --admin-email you@example.com` (details in guide 2).
 
