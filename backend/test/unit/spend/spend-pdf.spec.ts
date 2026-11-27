@@ -1,6 +1,9 @@
 import {
   cleanDescription,
   findPeriod,
+  isProse,
+  printedTotals,
+  scanStatementPdf,
   parseAmountToken,
   parseFullDate,
   parseStatementPdf,
@@ -206,4 +209,42 @@ describe("sandboxed PDF extractor", () => {
       extractPdfLines(makePdf([["a"]]), { timeoutMs: 1 }),
     ).rejects.toThrow(/too long/);
   }, 30_000);
+});
+
+describe("two-column summary pages (Capital One layout, synthetic)", () => {
+  // the left column's sentence starts with a date and shares its line with the right column's "Payments" figure
+  const PAGES = [
+    [
+      "Payment Information Account Summary",
+      "Previous Balance $100.00",
+      "Sep 12, 2026 or later you will pay the late fee and the interest owed on the account Payments - $50.00",
+      "Transactions + $20.00",
+      "Fees Charged + $0.00",
+      "Interest Charged + $0.00",
+      "New Balance = $70.00",
+    ],
+    [
+      "Transactions",
+      "Trans Date Post Date Description Amount",
+      "Aug 10 Aug 11 PAYMENT THANK YOU - $50.00",
+      "Trans Date Post Date Description Amount",
+      "Aug 14 Aug 15 EXAMPLE STORE 800-555-0100 CA $20.00",
+    ],
+  ];
+  it("does not read a date-led sentence as a transaction, so the payment is counted once", () => {
+    const p = parseStatementPdf(PAGES, "w", NOW);
+    expect(p.rows.map((r) => r.signedCents)).toEqual([-5000, 2000]);
+    expect(scanStatementPdf(PAGES).count).toBe(2);
+  });
+  it("knows the summary's \"Transactions\" line as the printed charges", () => {
+    const t = printedTotals(PAGES)!;
+    expect(t.charges).toContain(2000);
+    expect(t.credits).toContain(5000);
+  });
+  it("tells prose from merchant descriptors", () => {
+    expect(isProse("or later you will pay the late fee and the interest owed")).toBe(true);
+    expect(isProse("UBER *TRIP HELP.UBER.COM CA")).toBe(false);
+    expect(isProse("Amazon Prime Video Digital Purchase")).toBe(false);
+    expect(isProse("amazon.com/bill wa")).toBe(false);
+  });
 });

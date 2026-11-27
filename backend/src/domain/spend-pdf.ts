@@ -67,6 +67,13 @@ export function matchTxLine(line: string): RegExpExecArray | null {
 
 const SKIP_DESC =
   /^(new balance|previous balance|payment due|minimum payment|total|statement (closing|period)|opening\/closing|closing date|credit limit|available credit|cash advance limit|interest charge calculation|annual percentage|balance (subject|transfer))/i;
+/**
+ * A sentence, not a merchant. Two-column statements can start a left-column sentence with a date ("Sep 12, 2026 …") and print
+ * the right-hand "Payments - $19.70" summary figure on the same line; read as a transaction it would count that payment twice.
+ * Merchant descriptors are mostly upper case or run together, so five or more plain lower-case words mark prose.
+ */
+export const isProse = (desc: string) => desc.split(/\s+/).filter((w) => /^[a-z]{2,}[,.;:]?$/.test(w)).length >= 5;
+
 const CREDIT_SECTION =
   /^(?:(?:payments?(?:,| and)? (?:other )?credits|payments? and credits|other credits|returns? and credits|payments, credits and adjustments)\b|(?:credits|payments)(?:\s+amount)?\s*$)/i;
 const DEBIT_SECTION =
@@ -246,6 +253,7 @@ export function scanStatementPdf(pages: string[][]): StatementScan {
       if (!amounts) continue;
       const rest = t.slice(m[0].length).replace(/^(\S+\s+)?/, "");
       if (SKIP_DESC.test(rest.trim()) || SKIP_DESC.test(t.slice(m[0].length).trim())) continue;
+      if (isProse(t.slice(m[0].length).replace(LOOSE_AMOUNT, " "))) continue;
       const v = parseAmountToken(amounts[amounts.length - 1]);
       if (v == null || v === 0) continue;
       count++;
@@ -277,7 +285,8 @@ export function printedTotals(pages: string[][]): PrintedTotals | null {
   const both = val("(?:payments?[,/]? ?(?:and )?(?:other )?credits?|total payments and credits)");
   const pay = val("\\bpayments(?: for this period)?(?: N/A)?");
   const cred = val("\\bcredits(?: for this period)?(?: N/A)?");
-  const chg = val("(?:\\bnew charges|\\bpurchases|\\bnew pay over time charges|total new charges)");
+  // Capital One's summary calls them "Transactions"
+  const chg = val("(?:\\bnew charges|\\bpurchases|\\btransactions|\\bnew pay over time charges|total new charges)");
   if (!both.length && !pay.length && !chg.length) return null;
   const fee = val("\\bfees(?: charged)?");
   const int = val("\\binterest(?: charged)?");
@@ -340,7 +349,7 @@ export function parseStatementPdf(
       const m = matchTxLine(line);
       if (!m) continue;
       const desc = cleanDescription(m[3]);
-      if (!desc || SKIP_DESC.test(desc) || /^\$?[\d,.]+$/.test(desc)) continue;
+      if (!desc || SKIP_DESC.test(desc) || /^\$?[\d,.]+$/.test(desc) || isProse(desc)) continue;
       const date = resolveDate(m[1], period, now);
       const value = parseAmountToken(m[4]);
       if (value === 0) continue; // a $0.00 line (e.g. a waived membership fee) is not a transaction
