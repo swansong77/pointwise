@@ -1,0 +1,12 @@
+[Unit]
+Description=PointWise: encrypted backup to ./backups (and off the machine, when configured)
+After=docker.service
+
+[Service]
+Type=oneshot
+User=@USER@
+WorkingDirectory=@DIR@
+ExecStart=/bin/bash @DIR@/deploy/backup.sh
+# optional off-site copy: create deploy/offsite.sh (see deploy/examples/offsite.sh.example); it runs after every backup
+ExecStartPost=/bin/bash -c '[ -x @DIR@/deploy/offsite.sh ] && @DIR@/deploy/offsite.sh || true'
+TimeoutStartSec=30min

@@ -1,0 +1,211 @@
+# PointWise: production stack for a server you run yourself.
+#
+#   bash deploy/install.sh          first install (writes .env with fresh secrets, starts everything, creates your admin)
+#   bash deploy/deploy.sh           later: update to the latest code, with a backup first and a rollback if it does not come up
+#
+# Only the reverse proxy (Caddy, ports 80 and 443) is reachable from outside. Postgres, Redis, the API and the web app stay on the
+# private Docker network. The browser talks to one address; the web app forwards /api/v1 to the API itself.
+# Settings come from .env (see deploy/production.env.example). The documentation is docs/guides/02-self-host-install.md.
+name: pointwise-prod
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "5" }
+
+x-backend-env: &backend-env
+  NODE_ENV: production
+  PORT: "4000"
+  DATABASE_URL: postgresql://pointwise:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/pointwise?schema=public
+  REDIS_URL: redis://redis:6379
+  JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET in .env}
+  JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set JWT_REFRESH_SECRET in .env}
+  INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?set INTERNAL_API_SECRET in .env}
+  TOKEN_ENC_KEY: ${TOKEN_ENC_KEY:?set TOKEN_ENC_KEY in .env (32 or more characters)}
+  # the one public address, e.g. https://pointwise.example.com (no trailing slash)
+  APP_URL: ${PW_PUBLIC_URL:?set PW_PUBLIC_URL in .env}
+  CORS_ORIGINS: ${PW_PUBLIC_URL}
+  # mail: a real provider needs SMTP_USER and SMTP_PASSWORD (port 587 upgrades with STARTTLS; set SMTP_SECURE=true for port 465)
+  SMTP_HOST: ${SMTP_HOST:-localhost}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  SMTP_SECURE: ${SMTP_SECURE:-false}
+  MAIL_FROM: ${MAIL_FROM:-PointWise <no-reply@localhost>}
+  # true = send no mail at all (password reset and e-mail digests then do not work)
+  MAIL_DISABLED: ${MAIL_DISABLED:-false}
+  # on your own server there is nothing to charge: "mock" lets any member switch to Pro at no cost
+  BILLING_PROVIDER: ${BILLING_PROVIDER:-mock}
+  AUTH_RATE_LIMIT_PER_MIN: ${AUTH_RATE_LIMIT_PER_MIN:-30}
+  RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-100}
+  # encrypted backups: the nightly backup runs only when BACKUP_PASSPHRASE is set (12+ characters)
+  BACKUP_DIR: /var/backups/pointwise
+  BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:-}
+  BACKUP_KEEP: ${BACKUP_KEEP:-14}
+  BACKUP_INCLUDE_EPHEMERAL: ${BACKUP_INCLUDE_EPHEMERAL:-false}
+  BACKUP_MAX_MB: ${BACKUP_MAX_MB:-2048}
+  ROTATING_AUTO_FETCH: ${ROTATING_AUTO_FETCH:-true}
+  OFFER_AUTO_PUBLISH: ${OFFER_AUTO_PUBLISH:-true}
+  MAILBOX_ALLOW_PRIVATE_HOSTS: "false"
+  CARD_SOURCE_ALLOWED_DOMAINS: ${CARD_SOURCE_ALLOWED_DOMAINS:-}
+  CARD_SOURCE_MIN_INTERVAL_MS: ${CARD_SOURCE_MIN_INTERVAL_MS:-5000}
+  # AI (all optional). Without a key only the offline demo model answers. Keys you add stay on this server.
+  AI_ENABLE_MOCK: ${AI_ENABLE_MOCK:-true}
+  AI_MONTHLY_TOKEN_BUDGET: ${AI_MONTHLY_TOKEN_BUDGET:-2000000}
+  AI_RATE_LIMIT_PER_MIN: ${AI_RATE_LIMIT_PER_MIN:-20}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+  OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
+  MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-}
+  # optional integrations (leave empty to keep them off)
+  BANK_PROVIDER: ${BANK_PROVIDER:-none}
+  PLAID_ENV: ${PLAID_ENV:-sandbox}
+  PLAID_CLIENT_ID: ${PLAID_CLIENT_ID:-}
+  PLAID_SECRET: ${PLAID_SECRET:-}
+  PLAID_WEBHOOK_URL: ${PLAID_WEBHOOK_URL:-}
+  INBOUND_EMAIL_DOMAIN: ${INBOUND_EMAIL_DOMAIN:-}
+  INBOUND_EMAIL_SECRET: ${INBOUND_EMAIL_SECRET:-}
+  INBOUND_AUTHSERV_ID: ${INBOUND_AUTHSERV_ID:-}
+  VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+  VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+  VAPID_SUBJECT: ${VAPID_SUBJECT:-}
+  GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
+  GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
+  MICROSOFT_OAUTH_CLIENT_ID: ${MICROSOFT_OAUTH_CLIENT_ID:-}
+  MICROSOFT_OAUTH_CLIENT_SECRET: ${MICROSOFT_OAUTH_CLIENT_SECRET:-}
+
+services:
+  postgres:
+    image: postgres:16.4-alpine
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_USER: pointwise
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: pointwise
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pointwise -d pointwise"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    logging: *logging
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: { context: ./backend, target: runtime }
+    image: ${PW_BACKEND_IMAGE:-pointwise/backend:prod}
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      <<: *backend-env
+      RUN_MIGRATIONS: "true"
+      # the curated real-card catalog, applied again on every start (it is idempotent). No demo members are ever created.
+      RUN_SEED: "true"
+      SEED_CATALOG: real
+      SEED_DEMO_USERS: "false"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    volumes:
+      - pointwise-backups:/var/backups/pointwise
+
+  # Runs queued and scheduled jobs (offer and benefit scans, digests, briefings, 5/24 snapshots).
+  worker:
+    image: ${PW_BACKEND_IMAGE:-pointwise/backend:prod}
+    restart: unless-stopped
+    logging: *logging
+    command: ["node", "dist/worker.js"]
+    environment:
+      <<: *backend-env
+      RUN_MIGRATIONS: "false"
+    healthcheck:
+      disable: true
+    volumes:
+      - pointwise-backups:/var/backups/pointwise
+    depends_on:
+      backend: { condition: service_healthy }
+
+  # Registers the cron schedule and re-asserts it hourly.
+  scheduler:
+    image: ${PW_BACKEND_IMAGE:-pointwise/backend:prod}
+    restart: unless-stopped
+    logging: *logging
+    command: ["node", "dist/scheduler.js"]
+    environment:
+      <<: *backend-env
+      RUN_MIGRATIONS: "false"
+    healthcheck:
+      disable: true
+    depends_on:
+      backend: { condition: service_healthy }
+
+  # Delivers e-mail and web-push notifications.
+  notification-service:
+    image: ${PW_BACKEND_IMAGE:-pointwise/backend:prod}
+    restart: unless-stopped
+    logging: *logging
+    command: ["node", "dist/notification.js"]
+    environment:
+      <<: *backend-env
+      RUN_MIGRATIONS: "false"
+    healthcheck:
+      disable: true
+    depends_on:
+      backend: { condition: service_healthy }
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        API_INTERNAL_URL: http://backend:4000
+    image: ${PW_FRONTEND_IMAGE:-pointwise/frontend:prod}
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      NEXTAUTH_URL: ${PW_PUBLIC_URL:?set PW_PUBLIC_URL in .env}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET in .env}
+      API_INTERNAL_URL: http://backend:4000
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?set INTERNAL_API_SECRET in .env}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      APPLE_ID: ${APPLE_ID:-}
+      APPLE_SECRET: ${APPLE_SECRET:-}
+    depends_on:
+      backend: { condition: service_healthy }
+
+  # The only service open to the network: HTTPS (certificates are obtained and renewed automatically) in front of the web app.
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    logging: *logging
+    ports:
+      - "${PW_HTTP_PORT:-80}:80"
+      - "${PW_HTTPS_PORT:-443}:443"
+    environment:
+      PW_SITE_ADDRESS: ${PW_SITE_ADDRESS:?set PW_SITE_ADDRESS in .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      frontend: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  redisdata:
+  pointwise-backups:
+  caddy_data:
+  caddy_config:

@@ -39,3 +39,8 @@ extension/dist/
 *.pointwise-data.json
 *.pointwise-data.json.gz
 .env.migrated
+
+# production deployment (deploy/): settings, logs, backups and the deploy lock never go in git
+/backups/
+/deploy.log
+/.deploy.lock
