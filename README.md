@@ -29,6 +29,8 @@ project-analysis/
 | [2. Install on your own server](docs/guides/02-self-host-install.md) | a real install with HTTPS, your first administrator, and first-time setup for each member |
 | [3. Automated deployment](docs/guides/03-automated-deployment.md) | updates, backups, rollback and recovery without doing it by hand |
 
+**Fastest install on a fresh Linux server:** `curl -fsSL <raw address of deploy/get.sh> | sudo bash -s -- --domain your.name --admin-email you@example.com` (details in guide 2).
+
 The stock `docker-compose.yml` is for development only (sample accounts with public passwords, every port open). A real install uses `docker-compose.prod.yml` through `deploy/install.sh`.
 
 ## Quick start (Docker)
