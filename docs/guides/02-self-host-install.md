@@ -41,6 +41,33 @@ Where it can live: a small cloud server, a spare computer or a mini PC at home, 
 - A place to keep secrets: a password manager. The installer prints a few values you must save.
 - Optional: an outgoing mail account (see "Turn on e-mail" below). Without one, PointWise works but cannot send password-reset or digest e-mails.
 
+## The fast way: one command
+
+On a fresh Linux server (Ubuntu, Debian, Fedora), after you have made your choice above and, for choice A, pointed the DNS name at the server (see "Choice A also needs DNS" in Part 1), sign in over SSH and run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/swansong77/pointwise/main/deploy/get.sh | sudo bash -s -- \
+  --domain pointwise.example.com --admin-email you@example.com
+```
+
+For a private address instead, use `--private-address http://192.168.1.20` in place of `--domain`. Leave both options out and it asks you.
+
+It installs what is missing (git, curl, OpenSSL and Docker through Docker's official script), opens ports 80 and 443 if the `ufw` firewall is on, downloads PointWise to `/opt/pointwise`, and runs the installer described in Part 2. When it ends, skip to "Save what it prints" in Part 2.
+
+**If the repository is private**, the download needs a read-only access token (GitHub: Settings, Developer settings, Fine-grained tokens, this repository, Contents: read-only):
+
+```bash
+export PW_GIT_TOKEN=github_pat_xxxxxxxx
+curl -fsSL -H "Authorization: token $PW_GIT_TOKEN" https://raw.githubusercontent.com/swansong77/pointwise/main/deploy/get.sh \
+  | sudo PW_GIT_TOKEN="$PW_GIT_TOKEN" bash -s -- --domain pointwise.example.com --admin-email you@example.com
+```
+
+The token is used for the download only and is not stored. To get later updates from a private repository, add a read-only deploy key (Guide 3, A1).
+
+Other settings: `PW_DIR=/somewhere` changes the install folder, `PW_BRANCH=...` the branch, `PW_REPO=...` the repository (for a fork). Run it again at any time to refresh the download; your `.env` and data are kept.
+
+Prefer to see what you run? Download it, read it, then run it: `curl -fsSLo get.sh <address>`, `less get.sh`, `sudo bash get.sh --domain ...`. The step-by-step version of the same thing is Parts 1 and 2 below.
+
 ## Part 1: Prepare the server
 
 Sign in over SSH, then:
