@@ -32,10 +32,10 @@ export class JwtAuthGuard implements CanActivate {
         // it may see takes effect at once, not when the access token expires.
         const p = await this.prisma.profile.findUnique({
           where: { loginUserId: payload.sub },
-          select: { id: true, userId: true, visibility: true, nickname: true },
+          select: { id: true, userId: true, visibility: true, nickname: true, canEdit: true },
         });
         if (!p) throw new Error('member login removed');
-        req.user.member = { ownerId: p.userId, profileId: p.id, visibility: p.visibility, nickname: p.nickname };
+        req.user.member = { ownerId: p.userId, profileId: p.id, visibility: p.visibility, nickname: p.nickname, canEdit: p.canEdit };
         req.user.role = 'USER';
       }
     } catch {

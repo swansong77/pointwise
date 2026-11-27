@@ -117,4 +117,48 @@ describe('Member sign-ins API', () => {
       });
     });
   });
+
+  it('CY-MEMBER-04 editing is off until the owner allows it, then pinned to the member; the owner can mute a member', () => {
+    cy.request('POST', '/api/v1/auth/register', { email: 'cy.owner4.' + stamp() + '@e2e.test', password: 'e2e-password-1', name: 'Owner' }).then((reg) => {
+      const owner = reg.body.accessToken as string;
+      cy.request({ method: 'POST', url: '/api/v1/subscription/checkout', headers: auth(owner), body: { interval: 'month' } });
+      cy.request({ url: '/api/v1/household', headers: auth(owner) }).then((hh) => {
+        const primary = hh.body.members.find((m: { isPrimary: boolean }) => m.isPrimary);
+        cy.request({ method: 'POST', url: '/api/v1/household/members', headers: auth(owner), body: { nickname: 'Riley', relationship: 'SPOUSE' } }).then((rm) => {
+          const riley = rm.body.id as string;
+          cy.request({ method: 'POST', url: '/api/v1/household/members', headers: auth(owner), body: { nickname: 'Sam', relationship: 'PARENT' } }).then((sm) => {
+            cy.request('/api/v1/cards/contoso-gold').then((card) => {
+              cy.request({ method: 'POST', url: '/api/v1/wallet/cards', headers: auth(owner), body: { cardId: card.body.id, profileId: primary.id, lastFour: '1111' } }).then((oc) => {
+                cy.request({ method: 'POST', url: `/api/v1/household/members/${riley}/invite`, headers: auth(owner) }).then((inv) => {
+                  cy.request('POST', '/api/v1/auth/accept-invite', { token: tokenOf(inv.body.url), email: 'cy.riley4.' + stamp() + '@e2e.test', password: 'riley-password-9' }).then((acc) => {
+                    const member = acc.body.accessToken as string;
+                    cy.request({ method: 'POST', url: '/api/v1/member/cards', headers: auth(member), body: { cardId: card.body.id }, failOnStatusCode: false }).its('status').should('eq', 403);
+                    // only for a member with their own sign-in
+                    cy.request({ method: 'PATCH', url: `/api/v1/household/members/${sm.body.id}`, headers: auth(owner), body: { canEdit: true }, failOnStatusCode: false }).its('status').should('eq', 400);
+                    cy.request({ method: 'PATCH', url: `/api/v1/household/members/${riley}`, headers: auth(owner), body: { canEdit: true } }).its('body.canEdit').should('eq', true);
+                    cy.request({ method: 'POST', url: '/api/v1/member/cards', headers: auth(member), body: { cardId: card.body.id, lastFour: '5555' } }).then((mc) => {
+                      expect(mc.body.profileId).to.eq(riley);
+                      cy.request({ method: 'POST', url: '/api/v1/member/cards', headers: auth(member), body: { cardId: card.body.id, profileId: primary.id }, failOnStatusCode: false }).its('status').should('eq', 400);
+                      cy.request({ method: 'PATCH', url: `/api/v1/member/cards/${oc.body.id}`, headers: auth(member), body: { nickname: 'mine' }, failOnStatusCode: false }).its('status').should('eq', 404);
+                      cy.request({ method: 'DELETE', url: `/api/v1/member/cards/${mc.body.id}`, headers: auth(member) }).its('status').should('eq', 204);
+                    });
+                    // the mute: only for a member with a sign-in
+                    cy.request({ method: 'PATCH', url: `/api/v1/household/members/${sm.body.id}`, headers: auth(owner), body: { notifyOwner: false }, failOnStatusCode: false }).its('status').should('eq', 400);
+                    cy.request({ method: 'PATCH', url: `/api/v1/household/members/${riley}`, headers: auth(owner), body: { notifyOwner: false } }).its('body.notifyOwner').should('eq', false);
+                    // removing the sign-in takes both away
+                    cy.request({ method: 'DELETE', url: `/api/v1/household/members/${riley}/login`, headers: auth(owner) });
+                    cy.request({ url: '/api/v1/household/members', headers: auth(owner) }).then((ms) => {
+                      const r = ms.body.find((m: { id: string }) => m.id === riley);
+                      expect(r.canEdit).to.eq(false);
+                      expect(r.notifyOwner).to.eq(true);
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
 });

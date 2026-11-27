@@ -178,6 +178,10 @@ model Profile {
   /// What the member's own sign-in may see: OWN = this member's cards, benefits, loyalty and spending; HOUSEHOLD = also the household overview (read only)
   visibility           MemberVisibility         @default(OWN)
   loginSince           DateTime?
+  /// the owner lets this member add and edit their own cards, points and benefit usage (needs their own sign-in)
+  canEdit              Boolean                  @default(false)
+  /// false = the owner no longer gets notifications about this member's items; the member does (needs their own sign-in)
+  notifyOwner          Boolean                  @default(true)
   user                 User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   household            Household?               @relation(fields: [householdId], references: [id], onDelete: SetNull)
   loginUser            User?                    @relation("ProfileLogin", fields: [loginUserId], references: [id], onDelete: SetNull)

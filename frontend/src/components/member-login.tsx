@@ -23,6 +23,7 @@ export function MemberLogin({ member }: { member: Member }) {
   const revoke = useApiMutation<void>(() => ({ path: `/household/members/${member.id}/invite`, method: 'DELETE' }), KEYS);
   const remove = useApiMutation<void>(() => ({ path: `/household/members/${member.id}/login`, method: 'DELETE' }), KEYS);
   const visibility = useApiMutation<string>((v) => ({ path: `/household/members/${member.id}`, method: 'PATCH', body: { visibility: v } }), KEYS);
+  const rights = useApiMutation<Record<string, boolean>>((body) => ({ path: `/household/members/${member.id}`, method: 'PATCH', body }), KEYS);
 
   if (!login || !login.canHaveLogin) return null;
 
@@ -112,6 +113,20 @@ export function MemberLogin({ member }: { member: Member }) {
               )}
             </p>
           )}
+          <ul className="mt-2 space-y-1" aria-label={`What ${member.nickname} may do`}>
+            <li>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={!!member.canEdit} onChange={(e) => rights.mutate({ canEdit: e.target.checked })} data-testid="can-edit" />
+                Let {member.nickname} add and edit their own cards and points
+              </label>
+            </li>
+            <li>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={member.notifyOwner !== false} onChange={(e) => rights.mutate({ notifyOwner: e.target.checked })} data-testid="notify-owner" />
+                Also tell me about {member.nickname}&apos;s alerts and reminders
+              </label>
+            </li>
+          </ul>
           <div className="mt-2 flex flex-wrap items-end gap-2">
             <div className="w-64">
               <label htmlFor={`vis-${member.id}`} className="mb-1 block text-xs font-medium text-slate-700">
@@ -134,7 +149,7 @@ export function MemberLogin({ member }: { member: Member }) {
           </div>
         </div>
       )}
-      <ErrorText error={create.error ?? revoke.error ?? remove.error ?? visibility.error} />
+      <ErrorText error={create.error ?? revoke.error ?? remove.error ?? visibility.error ?? rights.error} />
     </section>
   );
 }

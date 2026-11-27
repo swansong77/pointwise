@@ -514,11 +514,16 @@ export class JobsService {
         })
       ).map((p) => [p.userId, p]),
     );
+    // members the owner stopped hearing about (the member still does)
+    const muted = new Set(
+      (await this.prisma.profile.findMany({ where: { id: { in: [...new Set(rows.map((r) => r.walletCard.profileId).filter((x): x is string => !!x))] }, loginUserId: { not: null }, notifyOwner: false }, select: { id: true } })).map((m) => m.id),
+    );
     let n = 0;
     for (const b of rows) {
       const userId = b.walletCard.wallet.userId;
       const p = prefs.get(userId);
-      if (p && !p.benefitExpiring) continue;
+      const ownerMuted = !!b.walletCard.profileId && muted.has(b.walletCard.profileId);
+      if (p && !p.benefitExpiring && !ownerMuted) continue;
       const v = benefitView(b, now);
       const t = dueThreshold(
         b,
@@ -531,9 +536,9 @@ export class JobsService {
       const title =
         d <= 1 ? `${b.name} expires today` : `${b.name} expires in ${d} days`;
       const body = `$${(v.currentPeriod.remainingCents / 100).toFixed(2)} left on ${v.walletCard.name} — use it by ${isoDay(v.currentPeriod.lastDay)}.`;
-      const channels: Array<"IN_APP" | "EMAIL" | "PUSH"> = ["IN_APP"];
-      if (p?.benefitEmail ?? true) channels.push("EMAIL");
-      if (p?.benefitPush ?? false) channels.push("PUSH");
+      const channels: Array<"IN_APP" | "EMAIL" | "PUSH"> = ownerMuted ? [] : ["IN_APP"];
+      if (!ownerMuted && (p?.benefitEmail ?? true)) channels.push("EMAIL");
+      if (!ownerMuted && (p?.benefitPush ?? false)) channels.push("PUSH");
       for (const channel of channels) {
         let logId: string;
         try {

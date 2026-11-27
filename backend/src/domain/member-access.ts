@@ -55,6 +55,8 @@ export interface MemberContext {
   profileId: string;
   visibility: MemberVisibility;
   nickname: string;
+  /** the owner lets them add and edit their own cards, points and benefit usage */
+  canEdit: boolean;
 }
 
 // ───────────── notifications for a member ─────────────

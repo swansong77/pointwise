@@ -63,9 +63,12 @@ export class NotificationsService {
    * unread, not e-mailed, and the executive briefing reports it. Critical ones, reminders and the briefings themselves go out at once.
    */
   async notify(userId: string, type: NotificationType, title: string, body: string, link?: string, dedupeKey?: string, opts: { profileId?: string | null } = {}) {
-    const row = await this.store(userId, type, title, body, link, dedupeKey);
+    if (!opts.profileId) return this.store(userId, type, title, body, link, dedupeKey);
     // an item that concerns one household member also goes to that member's own sign-in, if they have one
-    if (opts.profileId) await this.toMember(opts.profileId, type, title, body, dedupeKey);
+    const p = await this.prisma.profile.findUnique({ where: { id: opts.profileId }, select: { loginUserId: true, notifyOwner: true } });
+    // the owner can stop hearing about a member who has their own sign-in; the member still does
+    const row = p && p.loginUserId && !p.notifyOwner ? null : await this.store(userId, type, title, body, link, dedupeKey);
+    if (p?.loginUserId) await this.toMember(p.loginUserId, type, title, body, dedupeKey);
     return row;
   }
 
@@ -73,13 +76,11 @@ export class NotificationsService {
    * The member's own copy of a household notification. It follows THEIR preferences (a kind they switched off is not sent) and THEIR Quiet
    * Mode, points at their own view, and never stops the owner's notification if anything goes wrong here.
    */
-  private async toMember(profileId: string, type: NotificationType, title: string, body: string, dedupeKey?: string) {
+  private async toMember(memberUserId: string, type: NotificationType, title: string, body: string, dedupeKey?: string) {
     try {
-      const p = await this.prisma.profile.findUnique({ where: { id: profileId }, select: { loginUserId: true } });
-      if (!p?.loginUserId) return;
-      const prefs = await this.prisma.notificationPreference.findUnique({ where: { userId: p.loginUserId } });
+      const prefs = await this.prisma.notificationPreference.findUnique({ where: { userId: memberUserId } });
       if (!memberWants(type, prefs)) return;
-      await this.store(p.loginUserId, type, title, body, MEMBER_HOME, dedupeKey ? `m:${dedupeKey}` : undefined);
+      await this.store(memberUserId, type, title, body, MEMBER_HOME, dedupeKey ? `m:${dedupeKey}` : undefined);
     } catch (e) {
       this.log.warn(`member copy of ${type} not delivered: ${(e as Error).message}`);
     }
