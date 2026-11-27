@@ -40,6 +40,10 @@ export class MemberDto {
   @ApiPropertyOptional({ description: 'Can apply for business cards' }) @IsOptional() @IsBoolean() hasBusiness?: boolean;
   @ApiPropertyOptional({ enum: VISIBILITIES, description: "What this member's own sign-in may see: OWN (their own cards, benefits, loyalty, spending) or HOUSEHOLD (also the household overview, read only)" })
   @IsOptional() @IsIn(VISIBILITIES) visibility?: MemberVisibility;
+  @ApiPropertyOptional({ description: 'Let this member add and edit their own cards, points and benefit usage (they need their own sign-in)' })
+  @IsOptional() @IsBoolean() canEdit?: boolean;
+  @ApiPropertyOptional({ description: 'false = stop sending the owner notifications about this member (they get them instead; needs their own sign-in)' })
+  @IsOptional() @IsBoolean() notifyOwner?: boolean;
 }
 export class UpdateMemberDto extends PartialType(MemberDto) {}
 
@@ -188,6 +192,8 @@ export class HouseholdsService {
 
   async updateMember(userId: string, id: string, dto: UpdateMemberDto) {
     const p = await this.owned(userId, id);
+    // both only make sense once the member has their own sign-in: someone has to receive what the owner stops receiving
+    if ((dto.canEdit === true || dto.notifyOwner === false) && !p.loginUserId) throw new BadRequestException('Give them their own sign-in first');
     if (dto.relationship && (dto.relationship === 'SELF') !== p.isPrimary) {
       throw new BadRequestException('Only the primary member can be SELF');
     }
@@ -197,7 +203,7 @@ export class HouseholdsService {
     }
     return this.prisma.profile.update({
       where: { id },
-      data: { nickname: dto.nickname, relationship: dto.relationship, email: dto.email, birthYear: dto.birthYear, visibility: dto.visibility, ...(dto.creditBand !== undefined && { creditBand: dto.creditBand }), ...(dto.goals !== undefined && { goals: [...new Set(dto.goals)] }), ...(dto.hasBusiness !== undefined && { hasBusiness: dto.hasBusiness }) },
+      data: { nickname: dto.nickname, relationship: dto.relationship, email: dto.email, birthYear: dto.birthYear, visibility: dto.visibility, canEdit: dto.canEdit, notifyOwner: dto.notifyOwner, ...(dto.creditBand !== undefined && { creditBand: dto.creditBand }), ...(dto.goals !== undefined && { goals: [...new Set(dto.goals)] }), ...(dto.hasBusiness !== undefined && { hasBusiness: dto.hasBusiness }) },
     });
   }
 
@@ -252,6 +258,8 @@ export class HouseholdsService {
     if (!p.loginUserId) throw new NotFoundException('This member has no sign-in');
     await this.prisma.$transaction([
       this.prisma.user.delete({ where: { id: p.loginUserId } }),
+      // nobody receives or edits as the member any more: the owner hears about their items again and the rights go
+      this.prisma.profile.update({ where: { id }, data: { canEdit: false, notifyOwner: true } }),
       this.prisma.auditLog.create({ data: { actorId: userId, action: 'member.login.removed', entity: 'Profile', entityId: id } }),
     ]);
   }

@@ -5,6 +5,7 @@ import { StatTiles } from '@/components/charts';
 import { Badge, EmptyState, ErrorText, PageHeader, Panel, Spinner } from '@/components/ui';
 import { daysLeftLabel, money, shortDate } from '@/lib/format';
 import type { MemberMe, MemberOverview } from '@/lib/member';
+import { MemberAccountActions, MemberAddAccount, MemberAddCard, MemberCardActions, MemberUseCredit } from '@/components/member-edit';
 import { useAuthedQuery } from '@/lib/queries';
 
 const STATUS_TONE: Record<string, 'green' | 'amber' | 'red' | 'slate' | 'brand'> = {
@@ -25,6 +26,7 @@ export default function MyViewPage() {
   if (!me.data || !ov.data) return null;
   const d = ov.data;
   const cards = [...d.cards.groups.active, ...d.cards.groups.authorizedUser];
+  const canEdit = me.data.canEdit;
   return (
     <div className="space-y-6">
       <PageHeader title={`Hi, ${me.data.nickname}`} subtitle={`Your cards and points in ${me.data.household}. The household owner keeps the details up to date.`} />
@@ -69,6 +71,7 @@ export default function MyViewPage() {
                   )}
                 </span>
                 <span className="tabular-nums text-slate-600">{money(c.annualFeeCents)} / yr</span>
+                {canEdit && <MemberCardActions card={c} />}
               </li>
             ))}
           </ul>
@@ -89,6 +92,7 @@ export default function MyViewPage() {
                   </span>
                 </span>
                 <Badge tone={STATUS_TONE[b.currentPeriod.status] ?? 'slate'}>{STATUS_LABEL[b.currentPeriod.status] ?? b.currentPeriod.status}</Badge>
+                {canEdit && <MemberUseCredit benefit={b} />}
               </li>
             ))}
           </ul>
@@ -111,11 +115,19 @@ export default function MyViewPage() {
                   </span>
                 </span>
                 <span className="tabular-nums font-medium">{l.balance.toLocaleString('en-US')}</span>
+                {canEdit && <MemberAccountActions account={l} />}
               </li>
             ))}
           </ul>
         )}
       </Panel>
+
+      {canEdit && (
+        <>
+          <MemberAddCard />
+          <MemberAddAccount />
+        </>
+      )}
 
       <Panel title="Recent spending on my cards" data-testid="my-transactions">
         {d.transactions.length === 0 ? (

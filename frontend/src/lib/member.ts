@@ -7,6 +7,8 @@ export interface MemberMe {
   since: string | null;
   household: string;
   visibility: Visibility;
+  /** the owner lets this member add and edit their own cards, points and credit usage */
+  canEdit: boolean;
 }
 
 export interface MemberCard {

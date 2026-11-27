@@ -73,7 +73,7 @@ A member can have their own e-mail and password without becoming a separate acco
 
 Routes without `@MemberSafe()` return 403, including every write. Public routes (catalog, `GET /offers`) are unchanged. Backups and member exports never carry `loginUserId`, and invites are not restored.
 
-**Not yet:** members cannot add or edit cards themselves (only read routes and their own channels are open).
+**Editing by members** is phase 4 (section 9).
 
 ## 7. Mailboxes and alert addresses per person (phase 2, 2026-12)
 
@@ -105,3 +105,9 @@ Items that name a member today: expiring offers (the card's member), card renewa
 **Their own briefing.** `domain/member-brief.ts` builds a daily and a weekly briefing from the member's own profile only (benefits, offers, points, certificates, renewals, bonuses; the week adds spending and balances): what needs them now, what is coming, fee and bonus decisions. No model is involved. A daily one exists only on days something is due; the weekly summary also reports spending and balances. It is stored once per period under the member's own user (`CopilotBriefing`) and announced with one `COPILOT` notification (exempt from Quiet Mode). `POST /member/briefings` makes one now, `GET /member/briefings` lists them. Jobs: `member-daily` (13:05 UTC) and `member-weekly` (Mondays 13:35 UTC), each skipping members who switched that briefing off (`NotificationPreference.briefingDaily` / `briefingWeekly`).
 
 **Not opened to members:** the household Copilot (briefings, settings, memory, goals), the Chief of Staff, and the owner's preferences. A member's preferences screen is `/my/settings`.
+
+## 9. Members editing their own data, and the owner's notification mute (phase 4, 2026-12)
+
+**Editing.** The owner switches it on per member (`Profile.canEdit`, off by default, only for a member with their own sign-in; it is switched off again, with the sign-in, when the login is removed). With it on, a member can: add, edit and remove **their own** cards (`/member/cards`), add, update and remove **their own** loyalty accounts (`/member/loyalty/accounts`, program list at `/member/loyalty/programs`), and mark a benefit used or undo it (`/member/benefits/:id/usage`). The existing services do the work against the owner's account, so plan limits, the child rule (authorized-user cards only), template benefits and the loyalty provenance rules all apply unchanged. `MemberEditService` pins every write to the member's profile: the profile is not a field a member can send (the DTOs omit it and extra fields are refused), and an id that belongs to anyone else answers 404, so other people's records are not confirmed. Every write is recorded in the audit log under the member. The permission is read live, so switching it off applies at once. The general wallet, loyalty and benefit routes stay closed to members.
+
+**Mute.** `Profile.notifyOwner` (default on). When the owner turns it off for a member who has their own sign-in, the owner is no longer sent notifications about that member's items (offers, renewals, bonuses, loyalty, offer sync, credits about to reset); the member still is. Items about a member without a sign-in, about nobody in particular, system notices and household-level items are unaffected, and switching it back on resumes them. Both settings are the owner's alone: a member's request to change them is refused.

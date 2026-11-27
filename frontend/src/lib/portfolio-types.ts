@@ -16,6 +16,9 @@ export interface Member {
   hasBusiness?: boolean;
   cardCount?: number;
   visibility?: 'OWN' | 'HOUSEHOLD';
+  canEdit?: boolean;
+  /** false = the owner is not told about this member's items (the member is) */
+  notifyOwner?: boolean;
   /** this member's mailboxes and alert address, as health only (never the addresses) */
   channels?: { mailboxes: number; needsAttention: number; lastSyncAt: string | null; alertAddress: boolean | null };
   /** The member's own sign-in, as the owner sees it */
