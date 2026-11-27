@@ -61,3 +61,61 @@ check_docker() {
   docker compose version >/dev/null 2>&1 || die "Docker Compose v2 is required (the 'docker compose' command). https://docs.docker.com/compose/install/"
   docker info >/dev/null 2>&1 || die "Docker is installed but this user cannot use it. Add the user to the docker group (sudo usermod -aG docker \$USER) and sign in again."
 }
+
+# ── ports ──────────────────────────────────────────────────────────────────────
+
+# is something on this machine already listening on this TCP port? (lsof sees this user's listeners; connecting sees everyone's)
+port_busy() {
+  local p=$1
+  if command -v lsof >/dev/null 2>&1 && lsof -nP -iTCP:"$p" -sTCP:LISTEN >/dev/null 2>&1; then return 0; fi
+  (exec 3<>"/dev/tcp/127.0.0.1/$p") 2>/dev/null
+}
+
+# the name of the program using a port, when it can be told (best effort, for the message)
+port_user() {
+  command -v lsof >/dev/null 2>&1 || return 0
+  lsof -nP -iTCP:"$1" -sTCP:LISTEN 2>/dev/null | awk 'NR==2 {print $1}'
+}
+
+# the first free port from $1 up to $2
+free_port_from() {
+  local p=$1 end=$2
+  while [ "$p" -le "$end" ]; do
+    port_busy "$p" || { echo "$p"; return 0; }
+    p=$((p + 1))
+  done
+  return 1
+}
+
+# Makes sure the web server can bind its ports, before anything is started.
+#   an http:// address never uses HTTPS, so a busy HTTPS port is moved out of the way instead of stopping the install
+#   an https address needs 80 and 443 (certificates): a busy one stops the install with what to do
+#   the HTTP port is needed either way
+# Skipped when this stack's own web server is already running (its ports are "busy" because they are ours).
+prepare_ports() {
+  [ -z "$(pw_compose ps -q --status running caddy 2>/dev/null || true)" ] || return 0
+  local hp sp new who
+  hp="$(env_get PW_HTTP_PORT)"; hp="${hp:-80}"
+  sp="$(env_get PW_HTTPS_PORT)"; sp="${sp:-443}"
+  case "$(env_get PW_PUBLIC_URL)" in
+    http://*)
+      if port_busy "$sp"; then
+        new="$(free_port_from 8443 8499)" || die "Port $sp is in use and no free port was found between 8443 and 8499. Set PW_HTTPS_PORT in $PW_ENV_FILE to a free port."
+        env_set PW_HTTPS_PORT "$new"
+        ok "Port $sp is in use on this machine. An http:// address does not use HTTPS, so the HTTPS port is set to $new instead."
+      fi
+      ;;
+    *)
+      for p in "$sp"; do
+        if port_busy "$p"; then
+          who="$(port_user "$p")"
+          die "Port $p is already in use${who:+ by $who}. A public https address needs ports 80 and 443 for its certificate. Stop what uses it, or use a private address instead (--private-address http://...)."
+        fi
+      done
+      ;;
+  esac
+  if port_busy "$hp"; then
+    who="$(port_user "$hp")"
+    die "Port $hp is already in use${who:+ by $who}. Pick another: set PW_HTTP_PORT to a free port (for example 8080) and put the same port in PW_PUBLIC_URL (for example http://192.168.1.20:8080) in $PW_ENV_FILE, then run this again."
+  fi
+}

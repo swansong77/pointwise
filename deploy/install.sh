@@ -100,7 +100,11 @@ ok "Settings are valid: $(env_get PW_PUBLIC_URL)"
 
 # ── start ───────────────────────────────────────────────────────────────────────
 say "Building and starting PointWise (the first build takes several minutes)"
-if [ -n "$(env_get PW_BACKEND_IMAGE)" ] || [ -n "${PW_BACKEND_IMAGE:-}" ]; then pw_compose pull; pw_compose up -d; else pw_compose up -d --build; fi
+# build first: the worker, scheduler and notification service reuse the API image, and starting them before it exists makes Docker try
+# (and fail, noisily) to download it
+if [ -n "$(env_get PW_BACKEND_IMAGE)" ] || [ -n "${PW_BACKEND_IMAGE:-}" ]; then pw_compose pull; else pw_compose build; fi
+prepare_ports
+pw_compose up -d
 say "Waiting for the database, API and web app"
 wait_healthy postgres 120 || die "The database did not become healthy. See: docker compose -f docker-compose.prod.yml logs postgres"
 wait_healthy backend 300 || die "The API did not become healthy. See: docker compose -f docker-compose.prod.yml logs backend"
