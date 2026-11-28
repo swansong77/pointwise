@@ -247,4 +247,19 @@ describe("two-column summary pages (Capital One layout, synthetic)", () => {
     expect(isProse("Amazon Prime Video Digital Purchase")).toBe(false);
     expect(isProse("amazon.com/bill wa")).toBe(false);
   });
+
+  it("does not read a date joined to a bare summary label as a transaction (a one-word variant of the same page)", () => {
+    const pages = [
+      ["Account Summary", "Jan 22, 2025 Payments - $50.00", "Transactions + $20.00", "New Balance = $70.00"],
+      PAGES[1],
+    ];
+    const p = parseStatementPdf(pages, "w", NOW);
+    expect(p.rows.map((r) => r.signedCents)).toEqual([-5000, 2000]);
+    expect(scanStatementPdf(pages).count).toBe(2);
+    expect(isProse("Payments")).toBe(true);
+    expect(isProse("Other Credits")).toBe(true);
+    // real descriptions that merely contain such a word are not labels
+    expect(isProse("PAYMENT THANK YOU")).toBe(false);
+    expect(isProse("Payments to Contractor LLC")).toBe(false);
+  });
 });

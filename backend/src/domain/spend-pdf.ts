@@ -72,7 +72,13 @@ const SKIP_DESC =
  * the right-hand "Payments - $19.70" summary figure on the same line; read as a transaction it would count that payment twice.
  * Merchant descriptors are mostly upper case or run together, so five or more plain lower-case words mark prose.
  */
-export const isProse = (desc: string) => desc.split(/\s+/).filter((w) => /^[a-z]{2,}[,.;:]?$/.test(w)).length >= 5;
+/**
+ * An account-summary label with its figure ("Payments - $1,593.91", "Transactions + $20.00"), which a two-column page can join to a
+ * date from the other column. As the whole description it is a summary line, never a transaction (real rows say what was paid or bought).
+ */
+const SUMMARY_LABEL = /^(?:payments|other credits|credits|transactions|purchases|new charges|fees(?: charged)?|interest(?: charged)?|cash advances?|balance transfers?)$/i;
+
+export const isProse = (desc: string) => SUMMARY_LABEL.test(desc.trim()) || desc.split(/\s+/).filter((w) => /^[a-z]{2,}[,.;:]?$/.test(w)).length >= 5;
 
 const CREDIT_SECTION =
   /^(?:(?:payments?(?:,| and)? (?:other )?credits|payments? and credits|other credits|returns? and credits|payments, credits and adjustments)\b|(?:credits|payments)(?:\s+amount)?\s*$)/i;
