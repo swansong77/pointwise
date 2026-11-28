@@ -7,6 +7,7 @@ const V = "/api/v1";
 const prisma = new PrismaClient();
 let app: INestApplication;
 let token: string;
+let ownerId: string;
 let other: string;
 let riley: string;
 let sam: string;
@@ -26,6 +27,7 @@ beforeAll(async () => {
   app = await createApp();
   const u = await register(app);
   token = u.token;
+  ownerId = u.userId;
   await api(app).post(`${V}/subscription/checkout`).set(bearer(token)).send({ interval: "month" }).expect(201); // household members are a paid feature
   other = (await register(app)).token;
   riley = (await api(app).post(`${V}/household/members`).set(bearer(token)).send({ nickname: "Riley", relationship: "SPOUSE" }).expect(201)).body.id;
@@ -61,5 +63,27 @@ describe("transactions: owner, last digits and member filter", () => {
   it("another account's member id shows nothing and a malformed id is refused", async () => {
     expect((await list(other, `?profileId=${riley}`)).body).toHaveLength(0);
     await api(app).get(`${V}/spending/transactions?profileId=nope`).set(bearer(token)).expect(400);
+  });
+});
+
+describe("transactions: date range", () => {
+  const at = (userId: string, day: string, externalId: string) =>
+    prisma.transaction.create({ data: { userId, walletCardId: cardPlain, amountCents: 500, description: "DATED FIXTURE", kind: "PURCHASE", source: "MANUAL", externalId, occurredAt: new Date(`${day}T00:00:00Z`) } });
+  const dated = async (qs: string) => ((await list(token, `?walletCardId=${cardPlain}&${qs}`)).body as Array<{ occurredAt: string; description: string }>).filter((r) => r.description === "DATED FIXTURE").map((r) => r.occurredAt.slice(0, 10)).sort();
+
+  it("from and to are inclusive days, either may be left out, and they combine with the other filters", async () => {
+    const userId = ownerId;
+    for (const [i, day] of ["2025-01-31", "2025-02-01", "2025-02-15", "2025-02-28", "2025-03-01"].entries()) await at(userId, day, `d-${i}`);
+    expect(await dated("from=2025-02-01&to=2025-02-28")).toEqual(["2025-02-01", "2025-02-15", "2025-02-28"]);
+    expect(await dated("from=2025-02-28")).toEqual(["2025-02-28", "2025-03-01"]);
+    expect(await dated("to=2025-01-31")).toEqual(["2025-01-31"]);
+    expect(await dated("from=2025-02-15&to=2025-02-15")).toEqual(["2025-02-15"]);
+    expect(await dated("from=2030-01-01")).toEqual([]);
+    // with a member filter that excludes this card, nothing comes back
+    expect((await list(token, `?profileId=${riley}&from=2025-01-01&to=2025-12-31&walletCardId=${cardPlain}`)).body).toHaveLength(0);
+  });
+  it("refuses a date that is not real and a range that runs backwards", async () => {
+    for (const qs of ["from=2025-02-30", "to=2025-13-01", "from=2025-3-1", "from=yesterday", "from=2025-03-01&to=2025-02-01"])
+      await api(app).get(`${V}/spending/transactions?${qs}`).set(bearer(token)).expect(400);
   });
 });

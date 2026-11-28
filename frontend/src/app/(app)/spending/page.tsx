@@ -5,7 +5,7 @@ import { useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { StatTiles } from '@/components/charts';
 import { WalletCardArt } from '@/components/card-bits';
-import { Badge, Button, EmptyState, ErrorText, Field, PageHeader, Panel, Select, Spinner } from '@/components/ui';
+import { Badge, Button, EmptyState, ErrorText, Field, Input, PageHeader, Panel, Select, Spinner } from '@/components/ui';
 import { useApi } from '@/lib/api';
 import { money, shortDate } from '@/lib/format';
 import { ValidationReport } from '@/components/validation-report';
@@ -395,8 +395,10 @@ function Transactions() {
   const wallet = useWallet();
   const [walletCardId, setWalletCardId] = useState('');
   const [profileId, setProfileId] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
   const [matched, setMatched] = useState<'' | 'true' | 'false'>('');
-  const qs = new URLSearchParams({ limit: '200', ...(walletCardId && { walletCardId }), ...(profileId && { profileId }), ...(matched && { matched }) }).toString();
+  const qs = new URLSearchParams({ limit: '200', ...(walletCardId && { walletCardId }), ...(profileId && { profileId }), ...(from && { from }), ...(to && { to }), ...(matched && { matched }) }).toString();
   const q = useAuthedQuery<SpendTx[]>(['spending', 'transactions', qs], `/spending/transactions?${qs}`);
   const allCards = wallet.data ?? [];
   const owners = cardOwners(allCards);
@@ -441,6 +443,19 @@ function Transactions() {
               </option>
             ))}
           </Select>
+          <label className="flex items-center gap-1 text-sm text-slate-700" htmlFor="tx-from">
+            From
+            <Input id="tx-from" type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} className="w-auto" />
+          </label>
+          <label className="flex items-center gap-1 text-sm text-slate-700" htmlFor="tx-to">
+            To
+            <Input id="tx-to" type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className="w-auto" />
+          </label>
+          {(from || to) && (
+            <Button type="button" variant="secondary" onClick={() => (setFrom(''), setTo(''))}>
+              Clear dates
+            </Button>
+          )}
           <label className="sr-only" htmlFor="tx-matched">
             Benefit matches
           </label>
@@ -455,7 +470,11 @@ function Transactions() {
       {q.isLoading ? (
         <Spinner />
       ) : !q.data?.length ? (
-        <EmptyState title="No transactions yet">Import a statement above, or sync a bank connection on the Import page.</EmptyState>
+        from || to || walletCardId || profileId || matched ? (
+          <EmptyState title="No transactions match these filters">Widen the dates or choose All cards, All members or All transactions.</EmptyState>
+        ) : (
+          <EmptyState title="No transactions yet">Import a statement above, or sync a bank connection on the Import page.</EmptyState>
+        )
       ) : (
         <ul className="divide-y divide-slate-100">
           {q.data.map((t) => (

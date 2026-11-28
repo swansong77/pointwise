@@ -149,6 +149,17 @@ test.describe('Spending & automatic benefit tracking', () => {
     await tx.getByLabel('Household member').selectOption({ label: 'All members' });
     await expect(tx.getByTestId('transaction')).toHaveCount(2);
 
+    // dates: both fixtures are from this month, so a range that ends last year shows none (with a clear message) and Clear brings them back
+    await tx.getByLabel('To', { exact: true }).fill('2020-12-31');
+    await expect(tx.getByText('No transactions match these filters')).toBeVisible();
+    await tx.getByLabel('From', { exact: true }).fill('2020-01-01');
+    await expect(tx.getByTestId('transaction')).toHaveCount(0);
+    await tx.getByRole('button', { name: 'Clear dates' }).click();
+    await expect(tx.getByTestId('transaction')).toHaveCount(2);
+    await tx.getByLabel('From', { exact: true }).fill('2020-01-01');
+    await expect(tx.getByTestId('transaction')).toHaveCount(2);
+    await tx.getByRole('button', { name: 'Clear dates' }).click();
+
     // the statement import's card choice carries the same label
     await expect(page.getByTestId('statement-import').getByLabel('Card')).toContainText('Contoso Gold · Riley ··1111');
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();

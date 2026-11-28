@@ -38,6 +38,7 @@ import {
   MaxLength,
   Min,
   ValidateNested,
+  Matches,
 } from "class-validator";
 import { AuthUser, CurrentUser } from "../common/decorators";
 import { MAX_BULK_FILES, MAX_PDF_BYTES, SpendService } from "./spend.service";
@@ -72,6 +73,14 @@ export class BulkStatementDto {
 
 export class SpendListQuery {
   @ApiPropertyOptional() @IsOptional() @IsUUID() walletCardId?: string;
+  @ApiPropertyOptional({ description: "first day, YYYY-MM-DD (inclusive)", example: "2026-01-01" })
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "from must be a date like 2026-01-31" })
+  from?: string;
+  @ApiPropertyOptional({ description: "last day, YYYY-MM-DD (inclusive)", example: "2026-12-31" })
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "to must be a date like 2026-01-31" })
+  to?: string;
   @ApiPropertyOptional({ description: "only the cards of this household member" })
   @IsOptional()
   @IsUUID()
