@@ -1,6 +1,6 @@
 import type { WalletCard } from './types';
 
-/** "Venture X · Riley ··8047": card name, whose card it is (only when it has an owner) and the last digits (only when known). */
+/** "Venture X · Riley ··1234": card name, whose card it is (only when it has an owner) and the last digits (only when known). */
 export function cardLabel(w: { nickname?: string | null; name?: string; card?: { name: string }; owner?: { nickname: string } | null; profile?: { nickname: string } | null; lastFour?: string | null }) {
   const name = w.nickname || w.name || w.card?.name || 'Card';
   const owner = (w.owner ?? w.profile)?.nickname;
