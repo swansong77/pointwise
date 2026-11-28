@@ -263,3 +263,14 @@ describe("two-column summary pages (Capital One layout, synthetic)", () => {
     expect(isProse("Payments to Contractor LLC")).toBe(false);
   });
 });
+
+describe("account summaries worded differently (Bank of America, synthetic)", () => {
+  it("knows 'Purchases and Adjustments' as the printed charges and 'Finance Charges' as interest", () => {
+    const pages = [["Account Summary", "Previous Balance $100.00", "Payments and Other Credits -$50.00", "Purchases and Adjustments +$2,808.32", "Cash Advances +$0.00", "Fees Charged +$0.00", "Finance Charges +$12.34", "New Balance Total = $2,870.66"]];
+    const t = printedTotals(pages)!;
+    expect(t.charges).toContain(280832);
+    expect(t.charges).toContain(280832 + 1234); // purchases plus the finance charge, as rows would total them
+    expect(t.credits).toContain(5000);
+  });
+});
+
