@@ -880,7 +880,26 @@ export class SpendService {
     const seen = await this.prisma.statementImport.findUnique({
       where: { walletCardId_fileSha256: { walletCardId, fileSha256 } },
     });
-    if (seen)
+    if (seen) {
+      // the same file again: nothing is stored twice, but the completeness check runs on this reading of it, so a parser
+      // fix shows up (and an earlier FAILED result does not stick to a file that now reads correctly)
+      const validation = this.validation(p);
+      const data = {
+        statementCount: validation.statementCount,
+        importedCount: validation.importedCount,
+        differenceCount: validation.differenceCount,
+        statementCents: validation.statementCents,
+        importedCents: validation.importedCents,
+        missingCents: validation.missingCents,
+        confidence: validation.confidence,
+        status: validation.status,
+        details: { notes: validation.notes },
+      };
+      await this.prisma.statementValidation.upsert({
+        where: { statementImportId: seen.id },
+        update: data,
+        create: { statementImportId: seen.id, ...data },
+      });
       return {
         imported: 0,
         merged: 0,
@@ -892,8 +911,9 @@ export class SpendService {
         format: p.format,
         period: p.period,
         alreadyImported: seen.createdAt,
-        validation: await this.savedValidation(seen.id),
+        validation,
       };
+    }
     const r = await this.ingest(
       userId,
       walletCardId,
