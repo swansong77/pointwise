@@ -123,8 +123,49 @@ The account owner can also connect a mailbox **for** a member who has no sign-in
 In **Spending** (or **Loyalty**), **Connected mailboxes**, choose **Connect Gmail** or **Connect Outlook** and sign in with that provider's own screen; or connect any other mailbox with its IMAP details and an **app password** that you create for this purpose and can revoke any time.
 
 - PointWise reads the mailbox **read-only** and only looks at messages from known card issuers and loyalty programs. It never deletes or sends anything. Bodies and attachments are not stored, only the facts it reads.
-- **Connect Gmail / Outlook** are greyed out unless the server owner has registered the sign-in with Google or Microsoft. If they are greyed out, use the IMAP form with an app password.
+- **Connect Gmail / Outlook** are greyed out unless the server owner has registered the sign-in with Google or Microsoft. If they are greyed out, use the IMAP form with an app password: the steps for Gmail are just below.
 - Card alert e-mails, statement PDFs attached to e-mails, and loyalty program e-mails (Step 4) all arrive this way.
+
+#### Connect Gmail with an app password (works on any server, no setup by the server owner)
+
+This is the way that works for everyone. Gmail does not let a program sign in with your normal Google password, so you create a separate 16-letter **app password** that is only for PointWise, and you can delete it any time.
+
+**1. Turn on 2-step verification** (a one-time step; skip it if it is already on). In your Google account, open **Security**, then **2-Step Verification**, and follow the prompts. Google only offers app passwords once this is on.
+
+**2. Create the app password.** Open **https://myaccount.google.com/apppasswords** (or, in your Google account, search for *App passwords*). Give it a name such as `PointWise` and choose **Create**. Google shows a 16-letter password in groups of four. Copy it now: Google shows it only once.
+
+**3. Check that IMAP is allowed.** In Gmail, open **Settings** (the gear), **See all settings**, **Forwarding and POP/IMAP**. If you see **IMAP access**, make sure it is **Enabled**.
+
+**4. Connect it in PointWise.** Open **Spending**, **Connected mailboxes**, and fill in the form (not the *Connect Gmail* button, which needs the server owner's app registration):
+
+| Field | What to enter |
+|---|---|
+| Whose cards and points does this mailbox feed? | the person whose mail it is, or *The whole household* |
+| Provider | **Gmail** (this fills in the server for you) |
+| IMAP server | `imap.gmail.com` |
+| Name | any label you will recognise, for example `Gmail` |
+| Email address | your **full** Gmail address, for example `name@gmail.com` |
+| App password | the 16 letters from step 2. Spaces do not matter. **Not** your Google password |
+| Folder | `INBOX` |
+
+Choose **Connect mailbox**. It signs in once to check the details; if it works, the mailbox appears with **Synced** and the number of messages read. **Sync now** reads it again straight away; otherwise it is read on a schedule.
+
+**What it reads.** Only messages from card issuers and loyalty programs, read-only (it never deletes, moves or sends anything). Message bodies are not stored. The app password is stored encrypted and is never shown again.
+
+**If the issuer e-mails skip your inbox.** Some people have Gmail filters that archive or label bank e-mails. PointWise reads the folder you named, so for those either remove the "skip the inbox" part of the filter, or put the label's name (for example `Banks`) in **Folder**.
+
+**To stop it.** Choose **Disconnect** next to the mailbox, and delete the app password at **https://myaccount.google.com/apppasswords**. Both are worth doing: disconnecting removes PointWise's copy, deleting the app password makes the old one useless everywhere.
+
+**If it does not connect.** The message now says what Gmail answered:
+
+| What you see | What to do |
+|---|---|
+| "the server rejected the user name or password" | you used your Google password, mistyped the app password, or the user name is not the **full** address. Create a new app password and paste it |
+| The *App passwords* page is not offered | 2-step verification is off (step 1), the account uses Google's Advanced Protection Program, or it is a work or school (Workspace) account whose administrator has not allowed app passwords. Ask the administrator, or use the forwarding method above |
+| "the server name was not found" or "refused the connection" | the server must be `imap.gmail.com`, port 993 |
+| Connected, but nothing is read | the mail is not in the folder you chose (see the filter note above), or no card-issuer e-mail has arrived yet |
+
+The same steps work for other providers that need an app password (Yahoo, iCloud, Outlook.com with two-step verification): create an app password in that provider's security settings and choose that provider in the form.
 
 ### Method 4: bank connection
 
