@@ -291,11 +291,11 @@ export function printedTotals(pages: string[][]): PrintedTotals | null {
   const both = val("(?:payments?[,/]? ?(?:and )?(?:other )?credits?|total payments and credits)");
   const pay = val("\\bpayments(?: for this period)?(?: N/A)?");
   const cred = val("\\bcredits(?: for this period)?(?: N/A)?");
-  // Capital One's summary calls them "Transactions"
-  const chg = val("(?:\\bnew charges|\\bpurchases|\\btransactions|\\bnew pay over time charges|total new charges)");
+  // Capital One's summary calls them "Transactions"; Bank of America's "Purchases and Adjustments"
+  const chg = val("(?:\\bnew charges|\\bpurchases(?: and adjustments)?|\\btransactions|\\bnew pay over time charges|total new charges)");
   if (!both.length && !pay.length && !chg.length) return null;
   const fee = val("\\bfees(?: charged)?");
-  const int = val("\\binterest(?: charged)?");
+  const int = val("(?:\\binterest(?: charged)?|\\bfinance charges?)");
   const cash = val("(?:cash advances|balance transfers)");
   return {
     credits: [...new Set([0, ...both, ...pay, ...cred, ...sumsOf([[0, ...pay], [0, ...cred]])])],
