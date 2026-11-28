@@ -1200,17 +1200,21 @@ export class SpendService {
     q: {
       walletCardId?: string;
       profileId?: string;
+      from?: string;
+      to?: string;
       kind?: TransactionKind;
       matched?: boolean;
       limit?: number;
     },
   ) {
+    const range = dayRange(q.from, q.to);
     const rows = await this.prisma.transaction.findMany({
       where: {
         userId,
         ...(q.walletCardId && { walletCardId: q.walletCardId }),
         // a member's cards only (the card belongs to the signed-in owner's wallet through the transaction's own userId)
         ...(q.profileId && { walletCard: { profileId: q.profileId } }),
+        ...(range && { occurredAt: range }),
         ...(q.kind && { kind: q.kind }),
         ...(q.matched !== undefined &&
           (q.matched
@@ -1368,4 +1372,21 @@ export class SpendService {
       },
     };
   }
+}
+
+/** "2026-01-31" → that day's UTC midnight, or null when it is not a real date. */
+const dayStart = (s: string) => {
+  const d = new Date(`${s}T00:00:00Z`);
+  return Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== s ? null : d;
+};
+
+/** Inclusive first and last day (statement dates are stored as UTC midnight) as a Prisma date filter; undefined when neither is given. */
+export function dayRange(from?: string, to?: string): { gte?: Date; lt?: Date } | undefined {
+  const a = from ? dayStart(from) : undefined;
+  const b = to ? dayStart(to) : undefined;
+  if (a === null) throw new BadRequestException("from is not a real date");
+  if (b === null) throw new BadRequestException("to is not a real date");
+  if (a && b && a > b) throw new BadRequestException("The first day is after the last day");
+  if (!a && !b) return undefined;
+  return { ...(a && { gte: a }), ...(b && { lt: new Date(b.getTime() + 86_400_000) }) };
 }
