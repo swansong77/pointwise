@@ -169,6 +169,22 @@ describe("bulk statement import", () => {
     ).toBe(before);
   });
 
+  it("the same file again re-checks completeness, so a stale FAILED result is replaced and nothing is stored twice", async () => {
+    const imp = await prisma.statementImport.findFirstOrThrow({ where: { walletCardId: cardA }, include: { validation: true } });
+    const wasStatus = imp.validation!.status;
+    await prisma.statementValidation.update({
+      where: { statementImportId: imp.id },
+      data: { status: "FAILED", confidence: 10, details: { notes: ["stale result from an older parser"] } },
+    });
+    const before = await prisma.transaction.count({ where: { walletCardId: cardA } });
+    const r = await bulk([[pdf(), "October (2).pdf"]]).expect(200);
+    expect(r.body.files[0].status).toBe("ALREADY_IMPORTED");
+    const now = await prisma.statementValidation.findUniqueOrThrow({ where: { statementImportId: imp.id } });
+    expect(now.status).toBe(wasStatus);
+    expect(JSON.stringify(now.details)).not.toContain("stale result");
+    expect(await prisma.transaction.count({ where: { walletCardId: cardA } })).toBe(before);
+  });
+
   it("a statement row the bank sync already recorded is not counted again", async () => {
     const me = await prisma.walletCard.findUniqueOrThrow({
       where: { id: cardC },
