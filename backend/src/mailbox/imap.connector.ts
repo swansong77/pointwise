@@ -30,6 +30,23 @@ export function parseCursor(c: string | null): { validity: string; last: number 
   return m ? { validity: m[1], last: Number(m[2]) } : null;
 }
 
+const CONNECT_CODES: Record<string, string> = {
+  ENOTFOUND: 'the server name was not found',
+  ECONNREFUSED: 'the server refused the connection (check the port)',
+  ETIMEDOUT: 'the server did not answer in time',
+  ECONNRESET: 'the connection was closed by the server',
+};
+
+/** Why the sign-in failed, in words: the library's own message is only "Command failed". Never includes the password. */
+export function signInReason(e: unknown): string {
+  const x = e as { authenticationFailed?: boolean; responseText?: string; serverResponseCode?: string; code?: string; message?: string };
+  const said = (x.responseText ?? '').replace(/\s+/g, ' ').trim().slice(0, 120);
+  if (x.authenticationFailed || /^AUTHENTICATIONFAILED$/i.test(x.serverResponseCode ?? ''))
+    return `the server rejected the user name or password${said ? ` (it said: ${said})` : ''}`;
+  if (x.code && CONNECT_CODES[x.code]) return CONNECT_CODES[x.code];
+  return said || x.message || 'unknown error';
+}
+
 /** IMAP over TLS, read-only (`EXAMINE`): lists new UIDs, checks the sender from the envelope, then fetches only matching messages. */
 export class ImapConnector implements MailboxConnector {
   constructor(
@@ -42,7 +59,7 @@ export class ImapConnector implements MailboxConnector {
     try {
       await c.connect();
     } catch (e) {
-      throw new Error(`Could not sign in to the mailbox: ${(e as Error).message}`.slice(0, 200));
+      throw new Error(`Could not sign in to the mailbox: ${signInReason(e)}`.slice(0, 240));
     }
     try {
       return await fn(c);

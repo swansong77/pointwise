@@ -1,7 +1,7 @@
 import { authservIdFor } from "../../../src/mailbox/connector";
 import { assertPublicHost, isPrivateAddress } from "../../../src/mailbox/host-guard";
-import { ImapClientLike, ImapConnector, parseCursor } from "../../../src/mailbox/imap.connector";
-import { MailboxService } from "../../../src/mailbox/mailbox.service";
+import { ImapClientLike, ImapConnector, parseCursor, signInReason } from "../../../src/mailbox/imap.connector";
+import { cleanPassword, MailboxService } from "../../../src/mailbox/mailbox.service";
 import { classifyMail, MAIL_KIND_LABEL } from "../../../src/domain/mail-classify";
 import { encryptSecret } from "../../../src/common/crypto";
 
@@ -46,6 +46,23 @@ function fakeClient(messages: Array<{ uid: number; from: string; source: string 
   return { client, calls };
 }
 const opts = { allowedDomains: ["alerts.chase.com", "aexp.com"], sinceDays: 30, max: 50 };
+
+describe("TC-MBX: why a sign-in failed, and Google app passwords", () => {
+  it("says what the server said instead of 'Command failed', never the password", () => {
+    expect(signInReason({ authenticationFailed: true, responseText: "Invalid credentials (Failure)", message: "Command failed" })).toBe("the server rejected the user name or password (it said: Invalid credentials (Failure))");
+    expect(signInReason({ authenticationFailed: true })).toBe("the server rejected the user name or password");
+    expect(signInReason({ code: "ENOTFOUND", message: "getaddrinfo ENOTFOUND" })).toMatch(/server name was not found/);
+    expect(signInReason({ code: "ECONNREFUSED" })).toMatch(/port/);
+    expect(signInReason({ responseText: "Too many simultaneous connections" })).toBe("Too many simultaneous connections");
+    expect(signInReason(new Error("Command failed"))).toBe("Command failed");
+  });
+  it("removes the spaces Google shows in an app password, for Google hosts only", () => {
+    expect(cleanPassword("imap.gmail.com", "abcd efgh ijkl mnop")).toBe("abcdefghijklmnop");
+    expect(cleanPassword("IMAP.GoogleMail.com ", "abcd efgh")).toBe("abcdefgh");
+    expect(cleanPassword("imap.example.com", "pass word")).toBe("pass word");
+    expect(cleanPassword("imap.notgmail.com", "a b")).toBe("a b");
+  });
+});
 
 describe("TC-MBX: IMAP connector", () => {
   it("verifies login and folder with clear errors", async () => {

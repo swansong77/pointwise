@@ -10,6 +10,9 @@ import { buildAuthUrl, credentialsFor, exchangeCode, FetchLike, KIND_PATH, newVe
 import { assertPublicHost } from './host-guard';
 import { ImapConnector } from './imap.connector';
 
+/** Google shows an app password as four groups of four letters with spaces; the spaces are not part of it. */
+export const cleanPassword = (host: string, password: string) => (/(^|\.)(gmail|googlemail)\.com$/i.test(host.trim()) ? password.replace(/\s+/g, '') : password);
+
 /** per person: the owner's household-wide mailboxes, and each member's own (or the ones the owner assigns to that member) */
 export const MAX_MAILBOXES = 3;
 const SINCE_DAYS = 30;
@@ -92,7 +95,7 @@ export class MailboxService {
     } catch (e) {
       throw new BadRequestException((e as Error).message);
     }
-    const cfg: MailboxConfig = { kind: 'IMAP', host: dto.host.trim().toLowerCase(), port: dto.port ?? 993, username: dto.username.trim(), password: dto.password, folder: (dto.folder ?? 'INBOX').trim() };
+    const cfg: MailboxConfig = { kind: 'IMAP', host: dto.host.trim().toLowerCase(), port: dto.port ?? 993, username: dto.username.trim(), password: cleanPassword(dto.host, dto.password), folder: (dto.folder ?? 'INBOX').trim() };
     try {
       await this.connectorFor(cfg).verify();
     } catch (e) {
@@ -102,7 +105,7 @@ export class MailboxService {
     if (dup) throw new BadRequestException('This mailbox is already connected');
     const row = await this.prisma.mailbox.create({
       include: { profile: { select: { id: true, nickname: true } } },
-      data: { userId, profileId, kind: 'IMAP', label: dto.label.trim().slice(0, 60), host: cfg.host, port: cfg.port, username: cfg.username, folder: cfg.folder, secretEnc: encryptSecret(dto.password) },
+      data: { userId, profileId, kind: 'IMAP', label: dto.label.trim().slice(0, 60), host: cfg.host, port: cfg.port, username: cfg.username, folder: cfg.folder, secretEnc: encryptSecret(cfg.password) },
     });
     return this.view(row);
   }
