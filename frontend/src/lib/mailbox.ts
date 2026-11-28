@@ -17,7 +17,7 @@ export interface MailboxView {
 
 /** Host and port hints for common providers (the user still needs an app password). */
 export const MAILBOX_PRESETS: Array<{ id: string; label: string; host: string; hint: string }> = [
-  { id: 'gmail', label: 'Gmail', host: 'imap.gmail.com', hint: 'Turn on 2-step verification, then create an app password in your Google account.' },
+  { id: 'gmail', label: 'Gmail', host: 'imap.gmail.com', hint: 'Turn on 2-step verification, then create an app password in your Google account. Use your full address as the user name and the 16-letter app password (spaces do not matter), not your Google password. IMAP must be on in Gmail settings, and a work or school (Workspace) account may need its administrator to allow app passwords.' },
   { id: 'outlook', label: 'Outlook.com', host: 'outlook.office365.com', hint: 'Use an app password if your account has two-step verification; some accounts require OAuth, which is not supported yet.' },
   { id: 'yahoo', label: 'Yahoo', host: 'imap.mail.yahoo.com', hint: 'Create an app password under Account security.' },
   { id: 'icloud', label: 'iCloud', host: 'imap.mail.me.com', hint: 'Create an app-specific password at appleid.apple.com.' },
