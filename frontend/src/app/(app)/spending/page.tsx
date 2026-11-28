@@ -33,6 +33,7 @@ import {
   txAmount,
 } from '@/lib/spend';
 import type { WalletCard } from '@/lib/types';
+import { cardLabel, cardOwners } from '@/lib/card-label';
 
 const AFTER_IMPORT = [['spending'], ['benefits'], ['portfolio'], ['wallet'], ['dashboard']] as const;
 
@@ -199,8 +200,7 @@ function BulkStatements() {
                     <option value="">Choose card…</option>
                     {cards.map((w) => (
                       <option key={w.id} value={w.id}>
-                        {w.nickname || w.card.name}
-                        {w.lastFour ? ` ··${w.lastFour}` : ''}
+                        {cardLabel(w)}
                       </option>
                     ))}
                   </Select>
@@ -281,8 +281,7 @@ function ImportStatement() {
             <option value="">Choose…</option>
             {cards.map((w) => (
               <option key={w.id} value={w.id}>
-                {w.nickname || w.card.name}
-                {w.lastFour ? ` ··${w.lastFour}` : ''}
+                {cardLabel(w)}
               </option>
             ))}
           </Select>
@@ -395,16 +394,42 @@ function ImportStatement() {
 function Transactions() {
   const wallet = useWallet();
   const [walletCardId, setWalletCardId] = useState('');
+  const [profileId, setProfileId] = useState('');
   const [matched, setMatched] = useState<'' | 'true' | 'false'>('');
-  const qs = new URLSearchParams({ limit: '200', ...(walletCardId && { walletCardId }), ...(matched && { matched }) }).toString();
+  const qs = new URLSearchParams({ limit: '200', ...(walletCardId && { walletCardId }), ...(profileId && { profileId }), ...(matched && { matched }) }).toString();
   const q = useAuthedQuery<SpendTx[]>(['spending', 'transactions', qs], `/spending/transactions?${qs}`);
-  const cards = wallet.data ?? [];
+  const allCards = wallet.data ?? [];
+  const owners = cardOwners(allCards);
+  // choosing a member narrows the card list to their cards
+  const cards = profileId ? allCards.filter((w: WalletCard) => w.profile?.id === profileId) : allCards;
   return (
     <Panel
       title="Transactions"
       data-testid="transactions"
       action={
         <div className="flex flex-wrap gap-2">
+          {owners.length > 0 && (
+            <>
+              <label className="sr-only" htmlFor="tx-member">
+                Household member
+              </label>
+              <Select
+                id="tx-member"
+                value={profileId}
+                onChange={(e) => {
+                  setProfileId(e.target.value);
+                  setWalletCardId('');
+                }}
+              >
+                <option value="">All members</option>
+                {owners.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.nickname}
+                  </option>
+                ))}
+              </Select>
+            </>
+          )}
           <label className="sr-only" htmlFor="tx-card">
             Card
           </label>
@@ -412,7 +437,7 @@ function Transactions() {
             <option value="">All cards</option>
             {cards.map((w: WalletCard) => (
               <option key={w.id} value={w.id}>
-                {w.nickname || w.card.name}
+                {cardLabel(w)}
               </option>
             ))}
           </Select>
@@ -440,7 +465,7 @@ function Transactions() {
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-slate-900">{t.description || t.merchant || KIND_LABEL[t.kind]}</p>
                 <p className="text-xs text-slate-500">
-                  {shortDate(t.occurredAt)} · {t.walletCard.name} · {t.merchant ?? t.category?.name ?? t.bankCategory ?? 'Uncategorised'} · {t.source.toLowerCase()}
+                  {shortDate(t.occurredAt)} · {cardLabel(t.walletCard)} · {t.merchant ?? t.category?.name ?? t.bankCategory ?? 'Uncategorised'} · {t.source.toLowerCase()}
                 </p>
                 {t.benefits.length > 0 && (
                   <p className="mt-1 flex flex-wrap gap-1">

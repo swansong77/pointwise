@@ -1199,6 +1199,7 @@ export class SpendService {
     userId: string,
     q: {
       walletCardId?: string;
+      profileId?: string;
       kind?: TransactionKind;
       matched?: boolean;
       limit?: number;
@@ -1208,6 +1209,8 @@ export class SpendService {
       where: {
         userId,
         ...(q.walletCardId && { walletCardId: q.walletCardId }),
+        // a member's cards only (the card belongs to the signed-in owner's wallet through the transaction's own userId)
+        ...(q.profileId && { walletCard: { profileId: q.profileId } }),
         ...(q.kind && { kind: q.kind }),
         ...(q.matched !== undefined &&
           (q.matched
@@ -1229,6 +1232,7 @@ export class SpendService {
             id: true,
             nickname: true,
             lastFour: true,
+            profile: { select: { id: true, nickname: true } },
             card: { select: { name: true, color: true } },
           },
         },
@@ -1275,6 +1279,7 @@ export class SpendService {
           name: t.walletCard.nickname || t.walletCard.card.name,
           color: t.walletCard.card.color,
           lastFour: t.walletCard.lastFour,
+          owner: t.walletCard.profile,
         },
         benefits: usages.map((u) => ({
           usageId: u.id,

@@ -72,6 +72,10 @@ export class BulkStatementDto {
 
 export class SpendListQuery {
   @ApiPropertyOptional() @IsOptional() @IsUUID() walletCardId?: string;
+  @ApiPropertyOptional({ description: "only the cards of this household member" })
+  @IsOptional()
+  @IsUUID()
+  profileId?: string;
   @ApiPropertyOptional({ enum: KINDS })
   @IsOptional()
   @IsIn(KINDS as unknown as string[])
