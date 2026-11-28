@@ -15,7 +15,7 @@ export interface SpendTx {
   category: { slug: string; name: string } | null;
   bankCategory: string | null;
   merchant: string | null;
-  walletCard: { id: string; name: string; color: string; lastFour: string | null };
+  walletCard: { id: string; name: string; color: string; lastFour: string | null; owner: { id: string; nickname: string } | null };
   benefits: Array<{ usageId: string; benefitId: string; name: string; amountCents: number; status: UsageStatus; source: UsageSource }>;
 }
 

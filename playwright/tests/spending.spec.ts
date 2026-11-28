@@ -111,4 +111,47 @@ test.describe('Spending & automatic benefit tracking', () => {
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
     expect(results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id)).toEqual([]);
   });
+
+  test('PW-SP-04 each transaction and card choice says whose card it is and its last digits; the list can be narrowed to a household member', async ({ page, request }) => {
+    const u = await apiRegister(request);
+    const auth = { Authorization: `Bearer ${u.token}` };
+    expect((await request.post('/api/v1/subscription/checkout', { headers: auth, data: { interval: 'month' } })).ok()).toBe(true); // household members are a paid feature
+    const member = async (nickname: string, relationship: string) =>
+      (await (await request.post('/api/v1/household/members', { headers: auth, data: { nickname, relationship } })).json()).id as string;
+    const riley = await member('Riley', 'SPOUSE');
+    const sam = await member('Sam', 'PARENT');
+    const gold = await (await request.get('/api/v1/cards/contoso-gold')).json();
+    const addFor = async (profileId: string, lastFour: string) =>
+      (await (await request.post('/api/v1/wallet/cards', { headers: auth, data: { cardId: gold.id, profileId, lastFour, approvedAt: new Date(now.getTime() - 40 * 86_400_000).toISOString() } })).json()).id as string;
+    const cardRiley = await addFor(riley, '1111');
+    const cardSam = await addFor(sam, '2222');
+    const statement = (desc: string) => ['Transaction Date,Post Date,Description,Category,Type,Amount,Memo', `${d(1)},${d(1)},${desc},Shopping,Sale,-12.00,`].join('\n');
+    for (const [card, desc] of [[cardRiley, 'RILEY FIXTURE STORE'], [cardSam, 'SAM FIXTURE STORE']]) {
+      const res = await request.post('/api/v1/spending/statements', {
+        headers: auth,
+        multipart: { walletCardId: card, file: { name: 'statement.csv', mimeType: 'text/csv', buffer: Buffer.from(statement(desc)) } },
+      });
+      expect(res.ok(), await res.text()).toBe(true);
+    }
+    await uiLogin(page, u.email);
+    await page.goto('/spending');
+    const tx = page.getByTestId('transactions');
+    await expect(tx.getByTestId('transaction')).toHaveCount(2);
+    await expect(tx.getByTestId('transaction').filter({ hasText: 'RILEY FIXTURE STORE' })).toContainText('Contoso Gold · Riley ··1111');
+    await expect(tx.getByTestId('transaction').filter({ hasText: 'SAM FIXTURE STORE' })).toContainText('Contoso Gold · Sam ··2222');
+    await expect(tx.getByLabel('Card', { exact: true })).toContainText('Contoso Gold · Riley ··1111');
+
+    // narrow to one member: their rows only, and the card list holds only their cards
+    await tx.getByLabel('Household member').selectOption({ label: 'Sam' });
+    await expect(tx.getByTestId('transaction')).toHaveCount(1);
+    await expect(tx.getByTestId('transaction')).toContainText('SAM FIXTURE STORE');
+    await expect(tx.getByLabel('Card', { exact: true }).locator('option')).toHaveText(['All cards', 'Contoso Gold · Sam ··2222']);
+    await tx.getByLabel('Household member').selectOption({ label: 'All members' });
+    await expect(tx.getByTestId('transaction')).toHaveCount(2);
+
+    // the statement import's card choice carries the same label
+    await expect(page.getByTestId('statement-import').getByLabel('Card')).toContainText('Contoso Gold · Riley ··1111');
+    const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+    expect(results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id)).toEqual([]);
+  });
 });
